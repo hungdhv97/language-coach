@@ -1,0 +1,25 @@
+package dto
+
+import (
+	"github.com/english-coach/backend/internal/domain/dictionary/model"
+)
+
+// WordDetail represents detailed information about a word
+type WordDetail struct {
+	Word           *model.Word            `json:"word"`
+	Senses         []SenseDetail          `json:"senses"`
+	Pronunciations []*model.Pronunciation `json:"pronunciations"`
+}
+
+// SenseDetail represents detailed information about a sense
+type SenseDetail struct {
+	ID                   int64            `json:"id"`
+	SenseOrder           int16            `json:"sense_order"`
+	Definition           string           `json:"definition"`
+	DefinitionLanguageID int16            `json:"definition_language_id"`
+	UsageLabel           *string          `json:"usage_label,omitempty"`
+	LevelID              *int64           `json:"level_id,omitempty"`
+	Note                 *string          `json:"note,omitempty"`
+	Translations         []*model.Word    `json:"translations"`
+	Examples             []*model.Example `json:"examples"`
+}

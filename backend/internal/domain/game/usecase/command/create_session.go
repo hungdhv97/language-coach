@@ -126,5 +126,5 @@ func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.Create
 }
 
 // InsufficientWordsError represents the error when there are not enough words
-var InsufficientWordsError = errors.New("không đủ từ vựng để tạo game session. Vui lòng chọn chủ đề hoặc cấp độ khác")
+var InsufficientWordsError = errors.New("insufficient vocabulary to create game session. Please choose a different topic or level")
 

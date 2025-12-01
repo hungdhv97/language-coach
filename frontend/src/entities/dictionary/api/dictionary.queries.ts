@@ -4,7 +4,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { dictionaryEndpoints } from './dictionary.endpoints';
-import type { Language, Topic, Level } from '../model/dictionary.types';
+import type { Language, Topic, Level, WordDetail, WordSearchResponse } from '../model/dictionary.types';
 
 export const dictionaryQueries = {
   /**
@@ -16,6 +16,10 @@ export const dictionaryQueries = {
     topics: () => [...dictionaryQueries.keys.all, 'topics'] as const,
     levels: (languageId?: number) =>
       [...dictionaryQueries.keys.all, 'levels', languageId] as const,
+    search: (query: string, languageId?: number, limit?: number, offset?: number) =>
+      [...dictionaryQueries.keys.all, 'search', query, languageId, limit, offset] as const,
+    wordDetail: (wordId: number) =>
+      [...dictionaryQueries.keys.all, 'word', wordId] as const,
   },
 
   /**
@@ -46,6 +50,35 @@ export const dictionaryQueries = {
       queryKey: dictionaryQueries.keys.levels(languageId),
       queryFn: () => dictionaryEndpoints.getLevels(languageId),
       enabled: true, // Always enabled, languageId is optional
+    });
+  },
+
+  /**
+   * Search words
+   */
+  useSearchWords: (
+    query: string,
+    languageId?: number,
+    limit: number = 20,
+    offset: number = 0,
+    enabled: boolean = true
+  ) => {
+    return useQuery<WordSearchResponse>({
+      queryKey: dictionaryQueries.keys.search(query, languageId, limit, offset),
+      queryFn: () => dictionaryEndpoints.searchWords(query, languageId, limit, offset),
+      enabled: enabled && query.trim().length > 0,
+      staleTime: 30 * 1000, // 30 seconds
+    });
+  },
+
+  /**
+   * Get word detail by ID
+   */
+  useWordDetail: (wordId: number) => {
+    return useQuery<WordDetail>({
+      queryKey: dictionaryQueries.keys.wordDetail(wordId),
+      queryFn: () => dictionaryEndpoints.getWordDetail(wordId),
+      enabled: !!wordId && wordId > 0,
     });
   },
 };

@@ -259,34 +259,34 @@
 
 ### Backend Implementation for User Story 6
 
-- [ ] T141 [P] [US6] Create Sense repository interface methods in `backend/internal/domain/dictionary/port/repository.go`
-- [ ] T142 [US6] Implement word search with multiple strategies (lemma, normalized, search_key) in `backend/internal/repository/dictionary_pg.go`
-- [ ] T143 [US6] Create dictionary service for word lookup in `backend/internal/domain/dictionary/service/dictionary_service.go`
-- [ ] T144 [US6] Create WordDetail DTO with senses, translations, examples in `backend/internal/domain/dictionary/dto/word_detail.go`
-- [ ] T145 [US6] Create GET /api/v1/dictionary/search endpoint handler with pagination in `backend/internal/interface/http/handler/dictionary_handler.go`
-- [ ] T146 [US6] Create GET /api/v1/dictionary/words/{wordId} endpoint handler in `backend/internal/interface/http/handler/dictionary_handler.go`
-- [ ] T147 [US6] Register dictionary routes for search and word details in `backend/internal/app/router.go`
-- [ ] T148 [US6] Optimize word search queries using existing indexes in `backend/internal/repository/dictionary_pg.go`
-- [ ] T149 [US6] Ensure dictionary lookup returns results within 1 second for 95% of searches per SC-005 in `backend/internal/repository/dictionary_pg.go`
-- [ ] T150 [US6] Implement pagination for search results (limit, offset) in `backend/internal/interface/http/handler/dictionary_handler.go`
-- [ ] T151 [US6] Handle empty search results gracefully in `backend/internal/interface/http/handler/dictionary_handler.go`
+- [x] T141 [P] [US6] Create Sense repository interface methods in `backend/internal/domain/dictionary/port/repository.go`
+- [x] T142 [US6] Implement word search with multiple strategies (lemma, normalized, search_key) in `backend/internal/repository/dictionary_pg.go`
+- [x] T143 [US6] Create dictionary service for word lookup in `backend/internal/domain/dictionary/service/dictionary_service.go`
+- [x] T144 [US6] Create WordDetail DTO with senses, translations, examples in `backend/internal/domain/dictionary/dto/word_detail.go`
+- [x] T145 [US6] Create GET /api/v1/dictionary/search endpoint handler with pagination in `backend/internal/interface/http/handler/dictionary_handler.go`
+- [x] T146 [US6] Create GET /api/v1/dictionary/words/{wordId} endpoint handler in `backend/internal/interface/http/handler/dictionary_handler.go`
+- [x] T147 [US6] Register dictionary routes for search and word details in `backend/internal/app/router.go`
+- [x] T148 [US6] Optimize word search queries using existing indexes in `backend/internal/repository/dictionary_pg.go`
+- [x] T149 [US6] Ensure dictionary lookup returns results within 1 second for 95% of searches per SC-005 in `backend/internal/repository/dictionary_pg.go`
+- [x] T150 [US6] Implement pagination for search results (limit, offset) in `backend/internal/interface/http/handler/dictionary_handler.go`
+- [x] T151 [US6] Handle empty search results gracefully in `backend/internal/interface/http/handler/dictionary_handler.go`
 
 ### Frontend Implementation for User Story 6
 
-- [ ] T152 [P] [US6] Create Word type definitions with detailed structure in `frontend/src/entities/dictionary/model/dictionary.types.ts`
-- [ ] T153 [P] [US6] Create WordDetail type definitions in `frontend/src/entities/dictionary/model/dictionary.types.ts`
-- [ ] T154 [P] [US6] Create dictionary search API endpoints in `frontend/src/entities/dictionary/api/dictionary.endpoints.ts`
-- [ ] T155 [P] [US6] Create dictionary search queries in `frontend/src/features/dictionary/api/dictionary.queries.ts`
-- [ ] T156 [US6] Create DictionaryLookupPage component in `frontend/src/pages/dictionary/DictionaryLookupPage.tsx`
-- [ ] T157 [US6] Create DictionarySearch component with search input in `frontend/src/features/dictionary/components/DictionarySearch.tsx`
-- [ ] T158 [US6] Display search results list in `frontend/src/features/dictionary/components/DictionarySearch.tsx`
-- [ ] T159 [US6] Implement search debouncing for performance in `frontend/src/features/dictionary/components/DictionarySearch.tsx`
-- [ ] T160 [US6] Create WordDetail component to display word information in `frontend/src/features/dictionary/components/WordDetail.tsx`
-- [ ] T161 [US6] Display definitions, translations, examples, pronunciation in `frontend/src/features/dictionary/components/WordDetail.tsx`
-- [ ] T162 [US6] Add route for dictionary lookup page (/dictionary) in `frontend/src/app/router/routes.tsx`
-- [ ] T163 [US6] Add route for word detail page (/dictionary/words/:wordId) in `frontend/src/app/router/routes.tsx`
-- [ ] T164 [US6] Handle empty search results with user-friendly message in `frontend/src/features/dictionary/components/DictionarySearch.tsx`
-- [ ] T165 [US6] Handle invalid/empty search queries gracefully in `frontend/src/features/dictionary/components/DictionarySearch.tsx`
+- [x] T152 [P] [US6] Create Word type definitions with detailed structure in `frontend/src/entities/dictionary/model/dictionary.types.ts`
+- [x] T153 [P] [US6] Create WordDetail type definitions in `frontend/src/entities/dictionary/model/dictionary.types.ts`
+- [x] T154 [P] [US6] Create dictionary search API endpoints in `frontend/src/entities/dictionary/api/dictionary.endpoints.ts`
+- [x] T155 [P] [US6] Create dictionary search queries in `frontend/src/entities/dictionary/api/dictionary.queries.ts`
+- [x] T156 [US6] Create DictionaryLookupPage component in `frontend/src/pages/dictionary/DictionaryLookupPage.tsx`
+- [x] T157 [US6] Create DictionarySearch component with search input in `frontend/src/features/dictionary/components/DictionarySearch.tsx`
+- [x] T158 [US6] Display search results list in `frontend/src/features/dictionary/components/DictionarySearch.tsx`
+- [x] T159 [US6] Implement search debouncing for performance in `frontend/src/features/dictionary/components/DictionarySearch.tsx`
+- [x] T160 [US6] Create WordDetail component to display word information in `frontend/src/features/dictionary/components/WordDetail.tsx`
+- [x] T161 [US6] Display definitions, translations, examples, pronunciation in `frontend/src/features/dictionary/components/WordDetail.tsx`
+- [x] T162 [US6] Add route for dictionary lookup page (/dictionary) in `frontend/src/app/router/routes.tsx`
+- [x] T163 [US6] Add route for word detail page (/dictionary/words/:wordId) in `frontend/src/app/router/routes.tsx`
+- [x] T164 [US6] Handle empty search results with user-friendly message in `frontend/src/features/dictionary/components/DictionarySearch.tsx`
+- [x] T165 [US6] Handle invalid/empty search queries gracefully in `frontend/src/features/dictionary/components/DictionarySearch.tsx`
 
 **Checkpoint**: At this point, all User Stories 1-6 should work independently - users can lookup words and play vocabulary games.
 
@@ -296,24 +296,24 @@
 
 **Purpose**: Improvements that affect multiple user stories and ensure constitution compliance
 
-- [ ] T166 [P] Add structured logging for all critical flows (game sessions, dictionary lookups) across all handlers
-- [ ] T167 [P] Add request ID/correlation ID to all log entries in `backend/internal/interface/http/middleware/logger.go`
-- [ ] T168 [P] Review and add error handling for network errors during game play in `frontend/src/features/game/hooks/useGameSession.ts`
-- [ ] T169 [P] Add loading states for all async operations in frontend components
-- [ ] T170 [P] Add error states with Vietnamese error messages throughout frontend (FR-025)
-- [ ] T171 [P] Implement navigation back to game list or landing page from any page (FR-027) in `frontend/src/app/router/routes.tsx`
-- [ ] T172 [P] Review database query performance and add indexes if needed beyond existing schema
-- [ ] T173 [P] Add pagination UI components for dictionary search results in `frontend/src/features/dictionary/components/DictionarySearch.tsx`
+- [x] T166 [P] Add structured logging for all critical flows (game sessions, dictionary lookups) across all handlers
+- [x] T167 [P] Add request ID/correlation ID to all log entries in `backend/internal/interface/http/middleware/logger.go`
+- [x] T168 [P] Review and add error handling for network errors during game play in `frontend/src/features/game/hooks/useGameSession.ts`
+- [x] T169 [P] Add loading states for all async operations in frontend components
+- [x] T170 [P] Add error states with Vietnamese error messages throughout frontend (FR-025)
+- [x] T171 [P] Implement navigation back to game list or landing page from any page (FR-027) in `frontend/src/app/router/routes.tsx`
+- [x] T172 [P] Review database query performance and add indexes if needed beyond existing schema
+- [x] T173 [P] Add pagination UI components for dictionary search results in `frontend/src/features/dictionary/components/DictionarySearch.tsx`
 - [ ] T174 [P] Add pagination UI components for game session history (if implemented) in frontend
-- [ ] T175 [P] Update quickstart.md with manual testing steps for all P1 user journeys in `specs/001-dictionary-vocab-game/quickstart.md`
-- [ ] T176 [P] Create manual test checklist document for P1 user stories in `specs/001-dictionary-vocab-game/`
+- [x] T175 [P] Update quickstart.md with manual testing steps for all P1 user journeys in `specs/001-dictionary-vocab-game/quickstart.md`
+- [x] T176 [P] Create manual test checklist document for P1 user stories in `specs/001-dictionary-vocab-game/`
 - [ ] T177 [P] Perform manual smoke tests for critical flows: landing page, game configuration, game play, dictionary lookup
-- [ ] T178 [P] Review all error messages are in Vietnamese and user-friendly (FR-025) across backend and frontend
-- [ ] T179 [P] Verify all external inputs are validated (FR-023) in all handlers and forms
-- [ ] T180 [P] Verify unified error schema is used consistently (FR-024) across all endpoints
-- [ ] T181 [P] Review code for magic values and extract to constants (game question count, timeouts)
-- [ ] T182 [P] Code cleanup and refactoring to maintain code quality & consistency per constitution
-- [ ] T183 [P] Update README.md with setup instructions if needed in repository root
+- [x] T178 [P] Review all error messages are in Vietnamese and user-friendly (FR-025) across backend and frontend
+- [x] T179 [P] Verify all external inputs are validated (FR-023) in all handlers and forms
+- [x] T180 [P] Verify unified error schema is used consistently (FR-024) across all endpoints
+- [x] T181 [P] Review code for magic values and extract to constants (game question count, timeouts)
+- [x] T182 [P] Code cleanup and refactoring to maintain code quality & consistency per constitution
+- [x] T183 [P] Update README.md with setup instructions if needed in repository root
 
 ---
 

@@ -14,6 +14,10 @@ func RegisterDictionaryRoutes(router *gin.RouterGroup, dictHandler *handler.Dict
 		ref.GET("/topics", dictHandler.GetTopics)
 		ref.GET("/levels", dictHandler.GetLevels)
 	}
+
+	// Dictionary search and word detail endpoints
+	router.GET("/search", dictHandler.SearchWords)
+	router.GET("/words/:wordId", dictHandler.GetWordDetail)
 }
 
 // RegisterGameRoutes registers game-related routes
@@ -35,4 +39,3 @@ func RegisterStatisticsRoutes(router *gin.RouterGroup, statisticsHandler *handle
 		statistics.GET("/sessions/:sessionId", statisticsHandler.GetSessionStatistics)
 	}
 }
-

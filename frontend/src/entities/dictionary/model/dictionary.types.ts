@@ -24,3 +24,72 @@ export interface Level {
   difficulty_order?: number;
 }
 
+export interface Word {
+  id: number;
+  language_id: number;
+  lemma: string;
+  lemma_normalized?: string;
+  search_key?: string;
+  part_of_speech_id?: number;
+  romanization?: string;
+  script_code?: string;
+  frequency_rank?: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Sense {
+  id: number;
+  word_id: number;
+  sense_order: number;
+  definition: string;
+  definition_language_id: number;
+  usage_label?: string;
+  level_id?: number;
+  note?: string;
+}
+
+export interface Example {
+  id: number;
+  source_sense_id: number;
+  language_id: number;
+  content: string;
+  audio_url?: string;
+  source?: string;
+}
+
+export interface Pronunciation {
+  id: number;
+  word_id: number;
+  dialect?: string;
+  ipa?: string;
+  phonetic?: string;
+  audio_url?: string;
+}
+
+export interface SenseDetail {
+  id: number;
+  sense_order: number;
+  definition: string;
+  definition_language_id: number;
+  usage_label?: string;
+  level_id?: number;
+  note?: string;
+  translations: Word[];
+  examples: Example[];
+}
+
+export interface WordDetail {
+  word: Word;
+  senses: SenseDetail[];
+  pronunciations: Pronunciation[];
+}
+
+export interface WordSearchResponse {
+  words: Word[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+

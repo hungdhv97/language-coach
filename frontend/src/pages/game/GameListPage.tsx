@@ -47,6 +47,13 @@ export default function GameListPage() {
   return (
     <div className="min-h-screen p-4 md:p-8 bg-gradient-to-br from-background to-muted/20">
       <div className="max-w-4xl mx-auto space-y-8">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/')}
+          className="mb-4"
+        >
+          ← Về trang chủ
+        </Button>
         <header className="text-center space-y-2">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Chọn Game</h1>
           <p className="text-muted-foreground text-lg">

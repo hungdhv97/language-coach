@@ -50,5 +50,16 @@ type WordRepository interface {
 	FindWordsByLevelAndLanguages(ctx context.Context, levelID int64, sourceLanguageID, targetLanguageID int16, limit int) ([]*model.Word, error)
 	// FindTranslationsForWord finds translation words for a given source word and target language
 	FindTranslationsForWord(ctx context.Context, sourceWordID int64, targetLanguageID int16, limit int) ([]*model.Word, error)
+	// SearchWords searches for words using multiple strategies (lemma, normalized, search_key)
+	SearchWords(ctx context.Context, query string, languageID *int16, limit, offset int) ([]*model.Word, error)
+	// CountSearchWords returns the total count of words matching the search query
+	CountSearchWords(ctx context.Context, query string, languageID *int16) (int, error)
 }
 
+// SenseRepository defines operations for sense data access
+type SenseRepository interface {
+	// FindByWordID returns all senses for a word, ordered by sense_order
+	FindByWordID(ctx context.Context, wordID int64) ([]*model.Sense, error)
+	// FindByWordIDs returns senses for multiple words
+	FindByWordIDs(ctx context.Context, wordIDs []int64) (map[int64][]*model.Sense, error)
+}

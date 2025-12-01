@@ -66,7 +66,7 @@ func (h *GameHandler) CreateSession(c *gin.Context) {
 		if err != nil {
 			response.ErrorResponse(c, http.StatusBadRequest,
 				"INVALID_USER_ID",
-				"ID người dùng không hợp lệ",
+				"Invalid user ID",
 				nil,
 			)
 			return
@@ -81,7 +81,7 @@ func (h *GameHandler) CreateSession(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ErrorResponse(c, http.StatusBadRequest,
 			"INVALID_REQUEST",
-			"Dữ liệu yêu cầu không hợp lệ",
+			"Invalid request data",
 			err.Error(),
 		)
 		return
@@ -91,19 +91,37 @@ func (h *GameHandler) CreateSession(c *gin.Context) {
 	if err := req.Validate(); err != nil {
 		response.ErrorResponse(c, http.StatusBadRequest,
 			"VALIDATION_ERROR",
-			err.Error(), // Vietnamese error message from validation
+			err.Error(), // Error message from validation
 			nil,
 		)
 		return
 	}
 
+	// Get request logger from context (includes request ID)
+	requestLogger, _ := c.Get("logger")
+	var logger *zap.Logger
+	if reqLogger, ok := requestLogger.(*zap.Logger); ok {
+		logger = reqLogger
+	} else {
+		logger = h.logger
+	}
+
+	// Log game session creation start
+	logger.Info("game session creation started",
+		zap.Int64("user_id", userIDInt64),
+		zap.String("mode", req.Mode),
+		zap.Int16("source_language_id", req.SourceLanguageID),
+		zap.Int16("target_language_id", req.TargetLanguageID),
+	)
+
 	// Execute use case
 	session, err := h.createSessionUC.Execute(ctx, &req, userIDInt64)
 	if err != nil {
-		h.logger.Error("failed to create game session",
+		logger.Error("failed to create game session",
 			zap.Error(err),
 			zap.String("path", c.Request.URL.Path),
 			zap.Int64("user_id", userIDInt64),
+			zap.String("mode", req.Mode),
 		)
 
 		// Check for insufficient words error (FR-026)
@@ -119,11 +137,18 @@ func (h *GameHandler) CreateSession(c *gin.Context) {
 
 		response.ErrorResponse(c, http.StatusInternalServerError,
 			"INTERNAL_ERROR",
-			"Không thể tạo game session",
+			"Failed to create game session",
 			nil,
 		)
 		return
 	}
+
+	// Log successful session creation
+	logger.Info("game session created successfully",
+		zap.Int64("session_id", session.ID),
+		zap.Int64("user_id", userIDInt64),
+		zap.Int16("total_questions", session.TotalQuestions),
+	)
 
 	response.Success(c, http.StatusCreated, session)
 }
@@ -137,7 +162,7 @@ func (h *GameHandler) GetSession(c *gin.Context) {
 	if err != nil {
 		response.ErrorResponse(c, http.StatusBadRequest,
 			"INVALID_PARAMETER",
-			"ID session không hợp lệ",
+			"Invalid session ID",
 			nil,
 		)
 		return
@@ -175,7 +200,7 @@ func (h *GameHandler) GetSession(c *gin.Context) {
 		)
 		response.ErrorResponse(c, http.StatusNotFound,
 			"SESSION_NOT_FOUND",
-			"Không tìm thấy session",
+			"Session not found",
 			nil,
 		)
 		return
@@ -185,7 +210,7 @@ func (h *GameHandler) GetSession(c *gin.Context) {
 	if session.UserID != userIDInt64 {
 		response.ErrorResponse(c, http.StatusForbidden,
 			"FORBIDDEN",
-			"Bạn không có quyền truy cập session này",
+			"You do not have permission to access this session",
 			nil,
 		)
 		return
@@ -200,7 +225,7 @@ func (h *GameHandler) GetSession(c *gin.Context) {
 		)
 		response.ErrorResponse(c, http.StatusInternalServerError,
 			"INTERNAL_ERROR",
-			"Không thể lấy câu hỏi",
+			"Failed to get questions",
 			nil,
 		)
 		return
@@ -243,7 +268,7 @@ func (h *GameHandler) SubmitAnswer(c *gin.Context) {
 	if err != nil {
 		response.ErrorResponse(c, http.StatusBadRequest,
 			"INVALID_PARAMETER",
-			"ID session không hợp lệ",
+			"Invalid session ID",
 			nil,
 		)
 		return
@@ -277,7 +302,7 @@ func (h *GameHandler) SubmitAnswer(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ErrorResponse(c, http.StatusBadRequest,
 			"INVALID_REQUEST",
-			"Dữ liệu yêu cầu không hợp lệ",
+			"Invalid request data",
 			err.Error(),
 		)
 		return
@@ -295,7 +320,7 @@ func (h *GameHandler) SubmitAnswer(c *gin.Context) {
 		if err.Error() == "answer already submitted for this question" {
 			response.ErrorResponse(c, http.StatusBadRequest,
 				"ANSWER_ALREADY_SUBMITTED",
-				"Đã trả lời câu hỏi này rồi",
+				"Answer already submitted for this question",
 				nil,
 			)
 			return
@@ -303,7 +328,7 @@ func (h *GameHandler) SubmitAnswer(c *gin.Context) {
 
 		response.ErrorResponse(c, http.StatusInternalServerError,
 			"INTERNAL_ERROR",
-			"Không thể gửi câu trả lời",
+			"Failed to submit answer",
 			nil,
 		)
 		return

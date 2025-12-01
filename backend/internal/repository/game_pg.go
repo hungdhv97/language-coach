@@ -22,10 +22,25 @@ func NewGameRepository(pool *pgxpool.Pool) *GameRepository {
 	}
 }
 
+// gameSessionRepo is a wrapper that implements GameSessionRepository
+type gameSessionRepo struct {
+	*GameRepository
+}
+
+// gameQuestionRepo is a wrapper that implements GameQuestionRepository
+type gameQuestionRepo struct {
+	*GameRepository
+}
+
+// gameAnswerRepo is a wrapper that implements GameAnswerRepository
+type gameAnswerRepo struct {
+	*GameRepository
+}
+
 // GameSessionRepository implementation
 
 // Create creates a new game session
-func (r *GameRepository) Create(ctx context.Context, session *model.GameSession) error {
+func (r *gameSessionRepo) Create(ctx context.Context, session *model.GameSession) error {
 	query := `
 		INSERT INTO vocab_game_sessions (
 			user_id, mode, source_language_id, target_language_id,
@@ -57,7 +72,7 @@ func (r *GameRepository) Create(ctx context.Context, session *model.GameSession)
 }
 
 // FindByID returns a game session by ID
-func (r *GameRepository) FindByID(ctx context.Context, id int64) (*model.GameSession, error) {
+func (r *gameSessionRepo) FindByID(ctx context.Context, id int64) (*model.GameSession, error) {
 	query := `
 		SELECT id, user_id, mode, source_language_id, target_language_id,
 		       topic_id, level_id, total_questions, correct_questions,
@@ -91,7 +106,7 @@ func (r *GameRepository) FindByID(ctx context.Context, id int64) (*model.GameSes
 }
 
 // Update updates a game session
-func (r *GameRepository) Update(ctx context.Context, session *model.GameSession) error {
+func (r *gameSessionRepo) Update(ctx context.Context, session *model.GameSession) error {
 	query := `
 		UPDATE vocab_game_sessions
 		SET total_questions = $2,
@@ -111,7 +126,7 @@ func (r *GameRepository) Update(ctx context.Context, session *model.GameSession)
 }
 
 // EndSession marks a session as ended
-func (r *GameRepository) EndSession(ctx context.Context, sessionID int64, endedAt interface{}) error {
+func (r *gameSessionRepo) EndSession(ctx context.Context, sessionID int64, endedAt interface{}) error {
 	var endTime time.Time
 	if endedAt != nil {
 		if t, ok := endedAt.(time.Time); ok {
@@ -131,7 +146,7 @@ func (r *GameRepository) EndSession(ctx context.Context, sessionID int64, endedA
 // GameQuestionRepository implementation
 
 // CreateBatch creates multiple questions and their options in a transaction
-func (r *GameRepository) CreateBatch(ctx context.Context, questions []*model.GameQuestion, options []*model.GameQuestionOption) error {
+func (r *gameQuestionRepo) CreateBatch(ctx context.Context, questions []*model.GameQuestion, options []*model.GameQuestionOption) error {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -191,7 +206,7 @@ func (r *GameRepository) CreateBatch(ctx context.Context, questions []*model.Gam
 }
 
 // FindBySessionID returns all questions for a session
-func (r *GameRepository) FindBySessionID(ctx context.Context, sessionID int64) ([]*model.GameQuestion, []*model.GameQuestionOption, error) {
+func (r *gameQuestionRepo) FindBySessionID(ctx context.Context, sessionID int64) ([]*model.GameQuestion, []*model.GameQuestionOption, error) {
 	// Fetch questions
 	questionQuery := `
 		SELECT id, session_id, question_order, question_type,
@@ -275,7 +290,7 @@ func (r *GameRepository) FindBySessionID(ctx context.Context, sessionID int64) (
 }
 
 // FindByID returns a question by ID with its options
-func (r *GameRepository) FindByID(ctx context.Context, questionID int64) (*model.GameQuestion, []*model.GameQuestionOption, error) {
+func (r *gameQuestionRepo) FindByID(ctx context.Context, questionID int64) (*model.GameQuestion, []*model.GameQuestionOption, error) {
 	// Fetch question
 	questionQuery := `
 		SELECT id, session_id, question_order, question_type,
@@ -341,7 +356,7 @@ func (r *GameRepository) FindByID(ctx context.Context, questionID int64) (*model
 // GameAnswerRepository implementation
 
 // Create creates a new answer
-func (r *GameRepository) Create(ctx context.Context, answer *model.GameAnswer) error {
+func (r *gameAnswerRepo) Create(ctx context.Context, answer *model.GameAnswer) error {
 	query := `
 		INSERT INTO vocab_game_question_answers (
 			question_id, session_id, user_id,
@@ -367,7 +382,7 @@ func (r *GameRepository) Create(ctx context.Context, answer *model.GameAnswer) e
 }
 
 // FindByQuestionID returns the answer for a specific question
-func (r *GameRepository) FindByQuestionID(ctx context.Context, questionID, sessionID, userID int64) (*model.GameAnswer, error) {
+func (r *gameAnswerRepo) FindByQuestionID(ctx context.Context, questionID, sessionID, userID int64) (*model.GameAnswer, error) {
 	query := `
 		SELECT id, question_id, session_id, user_id,
 		       selected_option_id, is_correct, response_time_ms, answered_at
@@ -397,7 +412,7 @@ func (r *GameRepository) FindByQuestionID(ctx context.Context, questionID, sessi
 }
 
 // FindBySessionID returns all answers for a session
-func (r *GameRepository) FindBySessionID(ctx context.Context, sessionID, userID int64) ([]*model.GameAnswer, error) {
+func (r *gameAnswerRepo) FindBySessionID(ctx context.Context, sessionID, userID int64) ([]*model.GameAnswer, error) {
 	query := `
 		SELECT id, question_id, session_id, user_id,
 		       selected_option_id, is_correct, response_time_ms, answered_at
@@ -440,10 +455,25 @@ func (r *GameRepository) FindBySessionID(ctx context.Context, sessionID, userID 
 	return answers, nil
 }
 
-// Ensure GameRepository implements the interfaces
+// Ensure wrapper types implement the interfaces
 var (
-	_ port.GameSessionRepository = (*GameRepository)(nil)
-	_ port.GameQuestionRepository = (*GameRepository)(nil)
-	_ port.GameAnswerRepository = (*GameRepository)(nil)
+	_ port.GameSessionRepository = (*gameSessionRepo)(nil)
+	_ port.GameQuestionRepository = (*gameQuestionRepo)(nil)
+	_ port.GameAnswerRepository = (*gameAnswerRepo)(nil)
 )
+
+// GameSessionRepo returns a GameSessionRepository implementation
+func (r *GameRepository) GameSessionRepo() port.GameSessionRepository {
+	return &gameSessionRepo{GameRepository: r}
+}
+
+// GameQuestionRepo returns a GameQuestionRepository implementation
+func (r *GameRepository) GameQuestionRepo() port.GameQuestionRepository {
+	return &gameQuestionRepo{GameRepository: r}
+}
+
+// GameAnswerRepo returns a GameAnswerRepository implementation
+func (r *GameRepository) GameAnswerRepo() port.GameAnswerRepository {
+	return &gameAnswerRepo{GameRepository: r}
+}
 

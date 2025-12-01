@@ -3,26 +3,26 @@ package validator
 import (
 	"net/http"
 
+	"github.com/english-coach/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
-	"github.com/english-coach/backend/internal/shared/response"
 )
 
 var validate *validator.Validate
 
 func init() {
 	validate = validator.New()
-	
+
 	// Register custom validators here if needed
 	// validate.RegisterValidation("custom_tag", customValidatorFunc)
 }
 
 // RegisterGinValidator registers go-playground/validator with Gin
 func RegisterGinValidator() error {
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+	if _, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		// Use the same validator instance
-		v = validate
+		_ = validate
 		return nil
 	}
 	return nil
@@ -38,7 +38,7 @@ func ValidateStruct(c *gin.Context, s interface{}) bool {
 	if err := validate.Struct(s); err != nil {
 		// Handle validation errors
 		var errs []string
-		
+
 		if ve, ok := err.(validator.ValidationErrors); ok {
 			for _, e := range ve {
 				errs = append(errs, getValidationErrorMessage(e))

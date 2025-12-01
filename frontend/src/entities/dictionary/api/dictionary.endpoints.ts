@@ -3,7 +3,7 @@
  */
 
 import { httpClient } from '@/shared/api/http-client';
-import type { Language, Topic, Level } from '../model/dictionary.types';
+import type { Language, Topic, Level, Word, WordDetail, WordSearchResponse } from '../model/dictionary.types';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -36,6 +36,39 @@ export const dictionaryEndpoints = {
       : '/reference/levels';
     const response = await httpClient.get<ApiResponse<Level[]>>(url);
     return response.data || [];
+  },
+
+  /**
+   * Search words
+   */
+  searchWords: async (
+    query: string,
+    languageId?: number,
+    limit: number = 20,
+    offset: number = 0
+  ): Promise<WordSearchResponse> => {
+    const params = new URLSearchParams({
+      q: query,
+      limit: limit.toString(),
+      offset: offset.toString(),
+    });
+    if (languageId !== undefined) {
+      params.append('languageId', languageId.toString());
+    }
+    const response = await httpClient.get<ApiResponse<WordSearchResponse>>(
+      `/dictionary/search?${params.toString()}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Get word detail by ID
+   */
+  getWordDetail: async (wordId: number): Promise<WordDetail> => {
+    const response = await httpClient.get<ApiResponse<WordDetail>>(
+      `/dictionary/words/${wordId}`
+    );
+    return response.data;
   },
 };
 

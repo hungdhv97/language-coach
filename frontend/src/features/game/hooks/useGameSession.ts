@@ -51,8 +51,20 @@ export function useGameSession({ sessionId, onAnswerSubmitted, onAllQuestionsAns
         onAnswerSubmitted?.(answer);
         return answer;
       } catch (error) {
+        // Enhanced error handling for network errors
+        if (error instanceof Error) {
+          // Network error (connection failed, timeout, etc.)
+          if (error.message.includes('fetch') || error.message.includes('network') || error.message.includes('Failed to fetch')) {
+            throw new Error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng và thử lại.');
+          }
+          // API error (from error interceptor)
+          if ('code' in error && 'message' in error) {
+            throw error; // Already formatted by error interceptor
+          }
+        }
+        // Generic error
         console.error('Failed to submit answer:', error);
-        throw error;
+        throw new Error('Không thể gửi câu trả lời. Vui lòng thử lại.');
       }
     },
     [submitAnswerMutation, onAnswerSubmitted]

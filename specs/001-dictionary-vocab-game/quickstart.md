@@ -165,35 +165,69 @@ You should see tables like:
 
 ## Manual Testing Steps
 
-### Test Dictionary Lookup
+For detailed manual testing procedures, see [Manual Test Checklist](./manual-test-checklist.md).
 
-1. Navigate to Dictionary Lookup page
-2. Enter a word (e.g., "hello" or "xin chào")
-3. Verify search results appear
-4. Click on a word to see detailed information
+### Quick Test: Complete User Journey
 
-### Test Vocabulary Game
+#### Test Dictionary Lookup (User Story 6)
 
-1. Navigate to Landing Page
-2. Click "Play Game"
-3. Select "Vocabulary Game" from game list
-4. Configure game:
-   - Select source language (e.g., English)
-   - Select target language (e.g., Vietnamese)
-   - Choose mode: Topic or Level
-   - Select a topic or level
-5. Click "Start Game"
-6. Answer multiple-choice questions
-7. Complete the game session
-8. View statistics
+1. Navigate to Dictionary Lookup page (`/dictionary`)
+2. Enter a word in search box (e.g., "hello" or "xin chào")
+3. Wait for debounced search (500ms delay)
+4. Verify search results appear with pagination if needed
+5. Click on a word to see detailed information
+6. Verify word detail shows: definitions, translations, examples, pronunciation
+7. Click "Quay lại tìm kiếm" to return to search
+
+#### Test Vocabulary Game (User Stories 1-5)
+
+**Step 1: Landing Page (US1)**
+1. Navigate to Landing Page (`/`)
+2. Verify "Play Game" and "Dictionary Lookup" buttons are visible
+3. Click "Play Game" to navigate to game list
+
+**Step 2: Game List (US2)**
+1. Verify game list page (`/games`) displays
+2. Verify "Học Từ Vựng" (Vocabulary Game) card is visible
+3. Click on vocabulary game card
+
+**Step 3: Game Configuration (US3)**
+1. Verify configuration page (`/games/vocab/config`) loads
+2. Select source language (e.g., English)
+3. Select target language (e.g., Vietnamese) - must be different
+4. Select mode: "Topic" or "Level"
+5. Select a topic or level based on mode
+6. Click "Bắt Đầu Chơi" (Start Game)
+7. Verify session is created and navigates to play page
+
+**Step 4: Game Play (US4)**
+1. Verify game play page loads with first question
+2. Verify question loads within 1 second (SC-003)
+3. Answer question by clicking option A, B, C, or D
+4. Verify answer is submitted and next question appears
+5. Complete all questions in session
+6. Verify completion screen appears with "View Statistics" button
+
+**Step 5: Statistics (US5)**
+1. Click "View Statistics" button
+2. Verify statistics page displays:
+   - Total questions
+   - Correct answers
+   - Accuracy percentage
+   - Session duration
+   - Average response time
+3. Test navigation buttons:
+   - "Chơi lại" → navigates to config page
+   - "Quay lại danh sách game" → navigates to game list
 
 ### Expected Behavior
 
-- **Landing Page**: Two buttons visible and functional
-- **Game List**: Shows vocabulary game option
-- **Game Configuration**: Validates language selection (source ≠ target)
-- **Game Play**: Questions load within 1 second
-- **Statistics**: Shows correct answers, accuracy, duration
+- **Landing Page (US1)**: Two buttons visible and functional, loads within 2 seconds (SC-001)
+- **Game List (US2)**: Shows vocabulary game option, back button works
+- **Game Configuration (US3)**: Validates inputs, completes in under 30 seconds (SC-002), error messages in Vietnamese
+- **Game Play (US4)**: Questions load within 1 second (SC-003), answers recorded, completion screen appears
+- **Statistics (US5)**: All statistics display correctly, navigation works
+- **Dictionary Lookup (US6)**: Search works, results within 1 second (SC-005), word detail shows complete information
 
 ## Common Issues
 

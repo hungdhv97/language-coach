@@ -547,10 +547,263 @@ func (r *wordRepository) FindTranslationsForWord(ctx context.Context, sourceWord
 	return words, nil
 }
 
+// SearchWords searches for words using multiple strategies (lemma, normalized, search_key)
+func (r *wordRepository) SearchWords(ctx context.Context, query string, languageID *int16, limit, offset int) ([]*model.Word, error) {
+	// Build query with multiple search strategies
+	// Try exact match on lemma first, then normalized, then search_key, then prefix match
+	searchPattern := "%" + query + "%"
+	
+	var sqlQuery string
+	var args []interface{}
+	
+	if languageID != nil {
+		sqlQuery = `
+			SELECT DISTINCT w.id, w.language_id, w.lemma, w.lemma_normalized, w.search_key,
+			       w.part_of_speech_id, w.romanization, w.script_code, w.frequency_rank,
+			       w.notes, w.created_at, w.updated_at
+			FROM words w
+			WHERE w.language_id = $1
+			  AND (
+			    w.lemma ILIKE $2
+			    OR w.lemma_normalized ILIKE $2
+			    OR w.search_key ILIKE $2
+			  )
+			ORDER BY 
+			  CASE 
+			    WHEN w.lemma = $3 THEN 1
+			    WHEN w.lemma ILIKE $4 THEN 2
+			    WHEN w.lemma_normalized ILIKE $4 THEN 3
+			    WHEN w.search_key ILIKE $4 THEN 4
+			    ELSE 5
+			  END,
+			  w.frequency_rank NULLS LAST,
+			  w.id
+			LIMIT $5 OFFSET $6
+		`
+		exactMatch := query
+		args = []interface{}{*languageID, searchPattern, exactMatch, searchPattern, limit, offset}
+	} else {
+		sqlQuery = `
+			SELECT DISTINCT w.id, w.language_id, w.lemma, w.lemma_normalized, w.search_key,
+			       w.part_of_speech_id, w.romanization, w.script_code, w.frequency_rank,
+			       w.notes, w.created_at, w.updated_at
+			FROM words w
+			WHERE (
+			  w.lemma ILIKE $1
+			  OR w.lemma_normalized ILIKE $1
+			  OR w.search_key ILIKE $1
+			)
+			ORDER BY 
+			  CASE 
+			    WHEN w.lemma = $2 THEN 1
+			    WHEN w.lemma ILIKE $3 THEN 2
+			    WHEN w.lemma_normalized ILIKE $3 THEN 3
+			    WHEN w.search_key ILIKE $3 THEN 4
+			    ELSE 5
+			  END,
+			  w.frequency_rank NULLS LAST,
+			  w.id
+			LIMIT $4 OFFSET $5
+		`
+		exactMatch := query
+		args = []interface{}{searchPattern, exactMatch, searchPattern, limit, offset}
+	}
+	
+	rows, err := r.pool.Query(ctx, sqlQuery, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var words []*model.Word
+	for rows.Next() {
+		var word model.Word
+		var lemmaNormalized, searchKey, romanization, scriptCode, notes *string
+		var partOfSpeechID *int16
+		var frequencyRank *int
+		if err := rows.Scan(
+			&word.ID,
+			&word.LanguageID,
+			&word.Lemma,
+			&lemmaNormalized,
+			&searchKey,
+			&partOfSpeechID,
+			&romanization,
+			&scriptCode,
+			&frequencyRank,
+			&notes,
+			&word.CreatedAt,
+			&word.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		word.LemmaNormalized = lemmaNormalized
+		word.SearchKey = searchKey
+		word.PartOfSpeechID = partOfSpeechID
+		word.Romanization = romanization
+		word.ScriptCode = scriptCode
+		word.FrequencyRank = frequencyRank
+		word.Notes = notes
+		words = append(words, &word)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return words, nil
+}
+
+// CountSearchWords returns the total count of words matching the search query
+func (r *wordRepository) CountSearchWords(ctx context.Context, query string, languageID *int16) (int, error) {
+	searchPattern := "%" + query + "%"
+	
+	var sqlQuery string
+	var args []interface{}
+	
+	if languageID != nil {
+		sqlQuery = `
+			SELECT COUNT(DISTINCT w.id)
+			FROM words w
+			WHERE w.language_id = $1
+			  AND (
+			    w.lemma ILIKE $2
+			    OR w.lemma_normalized ILIKE $2
+			    OR w.search_key ILIKE $2
+			  )
+		`
+		args = []interface{}{*languageID, searchPattern}
+	} else {
+		sqlQuery = `
+			SELECT COUNT(DISTINCT w.id)
+			FROM words w
+			WHERE (
+			  w.lemma ILIKE $1
+			  OR w.lemma_normalized ILIKE $1
+			  OR w.search_key ILIKE $1
+			)
+		`
+		args = []interface{}{searchPattern}
+	}
+	
+	var count int
+	err := r.pool.QueryRow(ctx, sqlQuery, args...).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	
+	return count, nil
+}
+
+// SenseRepository returns a SenseRepository implementation
+func (r *DictionaryRepository) SenseRepository() port.SenseRepository {
+	return &senseRepository{r}
+}
+
+// senseRepository implements SenseRepository
+type senseRepository struct {
+	*DictionaryRepository
+}
+
+// FindByWordID returns all senses for a word, ordered by sense_order
+func (r *senseRepository) FindByWordID(ctx context.Context, wordID int64) ([]*model.Sense, error) {
+	query := `
+		SELECT id, word_id, sense_order, definition, definition_language_id,
+		       usage_label, level_id, note
+		FROM senses
+		WHERE word_id = $1
+		ORDER BY sense_order
+	`
+	rows, err := r.pool.Query(ctx, query, wordID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var senses []*model.Sense
+	for rows.Next() {
+		var sense model.Sense
+		var usageLabel, note *string
+		var levelID *int64
+		if err := rows.Scan(
+			&sense.ID,
+			&sense.WordID,
+			&sense.SenseOrder,
+			&sense.Definition,
+			&sense.DefinitionLanguageID,
+			&usageLabel,
+			&levelID,
+			&note,
+		); err != nil {
+			return nil, err
+		}
+		sense.UsageLabel = usageLabel
+		sense.LevelID = levelID
+		sense.Note = note
+		senses = append(senses, &sense)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return senses, nil
+}
+
+// FindByWordIDs returns senses for multiple words
+func (r *senseRepository) FindByWordIDs(ctx context.Context, wordIDs []int64) (map[int64][]*model.Sense, error) {
+	if len(wordIDs) == 0 {
+		return make(map[int64][]*model.Sense), nil
+	}
+
+	query := `
+		SELECT id, word_id, sense_order, definition, definition_language_id,
+		       usage_label, level_id, note
+		FROM senses
+		WHERE word_id = ANY($1)
+		ORDER BY word_id, sense_order
+	`
+	rows, err := r.pool.Query(ctx, query, wordIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[int64][]*model.Sense)
+	for rows.Next() {
+		var sense model.Sense
+		var usageLabel, note *string
+		var levelID *int64
+		if err := rows.Scan(
+			&sense.ID,
+			&sense.WordID,
+			&sense.SenseOrder,
+			&sense.Definition,
+			&sense.DefinitionLanguageID,
+			&usageLabel,
+			&levelID,
+			&note,
+		); err != nil {
+			return nil, err
+		}
+		sense.UsageLabel = usageLabel
+		sense.LevelID = levelID
+		sense.Note = note
+		result[sense.WordID] = append(result[sense.WordID], &sense)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // Ensure implementations satisfy interfaces
 var (
 	_ port.LanguageRepository = (*languageRepository)(nil)
 	_ port.TopicRepository    = (*topicRepository)(nil)
 	_ port.LevelRepository    = (*levelRepository)(nil)
 	_ port.WordRepository     = (*wordRepository)(nil)
+	_ port.SenseRepository    = (*senseRepository)(nil)
 )

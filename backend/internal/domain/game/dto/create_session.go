@@ -18,28 +18,28 @@ type CreateGameSessionRequest struct {
 func (r *CreateGameSessionRequest) Validate() error {
 	// Source and target languages must be different
 	if r.SourceLanguageID == r.TargetLanguageID {
-		return errors.New("ngôn ngữ nguồn và ngôn ngữ đích phải khác nhau")
+		return errors.New("source and target languages must be different")
 	}
 
 	// Mode must be either 'topic' or 'level'
 	if r.Mode != "topic" && r.Mode != "level" {
-		return errors.New("chế độ phải là 'topic' hoặc 'level'")
+		return errors.New("mode must be either 'topic' or 'level'")
 	}
 
 	// Topic XOR Level required (exactly one must be set)
 	if r.Mode == "topic" {
 		if r.TopicID == nil || *r.TopicID <= 0 {
-			return errors.New("topic_id là bắt buộc khi chế độ là 'topic'")
+			return errors.New("topic_id is required when mode is 'topic'")
 		}
 		if r.LevelID != nil {
-			return errors.New("không thể chỉ định cả topic_id và level_id cùng lúc")
+			return errors.New("cannot specify both topic_id and level_id at the same time")
 		}
 	} else if r.Mode == "level" {
 		if r.LevelID == nil || *r.LevelID <= 0 {
-			return errors.New("level_id là bắt buộc khi chế độ là 'level'")
+			return errors.New("level_id is required when mode is 'level'")
 		}
 		if r.TopicID != nil {
-			return errors.New("không thể chỉ định cả topic_id và level_id cùng lúc")
+			return errors.New("cannot specify both topic_id and level_id at the same time")
 		}
 	}
 

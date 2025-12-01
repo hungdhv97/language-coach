@@ -8,23 +8,8 @@ import GameListPage from '../../pages/game/GameListPage';
 import GameConfigPage from '../../pages/game/GameConfigPage';
 import GamePlayPage from '../../pages/game/GamePlayPage';
 import GameStatisticsPage from '../../pages/game/GameStatisticsPage';
-
-// Placeholder components - will be implemented in later user stories
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-
-const DictionaryLookupPage = () => (
-  <div className="min-h-screen flex items-center justify-center p-4">
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Dictionary Lookup</CardTitle>
-        <CardDescription>Coming Soon</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground">This feature will be implemented in a later user story.</p>
-      </CardContent>
-    </Card>
-  </div>
-);
+import DictionaryLookupPage from '../../pages/dictionary/DictionaryLookupPage';
+import WordDetailPage from '../../pages/dictionary/WordDetailPage';
 
 export const router = createBrowserRouter([
   {
@@ -50,5 +35,9 @@ export const router = createBrowserRouter([
   {
     path: '/dictionary',
     element: <DictionaryLookupPage />,
+  },
+  {
+    path: '/dictionary/words/:wordId',
+    element: <WordDetailPage />,
   },
 ]);

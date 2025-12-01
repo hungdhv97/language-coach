@@ -37,7 +37,7 @@ func (h *StatisticsHandler) GetSessionStatistics(c *gin.Context) {
 	if err != nil {
 		response.ErrorResponse(c, http.StatusBadRequest,
 			"INVALID_SESSION_ID",
-			"ID phiên chơi không hợp lệ",
+			"Invalid session ID",
 			nil,
 		)
 		return
@@ -63,7 +63,7 @@ func (h *StatisticsHandler) GetSessionStatistics(c *gin.Context) {
 		if err != nil {
 			response.ErrorResponse(c, http.StatusBadRequest,
 				"INVALID_USER_ID",
-				"ID người dùng không hợp lệ",
+				"Invalid user ID",
 				nil,
 			)
 			return
@@ -86,7 +86,7 @@ func (h *StatisticsHandler) GetSessionStatistics(c *gin.Context) {
 		if err.Error() == "session does not belong to user" {
 			response.ErrorResponse(c, http.StatusForbidden,
 				"FORBIDDEN",
-				"Bạn không có quyền truy cập phiên chơi này",
+				"You do not have permission to access this game session",
 				nil,
 			)
 			return
@@ -95,7 +95,7 @@ func (h *StatisticsHandler) GetSessionStatistics(c *gin.Context) {
 		if err.Error() == "failed to find session" || err.Error() == "sql: no rows in result set" {
 			response.ErrorResponse(c, http.StatusNotFound,
 				"SESSION_NOT_FOUND",
-				"Không tìm thấy phiên chơi",
+				"Game session not found",
 				nil,
 			)
 			return
@@ -103,7 +103,7 @@ func (h *StatisticsHandler) GetSessionStatistics(c *gin.Context) {
 
 		response.ErrorResponse(c, http.StatusInternalServerError,
 			"INTERNAL_ERROR",
-			"Không thể lấy thống kê phiên chơi",
+			"Failed to get session statistics",
 			nil,
 		)
 		return
@@ -112,4 +112,3 @@ func (h *StatisticsHandler) GetSessionStatistics(c *gin.Context) {
 	// Return success response
 	response.Success(c, http.StatusOK, stats)
 }
-
