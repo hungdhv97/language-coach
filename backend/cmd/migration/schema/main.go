@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -40,7 +39,7 @@ func main() {
 		migrationPath = filepath.Join("backend", migrationPath)
 	}
 
-	sqlBytes, err := ioutil.ReadFile(migrationPath)
+	sqlBytes, err := os.ReadFile(migrationPath)
 	if err != nil {
 		log.Fatalf("Failed to read migration file: %v", err)
 	}

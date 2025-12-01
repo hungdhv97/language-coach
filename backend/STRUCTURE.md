@@ -6,8 +6,11 @@
 │   │   └── wiring.go
 │   ├── worker/
 │   │   └── main.go
-│   └── migration/
-│       └── main.go
+│   └─── migration/
+|       ├── schema/
+│       │   └── main.go
+│       └── data/
+│           └── main.go
 │
 ├── internal/
 │   ├── app/
@@ -102,22 +105,22 @@
 │   │   │   │
 │   │   │   └── doc.go
 │   │   │
-│   │   └── ... (các domain khác như order/, product/, payment/, auth/, billing/, ...)
-│   │
-│   ├── repository/
-│   │   ├── user_pg.go
-│   │   ├── user_cache.go
-│   │   ├── user_search_pg.go
-│   │   ├── role_pg.go
-│   │   └── common_helpers.go
+│   │   └── ... (other domains such as order/, product/, payment/, auth/, billing/, ...)
 │   │
 │   ├── infrastructure/
 │   │   ├── db/
 │   │   │   ├── postgres.go        # Init pgxpool.DB / pgxpool.Pool
 │   │   │   ├── transaction.go
 │   │   │   ├── migrations/
-│   │   │   │   ├── 0001_init.sql
-│   │   │   │   └── 0002_add_user_profile.sql
+│   │   │   │   ├── schema/
+│   │   │   │   │   ├── 0001_init.sql
+│   │   │   │   │   ├── 0002_add_user_profile.sql
+│   │   │   │   │   └── 0003_add_role_table.sql
+│   │   │   │   │
+│   │   │   │   └── data/
+│   │   │   │       ├── 0001_seed_roles.jsonl
+│   │   │   │       ├── 0002_seed_permissions.jsonl
+│   │   │   │       └── 0003_seed_default_admin.jsonl
 │   │   │   │
 │   │   │   └── sqlc/
 │   │   │       ├── query/

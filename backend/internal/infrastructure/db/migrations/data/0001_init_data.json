@@ -1,0 +1,125 @@
+{
+    "languages": [
+      { "code": "en", "name": "English", "native_name": "English" },
+      { "code": "vi", "name": "Vietnamese", "native_name": "Tiếng Việt" },
+      { "code": "zh", "name": "Chinese", "native_name": "中文" }
+    ],
+    "parts_of_speech": [
+      { "code": "noun", "name": "Noun" },
+      { "code": "pronoun", "name": "Pronoun" },
+      { "code": "verb", "name": "Verb" },
+      { "code": "adjective", "name": "Adjective" },
+      { "code": "adverb", "name": "Adverb" },
+      { "code": "preposition", "name": "Preposition" },
+      { "code": "conjunction", "name": "Conjunction" },
+      { "code": "interjection", "name": "Interjection" },
+      { "code": "numeral", "name": "Numeral" },
+      { "code": "classifier", "name": "Classifier" }
+    ],
+    "topics": [
+      { "code": "general", "name": "General" },
+      { "code": "greetings", "name": "Greetings" },
+      { "code": "daily_life", "name": "Daily life" },
+      { "code": "family", "name": "Family" },
+      { "code": "education", "name": "Education" },
+      { "code": "work", "name": "Work" },
+      { "code": "business", "name": "Business" },
+      { "code": "travel", "name": "Travel" },
+      { "code": "food_and_drink", "name": "Food and drink" },
+      { "code": "shopping", "name": "Shopping" },
+      { "code": "health", "name": "Health" },
+      { "code": "technology", "name": "Technology" },
+      { "code": "entertainment", "name": "Entertainment" },
+      { "code": "sports", "name": "Sports" },
+      { "code": "nature", "name": "Nature" },
+      { "code": "culture", "name": "Culture" },
+      { "code": "society", "name": "Society" }
+    ],
+    "levels": [
+      {
+        "code": "A1",
+        "name": "A1 - Beginner",
+        "description": "Basic user; can understand and use very simple everyday expressions.",
+        "language": null,
+        "difficulty_order": 1
+      },
+      {
+        "code": "A2",
+        "name": "A2 - Elementary",
+        "description": "Basic user; can understand frequently used expressions related to areas of most immediate relevance.",
+        "language": null,
+        "difficulty_order": 2
+      },
+      {
+        "code": "B1",
+        "name": "B1 - Intermediate",
+        "description": "Independent user; can deal with most situations likely to arise whilst travelling.",
+        "language": null,
+        "difficulty_order": 3
+      },
+      {
+        "code": "B2",
+        "name": "B2 - Upper intermediate",
+        "description": "Independent user; can interact with a degree of fluency and spontaneity.",
+        "language": null,
+        "difficulty_order": 4
+      },
+      {
+        "code": "C1",
+        "name": "C1 - Advanced",
+        "description": "Proficient user; can express ideas fluently and spontaneously without much obvious searching for expressions.",
+        "language": null,
+        "difficulty_order": 5
+      },
+      {
+        "code": "C2",
+        "name": "C2 - Proficiency",
+        "description": "Proficient user; can understand with ease virtually everything heard or read.",
+        "language": null,
+        "difficulty_order": 6
+      },
+      {
+        "code": "HSK1",
+        "name": "HSK 1",
+        "description": "Elementary level Chinese; can understand and use very simple Chinese phrases.",
+        "language": "zh",
+        "difficulty_order": 1
+      },
+      {
+        "code": "HSK2",
+        "name": "HSK 2",
+        "description": "Elementary level Chinese; can communicate in simple and routine tasks.",
+        "language": "zh",
+        "difficulty_order": 2
+      },
+      {
+        "code": "HSK3",
+        "name": "HSK 3",
+        "description": "Intermediate Chinese; can communicate about familiar topics in daily life.",
+        "language": "zh",
+        "difficulty_order": 3
+      },
+      {
+        "code": "HSK4",
+        "name": "HSK 4",
+        "description": "Upper intermediate Chinese; can discuss a relatively wide range of topics.",
+        "language": "zh",
+        "difficulty_order": 4
+      },
+      {
+        "code": "HSK5",
+        "name": "HSK 5",
+        "description": "Advanced Chinese; can read Chinese newspapers and magazines and enjoy films and plays.",
+        "language": "zh",
+        "difficulty_order": 5
+      },
+      {
+        "code": "HSK6",
+        "name": "HSK 6",
+        "description": "Proficient Chinese; can easily understand any information communicated in Chinese.",
+        "language": "zh",
+        "difficulty_order": 6
+      }
+    ]
+  }
+  
