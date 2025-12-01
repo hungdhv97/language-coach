@@ -75,4 +75,3 @@ func (m *JWTManager) ValidateToken(tokenString string) (*Claims, error) {
 
 	return claims, nil
 }
-

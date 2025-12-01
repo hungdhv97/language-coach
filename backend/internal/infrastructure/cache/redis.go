@@ -64,4 +64,3 @@ func (c *Cache) Close() error {
 func (c *Cache) Client() *redis.Client {
 	return c.client
 }
-

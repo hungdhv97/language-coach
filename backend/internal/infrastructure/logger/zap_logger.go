@@ -48,4 +48,3 @@ func (l *Logger) WithRequestID(requestID string) *Logger {
 func (l *Logger) WithFields(fields ...zap.Field) *Logger {
 	return &Logger{Logger: l.Logger.With(fields...)}
 }
-

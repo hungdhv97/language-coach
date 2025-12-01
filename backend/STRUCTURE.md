@@ -113,13 +113,58 @@
 │   │
 │   ├── infrastructure/
 │   │   ├── db/
-│   │   │   ├── postgres.go
-│   │   │   ├── sqlc/
-│   │   │   │   └── generated queries...
+│   │   │   ├── postgres.go        # Init pgxpool.DB / pgxpool.Pool
+│   │   │   ├── transaction.go
 │   │   │   ├── migrations/
 │   │   │   │   ├── 0001_init.sql
 │   │   │   │   └── 0002_add_user_profile.sql
-│   │   │   └── transaction.go
+│   │   │   │
+│   │   │   └── sqlc/
+│   │   │       ├── query/
+│   │   │       │   ├── user/
+│   │   │       │   │   ├── user_crud.sql
+│   │   │       │   │   ├── user_profile.sql
+│   │   │       │   │   ├── user_auth.sql
+│   │   │       │   │   ├── user_role.sql
+│   │   │       │   │   ├── user_address.sql
+│   │   │       │   │   └── user_search.sql
+│   │   │       │   │
+│   │   │       │   ├── role/
+│   │   │       │   │   ├── role_crud.sql
+│   │   │       │   │   └── role_permission.sql
+│   │   │       │   │
+│   │   │       │   └── common/
+│   │   │       │       ├── pagination.sql
+│   │   │       │       └── audit.sql
+│   │   │       │
+│   │   │       └── gen/
+│   │   │           ├── user/
+│   │   │           │   ├── user_crud.sql.go
+│   │   │           │   ├── user_profile.sql.go
+│   │   │           │   ├── user_auth.sql.go
+│   │   │           │   ├── user_role.sql.go
+│   │   │           │   ├── user_address.sql.go
+│   │   │           │   └── user_search.sql.go
+│   │   │           │
+│   │   │           ├── role/
+│   │   │           │   ├── role_crud.sql.go
+│   │   │           │   └── role_permission.sql.go
+│   │   │           │
+│   │   │           └── common/
+│   │   │               ├── pagination.sql.go
+│   │   │               └── audit.sql.go
+│   │   │
+│   │   ├── repository/          
+│   │   │   ├── user/
+│   │   │   │   ├── user_pg.go       # implements domain/user/port.Repository by sqlc + pgx
+│   │   │   │   ├── user_search_pg.go
+│   │   │   │   └── user_repository_helpers.go
+│   │   │   │
+│   │   │   ├── role/
+│   │   │   │   └── role_pg.go
+│   │   │   │
+│   │   │   └── common/
+│   │   │       └── repository_helpers.go  # isUniqueViolation, map PG error → domain error
 │   │   │
 │   │   ├── cache/
 │   │   │   ├── redis.go
@@ -190,4 +235,5 @@
 │   └── user.proto
 │
 ├── Makefile
+├── sqlc.yaml
 └── go.mod

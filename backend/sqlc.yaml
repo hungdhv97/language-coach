@@ -1,12 +1,15 @@
 version: "2"
 sql:
+  # Dictionary domain
   - engine: "postgresql"
-    queries: "internal/repository/queries"
-    schema: "internal/infrastructure/db/migrations"
+    queries:
+      - "internal/infrastructure/db/sqlc/query/dictionary"
+    schema:
+      - "internal/infrastructure/db/migrations"
     gen:
       go:
         package: "db"
-        out: "internal/repository/db"
+        out: "internal/infrastructure/db/sqlc/gen/dictionary"
         sql_package: "pgx/v5"
         emit_json_tags: true
         emit_prepared_queries: false
@@ -14,3 +17,19 @@ sql:
         emit_exact_table_names: false
         emit_empty_slices: true
 
+  # Game domain
+  - engine: "postgresql"
+    queries:
+      - "internal/infrastructure/db/sqlc/query/game"
+    schema:
+      - "internal/infrastructure/db/migrations"
+    gen:
+      go:
+        package: "db"
+        out: "internal/infrastructure/db/sqlc/gen/game"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_prepared_queries: false
+        emit_interface: true
+        emit_exact_table_names: false
+        emit_empty_slices: true
