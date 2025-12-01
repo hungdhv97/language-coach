@@ -33,7 +33,17 @@
       { "code": "sports", "name": "Sports" },
       { "code": "nature", "name": "Nature" },
       { "code": "culture", "name": "Culture" },
-      { "code": "society", "name": "Society" }
+      { "code": "society", "name": "Society" },
+      { "code": "grammar", "name": "Grammar" },
+      { "code": "basic", "name": "Basic vocabulary" },
+      { "code": "possession", "name": "Possession" },
+      { "code": "experience", "name": "Experience" },
+      { "code": "informal", "name": "Informal" },
+      { "code": "meeting", "name": "Meeting" },
+      { "code": "event", "name": "Event" },
+      { "code": "activity", "name": "Activity" },
+      { "code": "auxiliary", "name": "Auxiliary verbs" },
+      { "code": "perfect", "name": "Perfect tense" }
     ],
     "levels": [
       {

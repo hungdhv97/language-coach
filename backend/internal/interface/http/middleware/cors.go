@@ -15,8 +15,14 @@ func CORS(allowedOrigins []string) gin.HandlerFunc {
 		origin := c.Request.Header.Get("Origin")
 
 		// Check if origin is allowed
-		if allowedOriginsMap[origin] {
-			c.Header("Access-Control-Allow-Origin", origin)
+		if origin != "" {
+			// Support wildcard "*" (allow any origin) by echoing the request origin.
+			// This works with credentials, unlike setting "*" directly.
+			if allowedOriginsMap["*"] {
+				c.Header("Access-Control-Allow-Origin", origin)
+			} else if allowedOriginsMap[origin] {
+				c.Header("Access-Control-Allow-Origin", origin)
+			}
 		}
 
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")

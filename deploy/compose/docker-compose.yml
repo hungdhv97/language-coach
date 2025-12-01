@@ -41,12 +41,15 @@ services:
   backend:
     build:
       context: ../..
-      dockerfile: deploy/docker/backend/Dockerfile
+      dockerfile: deploy/docker/backend/${BACKEND_DOCKERFILE:-Dockerfile}
     container_name: english-coach-backend
     ports:
       - "8080:8080"
     env_file:
       - ../env/${ENV:-dev}/backend.env
+    volumes:
+      # Mount backend source code for live reload in dev
+      - ../../backend:/app
     depends_on:
       postgres:
         condition: service_healthy

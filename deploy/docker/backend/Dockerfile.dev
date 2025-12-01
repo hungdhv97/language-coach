@@ -1,0 +1,24 @@
+## Backend Dev Dockerfile with live reload (air)
+FROM golang:1.25-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache git make
+
+# Preload Go modules for faster builds
+COPY backend/go.mod backend/go.sum ./
+RUN go mod download
+
+# Copy source code (will be overridden by volume in dev, but needed for initial build)
+COPY backend/ ./
+
+# Install air for live reload
+RUN go install github.com/air-verse/air@v1.60.0
+ENV PATH="/go/bin:${PATH}"
+
+EXPOSE 8080
+
+# Run backend with air for auto-rebuild on code changes
+CMD ["air", "-c", ".air.toml"]
+
+

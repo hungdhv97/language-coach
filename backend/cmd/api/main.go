@@ -7,12 +7,16 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/gin-gonic/gin"
+	"github.com/english-coach/backend/internal/app"
 	"github.com/english-coach/backend/internal/config"
+	"github.com/english-coach/backend/internal/domain/dictionary/service"
 	"github.com/english-coach/backend/internal/infrastructure/db"
 	"github.com/english-coach/backend/internal/infrastructure/logger"
+	"github.com/english-coach/backend/internal/infrastructure/repository/dictionary"
 	httpServer "github.com/english-coach/backend/internal/interface/http"
+	"github.com/english-coach/backend/internal/interface/http/handler"
 	"github.com/english-coach/backend/internal/interface/http/middleware"
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
@@ -56,6 +60,11 @@ func main() {
 
 	appLogger.Info("Database connection established")
 
+	// Log CORS configuration
+	appLogger.Info("CORS configuration loaded",
+		zap.Strings("allowed_origins", cfg.CORS.AllowedOrigins),
+	)
+
 	// Setup HTTP server
 	server := httpServer.NewServer(
 		httpServer.Config{
@@ -71,12 +80,42 @@ func main() {
 		middleware.LoggerMiddleware(appLogger.Logger),
 	)
 
-	// Register routes (will be added in Phase 5+)
-	// For now, just a health check endpoint
+	// Initialize repositories
+	dictRepo := dictionary.NewDictionaryRepository(pool)
+
+	// Initialize services
+	dictService := service.NewDictionaryService(
+		dictRepo.WordRepository(),
+		dictRepo.SenseRepository(),
+		pool,
+		appLogger.Logger,
+	)
+
+	// Initialize handlers
+	dictHandler := handler.NewDictionaryHandler(
+		dictRepo.LanguageRepository(),
+		dictRepo.TopicRepository(),
+		dictRepo.LevelRepository(),
+		dictRepo.WordRepository(),
+		dictService,
+		appLogger.Logger,
+	)
+
+	// Register routes
 	router := server.Router()
+
+	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
+
+	// API v1 routes
+	apiV1 := router.Group("/api/v1")
+	{
+		// Dictionary routes: /api/v1/dictionary/...
+		dictionaryGroup := apiV1.Group("/dictionary")
+		app.RegisterDictionaryRoutes(dictionaryGroup, dictHandler)
+	}
 
 	// Start server in goroutine
 	go func() {

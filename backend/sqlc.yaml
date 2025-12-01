@@ -4,8 +4,10 @@ sql:
   - engine: "postgresql"
     queries:
       - "internal/infrastructure/db/sqlc/query/dictionary"
+    # Use only schema SQL files (no data) so sqlc can see table definitions.
+    # This directory contains files like 0001_init_schema.sql.
     schema:
-      - "internal/infrastructure/db/migrations"
+      - "internal/infrastructure/db/migrations/schema"
     gen:
       go:
         package: "db"
@@ -22,7 +24,7 @@ sql:
     queries:
       - "internal/infrastructure/db/sqlc/query/game"
     schema:
-      - "internal/infrastructure/db/migrations"
+      - "internal/infrastructure/db/migrations/schema"
     gen:
       go:
         package: "db"

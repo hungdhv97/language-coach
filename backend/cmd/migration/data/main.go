@@ -333,7 +333,10 @@ VALUES (
     $1,
     $2,
     $3,
-    CASE WHEN $4 IS NULL THEN NULL ELSE (SELECT id FROM languages WHERE code = $4) END,
+    CASE
+        WHEN $4::varchar IS NULL THEN NULL::smallint
+        ELSE (SELECT id FROM languages WHERE code = $4::varchar)
+    END,
     $5
 )
 ON CONFLICT (code) DO UPDATE

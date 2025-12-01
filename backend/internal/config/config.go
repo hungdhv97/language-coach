@@ -156,4 +156,5 @@ func setDefaults() {
 	viper.BindEnv("redis.db", "REDIS_DB")
 	viper.BindEnv("jwt.secret", "JWT_SECRET")
 	viper.BindEnv("logging.level", "LOG_LEVEL")
+	viper.BindEnv("cors.allowed_origins", "CORS_ALLOWED_ORIGINS")
 }
