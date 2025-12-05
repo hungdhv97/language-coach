@@ -11,10 +11,14 @@ import (
 	"github.com/english-coach/backend/internal/domain/dictionary/service"
 	gameService "github.com/english-coach/backend/internal/domain/game/service"
 	"github.com/english-coach/backend/internal/domain/game/usecase/command"
+	userCommand "github.com/english-coach/backend/internal/domain/user/usecase/command"
+	userQuery "github.com/english-coach/backend/internal/domain/user/usecase/query"
+	"github.com/english-coach/backend/internal/infrastructure/auth"
 	"github.com/english-coach/backend/internal/infrastructure/db"
 	"github.com/english-coach/backend/internal/infrastructure/logger"
 	"github.com/english-coach/backend/internal/infrastructure/repository/dictionary"
 	gameRepo "github.com/english-coach/backend/internal/infrastructure/repository/game"
+	userRepo "github.com/english-coach/backend/internal/infrastructure/repository/user"
 	httpServer "github.com/english-coach/backend/internal/interface/http"
 	"github.com/english-coach/backend/internal/interface/http/handler"
 	"github.com/english-coach/backend/internal/interface/http/middleware"
@@ -82,9 +86,13 @@ func main() {
 		middleware.LoggerMiddleware(appLogger.Logger),
 	)
 
+	// Initialize JWT manager
+	jwtManager := auth.NewJWTManager(cfg.JWT.Secret, cfg.JWT.Expiration)
+
 	// Initialize repositories
 	dictRepo := dictionary.NewDictionaryRepository(pool)
 	gameRepository := gameRepo.NewGameRepository(pool)
+	userRepository := userRepo.NewUserRepository(pool)
 
 	// Initialize services
 	dictService := service.NewDictionaryService(
@@ -120,6 +128,28 @@ func main() {
 		appLogger.Logger,
 	)
 
+	// Initialize user use cases
+	registerUC := userCommand.NewRegisterUserUseCase(
+		userRepository.UserRepository(),
+		appLogger.Logger,
+	)
+
+	loginUC := userCommand.NewLoginUseCase(
+		userRepository.UserRepository(),
+		jwtManager,
+		appLogger.Logger,
+	)
+
+	getProfileUC := userQuery.NewGetUserProfileUseCase(
+		userRepository.UserProfileRepository(),
+		appLogger.Logger,
+	)
+
+	updateProfileUC := userCommand.NewUpdateUserProfileUseCase(
+		userRepository.UserProfileRepository(),
+		appLogger.Logger,
+	)
+
 	// Initialize handlers
 	dictHandler := handler.NewDictionaryHandler(
 		dictRepo.LanguageRepository(),
@@ -139,6 +169,16 @@ func main() {
 		appLogger.Logger,
 	)
 
+	userHandler := handler.NewUserHandler(
+		registerUC,
+		loginUC,
+		getProfileUC,
+		updateProfileUC,
+		userRepository.UserRepository(),
+		userRepository.UserProfileRepository(),
+		appLogger.Logger,
+	)
+
 	// Register routes
 	router := server.Router()
 
@@ -150,7 +190,16 @@ func main() {
 	// API v1 routes
 	apiV1 := router.Group("/api/v1")
 	{
-		// Reference routes: /api/v1/reference/...
+		// Auth routes: /api/v1/auth/... (public)
+		authGroup := apiV1.Group("/auth")
+		{
+			authGroup.POST("/register", userHandler.Register)
+			authGroup.POST("/login", userHandler.Login)
+			authGroup.GET("/check-email", userHandler.CheckEmailAvailability)
+			authGroup.GET("/check-username", userHandler.CheckUsernameAvailability)
+		}
+
+		// Reference routes: /api/v1/reference/... (public)
 		referenceGroup := apiV1.Group("/reference")
 		{
 			referenceGroup.GET("/languages", dictHandler.GetLanguages)
@@ -158,15 +207,24 @@ func main() {
 			referenceGroup.GET("/levels", dictHandler.GetLevels)
 		}
 
-		// Dictionary routes: /api/v1/dictionary/...
+		// Dictionary routes: /api/v1/dictionary/... (public)
 		dictionaryGroup := apiV1.Group("/dictionary")
 		{
 			dictionaryGroup.GET("/search", dictHandler.SearchWords)
 			dictionaryGroup.GET("/words/:wordId", dictHandler.GetWordDetail)
 		}
 
-		// Game routes: /api/v1/games/...
+		// User routes: /api/v1/users/... (protected)
+		userGroup := apiV1.Group("/users")
+		userGroup.Use(middleware.AuthMiddleware(jwtManager))
+		{
+			userGroup.GET("/profile", userHandler.GetProfile)
+			userGroup.PUT("/profile", userHandler.UpdateProfile)
+		}
+
+		// Game routes: /api/v1/games/... (protected - requires login)
 		gameGroup := apiV1.Group("/games")
+		gameGroup.Use(middleware.AuthMiddleware(jwtManager))
 		{
 			sessionsGroup := gameGroup.Group("/sessions")
 			{

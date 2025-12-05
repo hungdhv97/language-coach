@@ -47,7 +47,8 @@ fi
 # Start services with dev profile
 echo -e "${YELLOW}📦 Starting services with dev profile...${NC}"
 
-# Use dev Dockerfile for backend with live reload
+# Set environment variables for docker-compose
+export ENV=dev
 export BACKEND_DOCKERFILE="Dockerfile.dev"
 
-$DOCKER_COMPOSE -f "$COMPOSE_FILE" --profile dev up --build
+$DOCKER_COMPOSE -f "$COMPOSE_FILE" --profile dev up --build -d

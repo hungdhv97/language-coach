@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/english-coach/backend/internal/domain/game/dto"
 	"github.com/english-coach/backend/internal/domain/game/model"
@@ -15,10 +16,10 @@ const DefaultQuestionCount = 10
 
 // CreateGameSessionUseCase handles game session creation
 type CreateGameSessionUseCase struct {
-	sessionRepo      port.GameSessionRepository
-	questionRepo     port.GameQuestionRepository
+	sessionRepo       port.GameSessionRepository
+	questionRepo      port.GameQuestionRepository
 	questionGenerator port.QuestionGenerator
-	logger           *zap.Logger
+	logger            *zap.Logger
 }
 
 // NewCreateGameSessionUseCase creates a new use case
@@ -29,10 +30,10 @@ func NewCreateGameSessionUseCase(
 	logger *zap.Logger,
 ) *CreateGameSessionUseCase {
 	return &CreateGameSessionUseCase{
-		sessionRepo:      sessionRepo,
-		questionRepo:     questionRepo,
+		sessionRepo:       sessionRepo,
+		questionRepo:      questionRepo,
 		questionGenerator: questionGenerator,
-		logger:           logger,
+		logger:            logger,
 	}
 }
 
@@ -45,13 +46,13 @@ func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.Create
 
 	// Create game session model
 	session := &model.GameSession{
-		UserID:          userID,
-		Mode:            req.Mode,
+		UserID:           userID,
+		Mode:             req.Mode,
 		SourceLanguageID: req.SourceLanguageID,
 		TargetLanguageID: req.TargetLanguageID,
-		TopicID:         req.TopicID,
-		LevelID:         req.LevelID,
-		TotalQuestions:  0, // Will be set when questions are generated
+		TopicID:          req.TopicID,
+		LevelID:          req.LevelID,
+		TotalQuestions:   0, // Will be set when questions are generated
 		CorrectQuestions: 0,
 	}
 
@@ -80,9 +81,15 @@ func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.Create
 		uc.logger.Error("failed to generate questions",
 			zap.Error(err),
 			zap.Int64("session_id", session.ID),
+			zap.String("mode", req.Mode),
+			zap.Int16("source_language_id", req.SourceLanguageID),
+			zap.Int16("target_language_id", req.TargetLanguageID),
+			zap.Any("topic_id", req.TopicID),
+			zap.Any("level_id", req.LevelID),
 		)
 		// Check for insufficient words error (FR-026)
-		if err.Error() == "insufficient words: need "+fmt.Sprintf("%d", DefaultQuestionCount) {
+		// Error message format: "insufficient words: need X, have Y"
+		if strings.Contains(err.Error(), "insufficient words") {
 			return nil, InsufficientWordsError
 		}
 		return nil, fmt.Errorf("failed to generate questions: %w", err)
@@ -127,4 +134,3 @@ func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.Create
 
 // InsufficientWordsError represents the error when there are not enough words
 var InsufficientWordsError = errors.New("insufficient vocabulary to create game session. Please choose a different topic or level")
-

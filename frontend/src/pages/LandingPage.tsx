@@ -7,12 +7,18 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Gamepad2, BookOpen } from 'lucide-react';
+import { useAuthStore } from '@/shared/store/useAuthStore';
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
 
   const handlePlayGame = () => {
-    navigate('/games');
+    if (!isAuthenticated) {
+      navigate('/auth/login');
+    } else {
+      navigate('/games');
+    }
   };
 
   const handleDictionaryLookup = () => {

@@ -6,10 +6,10 @@
 
 ## Test Environment Setup
 
-- [ ] Backend API running on `http://localhost:8080`
-- [ ] Frontend running on `http://localhost:5173`
-- [ ] Database connected and migrations applied
-- [ ] Sample data loaded (languages, words, topics, levels)
+- [x] Backend API running on `http://localhost:9090`
+- [x] Frontend running on `http://localhost:5173`
+- [x] Database connected and migrations applied
+- [x] Sample data loaded (languages, words, topics, levels)
 
 ---
 
@@ -19,15 +19,15 @@
 
 ### Test Steps
 
-1. [ ] Navigate to `http://localhost:5173/`
-2. [ ] Verify landing page displays with title "English Coach"
-3. [ ] Verify "Play Game" button is visible and clickable
-4. [ ] Verify "Dictionary Lookup" button is visible and clickable
-5. [ ] Click "Play Game" button
-6. [ ] Verify navigation to `/games` page
-7. [ ] Navigate back to landing page
-8. [ ] Click "Dictionary Lookup" button
-9. [ ] Verify navigation to `/dictionary` page
+1. [x] Navigate to `http://localhost:5173/`
+2. [x] Verify landing page displays with title "English Coach"
+3. [x] Verify "Play Game" button is visible and clickable
+4. [x] Verify "Dictionary Lookup" button is visible and clickable
+5. [x] Click "Play Game" button
+6. [x] Verify navigation to `/games` page
+7. [x] Navigate back to landing page
+8. [x] Click "Dictionary Lookup" button
+9. [x] Verify navigation to `/dictionary` page
 
 ### Expected Results
 
@@ -49,14 +49,14 @@
 
 ### Test Steps
 
-1. [ ] Navigate to `/games` page
-2. [ ] Verify "Về trang chủ" (Back to Home) button is visible
-3. [ ] Verify game list displays with "Học Từ Vựng" (Vocabulary Game) option
-4. [ ] Verify game card shows description
-5. [ ] Click on vocabulary game card
-6. [ ] Verify navigation to `/games/vocab/config` page
-7. [ ] Click "Về trang chủ" button
-8. [ ] Verify navigation back to landing page
+1. [x] Navigate to `/games` page
+2. [x] Verify "Về trang chủ" (Back to Home) button is visible
+3. [x] Verify game list displays with "Học Từ Vựng" (Vocabulary Game) option
+4. [x] Verify game card shows description
+5. [x] Click on vocabulary game card
+6. [x] Verify navigation to `/games/vocab/config` page
+7. [x] Click "Về trang chủ" button
+8. [x] Verify navigation back to landing page
 
 ### Expected Results
 
@@ -78,15 +78,15 @@
 
 ### Test Steps - Valid Configuration
 
-1. [ ] Navigate to `/games/vocab/config`
-2. [ ] Verify "Quay Lại" (Back) button is visible
-3. [ ] Verify language dropdowns load (source and target)
-4. [ ] Select source language (e.g., English)
-5. [ ] Select target language (e.g., Vietnamese) - different from source
-6. [ ] Select mode: "Topic" or "Level"
-7. [ ] If Topic mode: Select a topic
-8. [ ] If Level mode: Select a level
-9. [ ] Click "Bắt Đầu Chơi" (Start Game) button
+1. [x] Navigate to `/games/vocab/config`
+2. [x] Verify "Quay Lại" (Back) button is visible
+3. [x] Verify language dropdowns load (source and target)
+4. [x] Select source language (e.g., English)
+5. [x] Select target language (e.g., Vietnamese) - different from source
+6. [x] Select mode: "Topic" or "Level"
+7. [x] If Topic mode: Select a topic
+8. [x] If Level mode: Select a level
+9. [x] Click "Bắt Đầu Chơi" (Start Game) button
 10. [ ] Verify navigation to game play page with session ID
 
 ### Test Steps - Invalid Configuration

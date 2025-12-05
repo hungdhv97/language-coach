@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/english-coach/backend/internal/domain/game/dto"
 	"github.com/english-coach/backend/internal/domain/game/model"
@@ -125,8 +126,13 @@ func (h *GameHandler) CreateSession(c *gin.Context) {
 		)
 
 		// Check for insufficient words error (FR-026)
-		if err.Error() == "validation error: "+command.InsufficientWordsError.Error() ||
-			err.Error() == command.InsufficientWordsError.Error() {
+		// Check if error is InsufficientWordsError or contains "insufficient words" message
+		errMsg := err.Error()
+		if err == command.InsufficientWordsError ||
+			errMsg == command.InsufficientWordsError.Error() ||
+			errMsg == "validation error: "+command.InsufficientWordsError.Error() ||
+			errMsg == "failed to generate questions: "+command.InsufficientWordsError.Error() ||
+			strings.Contains(errMsg, "insufficient words") {
 			response.ErrorResponse(c, http.StatusBadRequest,
 				"INSUFFICIENT_WORDS",
 				command.InsufficientWordsError.Error(),
@@ -247,12 +253,12 @@ func (h *GameHandler) GetSession(c *gin.Context) {
 	for _, q := range questions {
 		questionsWithOptions = append(questionsWithOptions, QuestionWithOptions{
 			GameQuestion: q,
-			Options:     optionsByQuestion[q.ID],
+			Options:      optionsByQuestion[q.ID],
 		})
 	}
 
 	responseData := gin.H{
-		"session":  session,
+		"session":   session,
 		"questions": questionsWithOptions,
 	}
 
@@ -336,4 +342,3 @@ func (h *GameHandler) SubmitAnswer(c *gin.Context) {
 
 	response.Success(c, http.StatusCreated, answer)
 }
-

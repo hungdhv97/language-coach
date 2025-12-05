@@ -26,10 +26,12 @@ func NewLogger(level string) (*Logger, error) {
 		zapLevel = zapcore.InfoLevel
 	}
 
-	config := zap.NewProductionConfig()
+	config := zap.NewDevelopmentConfig()
 	config.Level = zap.NewAtomicLevelAt(zapLevel)
 	config.EncoderConfig.TimeKey = "timestamp"
 	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder // Thêm màu sắc cho level
+	config.EncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder      // Hiển thị caller ngắn gọn
 
 	logger, err := config.Build()
 	if err != nil {

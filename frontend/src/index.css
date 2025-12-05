@@ -114,7 +114,21 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    /* Ẩn scrollbar nhưng vẫn giữ chức năng scroll */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE và Edge */
+  }
+  html::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
   body {
     @apply bg-background text-foreground;
+    /* Đảm bảo body cũng ẩn scrollbar */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE và Edge */
+  }
+  body::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
   }
 }

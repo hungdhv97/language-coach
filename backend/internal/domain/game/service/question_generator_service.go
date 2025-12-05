@@ -49,24 +49,61 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 		sourceWords, err = s.wordRepo.FindWordsByTopicAndLanguages(
 			ctx, *topicID, sourceLanguageID, targetLanguageID, questionCount*3,
 		)
+		if err != nil {
+			s.logger.Error("failed to fetch source words by topic",
+				zap.Error(err),
+				zap.String("mode", mode),
+				zap.Int64("topic_id", *topicID),
+				zap.Int16("source_language_id", sourceLanguageID),
+				zap.Int16("target_language_id", targetLanguageID),
+				zap.Int("requested_limit", questionCount*3),
+			)
+			return nil, nil, fmt.Errorf("failed to fetch source words: %w", err)
+		}
+		s.logger.Info("fetched words by topic",
+			zap.Int64("topic_id", *topicID),
+			zap.Int16("source_language_id", sourceLanguageID),
+			zap.Int16("target_language_id", targetLanguageID),
+			zap.Int("word_count", len(sourceWords)),
+			zap.Int("requested_limit", questionCount*3),
+		)
 	} else if mode == "level" && levelID != nil {
 		sourceWords, err = s.wordRepo.FindWordsByLevelAndLanguages(
 			ctx, *levelID, sourceLanguageID, targetLanguageID, questionCount*3,
+		)
+		if err != nil {
+			s.logger.Error("failed to fetch source words by level",
+				zap.Error(err),
+				zap.String("mode", mode),
+				zap.Int64("level_id", *levelID),
+				zap.Int16("source_language_id", sourceLanguageID),
+				zap.Int16("target_language_id", targetLanguageID),
+				zap.Int("requested_limit", questionCount*3),
+			)
+			return nil, nil, fmt.Errorf("failed to fetch source words: %w", err)
+		}
+		s.logger.Info("fetched words by level",
+			zap.Int64("level_id", *levelID),
+			zap.Int16("source_language_id", sourceLanguageID),
+			zap.Int16("target_language_id", targetLanguageID),
+			zap.Int("word_count", len(sourceWords)),
+			zap.Int("requested_limit", questionCount*3),
 		)
 	} else {
 		return nil, nil, fmt.Errorf("invalid mode or missing topic/level ID")
 	}
 
-	if err != nil {
-		s.logger.Error("failed to fetch source words",
-			zap.Error(err),
-			zap.String("mode", mode),
-		)
-		return nil, nil, fmt.Errorf("failed to fetch source words: %w", err)
-	}
-
 	// Check if we have enough words
 	if len(sourceWords) < questionCount {
+		s.logger.Warn("insufficient words for question generation",
+			zap.String("mode", mode),
+			zap.Int("required", questionCount),
+			zap.Int("available", len(sourceWords)),
+			zap.Any("topic_id", topicID),
+			zap.Any("level_id", levelID),
+			zap.Int16("source_language_id", sourceLanguageID),
+			zap.Int16("target_language_id", targetLanguageID),
+		)
 		return nil, nil, fmt.Errorf("insufficient words: need %d, have %d", questionCount, len(sourceWords))
 	}
 
