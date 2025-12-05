@@ -15,9 +15,10 @@ func main() {
 	ctx := context.Background()
 
 	// Get database connection string from environment or use default
-	dsn := os.Getenv("DB_DSN")
+	// Priority: DATABASE_URL env var > default DSN
+	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		dsn = "postgres://postgres:postgres@localhost:5432/english_coach?sslmode=disable"
+		dsn = "postgres://postgres:postgres@localhost:5500/english_coach?sslmode=disable"
 	}
 
 	// Use pgx/stdlib for compatibility with sql.Open
@@ -33,7 +34,7 @@ func main() {
 	}
 
 	// Read migration file
-	migrationPath := "internal/infrastructure/db/migrations/0001_init.sql"
+	migrationPath := "internal/infrastructure/db/migrations/schema/0001_init_schema.sql"
 	if _, err := os.Stat(migrationPath); os.IsNotExist(err) {
 		// Try alternative path
 		migrationPath = filepath.Join("backend", migrationPath)

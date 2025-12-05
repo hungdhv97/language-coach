@@ -26,6 +26,9 @@ out/
 !.env.example
 .env.local
 .env.*.local
+# Allow example env files in deploy/env/example
+!deploy/env/example/
+!deploy/env/example/*.env
 
 # IDE and editor files
 .vscode/
