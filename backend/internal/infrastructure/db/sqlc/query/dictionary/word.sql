@@ -64,7 +64,7 @@ ORDER BY st.priority, tw.frequency_rank NULLS LAST, tw.id
 LIMIT sqlc.arg('limit');
 
 -- name: SearchWords :many
-SELECT DISTINCT w.id, w.language_id, w.lemma, w.lemma_normalized, w.search_key,
+SELECT w.id, w.language_id, w.lemma, w.lemma_normalized, w.search_key,
        w.part_of_speech_id, w.romanization, w.script_code, w.frequency_rank,
        w.notes, w.created_at, w.updated_at
 FROM words w
@@ -86,28 +86,6 @@ ORDER BY
   w.id
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
--- name: SearchWordsNoLanguage :many
-SELECT DISTINCT w.id, w.language_id, w.lemma, w.lemma_normalized, w.search_key,
-       w.part_of_speech_id, w.romanization, w.script_code, w.frequency_rank,
-       w.notes, w.created_at, w.updated_at
-FROM words w
-WHERE (
-  w.lemma ILIKE sqlc.arg('search_pattern')
-  OR w.lemma_normalized ILIKE sqlc.arg('search_pattern')
-  OR w.search_key ILIKE sqlc.arg('search_pattern')
-)
-ORDER BY 
-  CASE 
-    WHEN w.lemma = sqlc.arg('exact_match') THEN 1
-    WHEN w.lemma ILIKE sqlc.arg('search_pattern') THEN 2
-    WHEN w.lemma_normalized ILIKE sqlc.arg('search_pattern') THEN 3
-    WHEN w.search_key ILIKE sqlc.arg('search_pattern') THEN 4
-    ELSE 5
-  END,
-  w.frequency_rank NULLS LAST,
-  w.id
-LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
-
 -- name: CountSearchWords :one
 SELECT COUNT(DISTINCT w.id)
 FROM words w
@@ -117,13 +95,4 @@ WHERE w.language_id = sqlc.arg('language_id')
     OR w.lemma_normalized ILIKE sqlc.arg('search_pattern')
     OR w.search_key ILIKE sqlc.arg('search_pattern')
   );
-
--- name: CountSearchWordsNoLanguage :one
-SELECT COUNT(DISTINCT w.id)
-FROM words w
-WHERE (
-  w.lemma ILIKE sqlc.arg('search_pattern')
-  OR w.lemma_normalized ILIKE sqlc.arg('search_pattern')
-  OR w.search_key ILIKE sqlc.arg('search_pattern')
-);
 

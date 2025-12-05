@@ -34,23 +34,6 @@ func (q *Queries) CountSearchWords(ctx context.Context, arg CountSearchWordsPara
 	return count, err
 }
 
-const countSearchWordsNoLanguage = `-- name: CountSearchWordsNoLanguage :one
-SELECT COUNT(DISTINCT w.id)
-FROM words w
-WHERE (
-  w.lemma ILIKE $1
-  OR w.lemma_normalized ILIKE $1
-  OR w.search_key ILIKE $1
-)
-`
-
-func (q *Queries) CountSearchWordsNoLanguage(ctx context.Context, searchPattern string) (int64, error) {
-	row := q.db.QueryRow(ctx, countSearchWordsNoLanguage, searchPattern)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const findTranslationsForWord = `-- name: FindTranslationsForWord :many
 SELECT DISTINCT tw.id, tw.language_id, tw.lemma, tw.lemma_normalized, tw.search_key,
        tw.part_of_speech_id, tw.romanization, tw.script_code, tw.frequency_rank,
@@ -304,7 +287,7 @@ func (q *Queries) FindWordsByTopicAndLanguages(ctx context.Context, arg FindWord
 }
 
 const searchWords = `-- name: SearchWords :many
-SELECT DISTINCT w.id, w.language_id, w.lemma, w.lemma_normalized, w.search_key,
+SELECT w.id, w.language_id, w.lemma, w.lemma_normalized, w.search_key,
        w.part_of_speech_id, w.romanization, w.script_code, w.frequency_rank,
        w.notes, w.created_at, w.updated_at
 FROM words w
@@ -338,74 +321,6 @@ type SearchWordsParams struct {
 func (q *Queries) SearchWords(ctx context.Context, arg SearchWordsParams) ([]Word, error) {
 	rows, err := q.db.Query(ctx, searchWords,
 		arg.LanguageID,
-		arg.SearchPattern,
-		arg.ExactMatch,
-		arg.Offset,
-		arg.Limit,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Word{}
-	for rows.Next() {
-		var i Word
-		if err := rows.Scan(
-			&i.ID,
-			&i.LanguageID,
-			&i.Lemma,
-			&i.LemmaNormalized,
-			&i.SearchKey,
-			&i.PartOfSpeechID,
-			&i.Romanization,
-			&i.ScriptCode,
-			&i.FrequencyRank,
-			&i.Notes,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const searchWordsNoLanguage = `-- name: SearchWordsNoLanguage :many
-SELECT DISTINCT w.id, w.language_id, w.lemma, w.lemma_normalized, w.search_key,
-       w.part_of_speech_id, w.romanization, w.script_code, w.frequency_rank,
-       w.notes, w.created_at, w.updated_at
-FROM words w
-WHERE (
-  w.lemma ILIKE $1
-  OR w.lemma_normalized ILIKE $1
-  OR w.search_key ILIKE $1
-)
-ORDER BY 
-  CASE 
-    WHEN w.lemma = $2 THEN 1
-    WHEN w.lemma ILIKE $1 THEN 2
-    WHEN w.lemma_normalized ILIKE $1 THEN 3
-    WHEN w.search_key ILIKE $1 THEN 4
-    ELSE 5
-  END,
-  w.frequency_rank NULLS LAST,
-  w.id
-LIMIT $4 OFFSET $3
-`
-
-type SearchWordsNoLanguageParams struct {
-	SearchPattern string `json:"search_pattern"`
-	ExactMatch    string `json:"exact_match"`
-	Offset        int32  `json:"offset"`
-	Limit         int32  `json:"limit"`
-}
-
-func (q *Queries) SearchWordsNoLanguage(ctx context.Context, arg SearchWordsNoLanguageParams) ([]Word, error) {
-	rows, err := q.db.Query(ctx, searchWordsNoLanguage,
 		arg.SearchPattern,
 		arg.ExactMatch,
 		arg.Offset,

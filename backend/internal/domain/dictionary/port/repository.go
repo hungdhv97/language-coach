@@ -51,9 +51,9 @@ type WordRepository interface {
 	// FindTranslationsForWord finds translation words for a given source word and target language
 	FindTranslationsForWord(ctx context.Context, sourceWordID int64, targetLanguageID int16, limit int) ([]*model.Word, error)
 	// SearchWords searches for words using multiple strategies (lemma, normalized, search_key)
-	SearchWords(ctx context.Context, query string, languageID *int16, limit, offset int) ([]*model.Word, error)
+	SearchWords(ctx context.Context, query string, languageID int16, limit, offset int) ([]*model.Word, error)
 	// CountSearchWords returns the total count of words matching the search query
-	CountSearchWords(ctx context.Context, query string, languageID *int16) (int, error)
+	CountSearchWords(ctx context.Context, query string, languageID int16) (int, error)
 }
 
 // SenseRepository defines operations for sense data access

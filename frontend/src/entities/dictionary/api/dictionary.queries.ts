@@ -16,7 +16,7 @@ export const dictionaryQueries = {
     topics: () => [...dictionaryQueries.keys.all, 'topics'] as const,
     levels: (languageId?: number) =>
       [...dictionaryQueries.keys.all, 'levels', languageId] as const,
-    search: (query: string, languageId?: number, limit?: number, offset?: number) =>
+    search: (query: string, languageId: number, limit?: number, offset?: number) =>
       [...dictionaryQueries.keys.all, 'search', query, languageId, limit, offset] as const,
     wordDetail: (wordId: number) =>
       [...dictionaryQueries.keys.all, 'word', wordId] as const,
@@ -58,7 +58,7 @@ export const dictionaryQueries = {
    */
   useSearchWords: (
     query: string,
-    languageId?: number,
+    languageId: number,
     limit: number = 20,
     offset: number = 0,
     enabled: boolean = true
@@ -66,7 +66,7 @@ export const dictionaryQueries = {
     return useQuery<WordSearchResponse>({
       queryKey: dictionaryQueries.keys.search(query, languageId, limit, offset),
       queryFn: () => dictionaryEndpoints.searchWords(query, languageId, limit, offset),
-      enabled: enabled && query.trim().length > 0,
+      enabled: enabled && query.trim().length > 0 && !!languageId,
       staleTime: 30 * 1000, // 30 seconds
     });
   },

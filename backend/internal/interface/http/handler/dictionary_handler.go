@@ -13,12 +13,12 @@ import (
 
 // DictionaryHandler handles dictionary-related HTTP requests
 type DictionaryHandler struct {
-	languageRepo     port.LanguageRepository
-	topicRepo        port.TopicRepository
-	levelRepo        port.LevelRepository
-	wordRepo         port.WordRepository
+	languageRepo      port.LanguageRepository
+	topicRepo         port.TopicRepository
+	levelRepo         port.LevelRepository
+	wordRepo          port.WordRepository
 	dictionaryService *service.DictionaryService
-	logger           *zap.Logger
+	logger            *zap.Logger
 }
 
 // NewDictionaryHandler creates a new dictionary handler
@@ -149,21 +149,27 @@ func (h *DictionaryHandler) SearchWords(c *gin.Context) {
 		return
 	}
 
-	// Parse language ID (optional)
-	var languageID *int16
-	if languageIDStr := c.Query("languageId"); languageIDStr != "" {
-		id, err := strconv.ParseInt(languageIDStr, 10, 16)
-		if err != nil {
-			response.ErrorResponse(c, http.StatusBadRequest,
-				"INVALID_PARAMETER",
-				"Invalid languageId parameter",
-				nil,
-			)
-			return
-		}
-		langID := int16(id)
-		languageID = &langID
+	// Parse language ID (required)
+	languageIDStr := c.Query("languageId")
+	if languageIDStr == "" {
+		response.ErrorResponse(c, http.StatusBadRequest,
+			"INVALID_PARAMETER",
+			"Language ID (languageId) is required",
+			nil,
+		)
+		return
 	}
+
+	languageID, err := strconv.ParseInt(languageIDStr, 10, 16)
+	if err != nil {
+		response.ErrorResponse(c, http.StatusBadRequest,
+			"INVALID_PARAMETER",
+			"Invalid languageId parameter",
+			nil,
+		)
+		return
+	}
+	langID := int16(languageID)
 
 	// Parse pagination parameters
 	limit := 20 // default limit
@@ -206,13 +212,13 @@ func (h *DictionaryHandler) SearchWords(c *gin.Context) {
 	// Log dictionary search start
 	logger.Info("dictionary search started",
 		zap.String("query", query),
-		zap.Any("language_id", languageID),
+		zap.Int16("language_id", langID),
 		zap.Int("limit", limit),
 		zap.Int("offset", offset),
 	)
 
 	// Search words
-	words, err := h.wordRepo.SearchWords(ctx, query, languageID, limit, offset)
+	words, err := h.wordRepo.SearchWords(ctx, query, langID, limit, offset)
 	if err != nil {
 		logger.Error("failed to search words",
 			zap.Error(err),
@@ -228,7 +234,7 @@ func (h *DictionaryHandler) SearchWords(c *gin.Context) {
 	}
 
 	// Get total count for pagination
-	total, err := h.wordRepo.CountSearchWords(ctx, query, languageID)
+	total, err := h.wordRepo.CountSearchWords(ctx, query, langID)
 	if err != nil {
 		h.logger.Error("failed to count search words",
 			zap.Error(err),
@@ -245,9 +251,9 @@ func (h *DictionaryHandler) SearchWords(c *gin.Context) {
 			zap.Int("total", total),
 		)
 		response.Success(c, http.StatusOK, gin.H{
-			"words": []interface{}{},
-			"total": total,
-			"limit": limit,
+			"words":  []interface{}{},
+			"total":  total,
+			"limit":  limit,
 			"offset": offset,
 		})
 		return
@@ -261,9 +267,9 @@ func (h *DictionaryHandler) SearchWords(c *gin.Context) {
 	)
 
 	response.Success(c, http.StatusOK, gin.H{
-		"words": words,
-		"total": total,
-		"limit": limit,
+		"words":  words,
+		"total":  total,
+		"limit":  limit,
 		"offset": offset,
 	})
 }
@@ -330,4 +336,3 @@ func (h *DictionaryHandler) GetWordDetail(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, wordDetail)
 }
-

@@ -43,18 +43,16 @@ export const dictionaryEndpoints = {
    */
   searchWords: async (
     query: string,
-    languageId?: number,
+    languageId: number,
     limit: number = 20,
     offset: number = 0
   ): Promise<WordSearchResponse> => {
     const params = new URLSearchParams({
       q: query,
+      languageId: languageId.toString(),
       limit: limit.toString(),
       offset: offset.toString(),
     });
-    if (languageId !== undefined) {
-      params.append('languageId', languageId.toString());
-    }
     const response = await httpClient.get<ApiResponse<WordSearchResponse>>(
       `/dictionary/search?${params.toString()}`
     );

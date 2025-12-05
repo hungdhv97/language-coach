@@ -12,7 +12,6 @@ import (
 
 type Querier interface {
 	CountSearchWords(ctx context.Context, arg CountSearchWordsParams) (int64, error)
-	CountSearchWordsNoLanguage(ctx context.Context, searchPattern string) (int64, error)
 	FindAllLanguages(ctx context.Context) ([]Language, error)
 	FindAllLevels(ctx context.Context) ([]Level, error)
 	FindAllTopics(ctx context.Context) ([]Topic, error)
@@ -31,7 +30,6 @@ type Querier interface {
 	FindWordsByLevelAndLanguages(ctx context.Context, arg FindWordsByLevelAndLanguagesParams) ([]Word, error)
 	FindWordsByTopicAndLanguages(ctx context.Context, arg FindWordsByTopicAndLanguagesParams) ([]Word, error)
 	SearchWords(ctx context.Context, arg SearchWordsParams) ([]Word, error)
-	SearchWordsNoLanguage(ctx context.Context, arg SearchWordsNoLanguageParams) ([]Word, error)
 }
 
 var _ Querier = (*Queries)(nil)

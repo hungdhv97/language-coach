@@ -105,27 +105,16 @@ func (r *wordRepository) FindTranslationsForWord(ctx context.Context, sourceWord
 }
 
 // SearchWords searches for words using multiple strategies (lemma, normalized, search_key)
-func (r *wordRepository) SearchWords(ctx context.Context, query string, languageID *int16, limit, offset int) ([]*model.Word, error) {
+func (r *wordRepository) SearchWords(ctx context.Context, query string, languageID int16, limit, offset int) ([]*model.Word, error) {
 	searchPattern := "%" + query + "%"
 
-	var wordRows []db.Word
-	var err error
-	if languageID != nil {
-		wordRows, err = r.queries.SearchWords(ctx, db.SearchWordsParams{
-			LanguageID:    *languageID,
-			SearchPattern: searchPattern,
-			ExactMatch:    query,
-			Limit:         int32(limit),
-			Offset:        int32(offset),
-		})
-	} else {
-		wordRows, err = r.queries.SearchWordsNoLanguage(ctx, db.SearchWordsNoLanguageParams{
-			SearchPattern: searchPattern,
-			ExactMatch:    query,
-			Limit:         int32(limit),
-			Offset:        int32(offset),
-		})
-	}
+	wordRows, err := r.queries.SearchWords(ctx, db.SearchWordsParams{
+		LanguageID:    languageID,
+		SearchPattern: searchPattern,
+		ExactMatch:    query,
+		Limit:         int32(limit),
+		Offset:        int32(offset),
+	})
 
 	if err != nil {
 		return nil, common.MapPgError(err)
@@ -140,20 +129,13 @@ func (r *wordRepository) SearchWords(ctx context.Context, query string, language
 }
 
 // CountSearchWords returns the total count of words matching the search query
-func (r *wordRepository) CountSearchWords(ctx context.Context, query string, languageID *int16) (int, error) {
+func (r *wordRepository) CountSearchWords(ctx context.Context, query string, languageID int16) (int, error) {
 	searchPattern := "%" + query + "%"
 
-	var count int64
-	var err error
-
-	if languageID != nil {
-		count, err = r.queries.CountSearchWords(ctx, db.CountSearchWordsParams{
-			LanguageID:    *languageID,
-			SearchPattern: searchPattern,
-		})
-	} else {
-		count, err = r.queries.CountSearchWordsNoLanguage(ctx, searchPattern)
-	}
+	count, err := r.queries.CountSearchWords(ctx, db.CountSearchWordsParams{
+		LanguageID:    languageID,
+		SearchPattern: searchPattern,
+	})
 
 	if err != nil {
 		return 0, common.MapPgError(err)
