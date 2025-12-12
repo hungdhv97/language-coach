@@ -16,7 +16,7 @@ type Character struct {
 	ScriptCode  string      `json:"script_code"`
 	Strokes     pgtype.Int2 `json:"strokes"`
 	Radical     pgtype.Text `json:"radical"`
-	Level       pgtype.Text `json:"level"`
+	LevelID     pgtype.Int8 `json:"level_id"`
 }
 
 type CharacterReading struct {
@@ -202,7 +202,7 @@ type Word struct {
 	Romanization    pgtype.Text      `json:"romanization"`
 	ScriptCode      pgtype.Text      `json:"script_code"`
 	FrequencyRank   pgtype.Int4      `json:"frequency_rank"`
-	Notes           pgtype.Text      `json:"notes"`
+	Note            pgtype.Text      `json:"note"`
 	CreatedAt       pgtype.Timestamp `json:"created_at"`
 	UpdatedAt       pgtype.Timestamp `json:"updated_at"`
 }

@@ -146,7 +146,7 @@ func (r *wordRepository) CountSearchWords(ctx context.Context, query string, lan
 
 // mapWordRow maps sqlc generated row to domain model
 func (r *wordRepository) mapWordRow(row db.Word) *model.Word {
-	var lemmaNormalized, searchKey, romanization, scriptCode, notes *string
+	var lemmaNormalized, searchKey, romanization, scriptCode, note *string
 	var frequencyRank *int
 
 	if row.LemmaNormalized.Valid {
@@ -161,8 +161,8 @@ func (r *wordRepository) mapWordRow(row db.Word) *model.Word {
 	if row.ScriptCode.Valid {
 		scriptCode = &row.ScriptCode.String
 	}
-	if row.Notes.Valid {
-		notes = &row.Notes.String
+	if row.Note.Valid {
+		note = &row.Note.String
 	}
 	if row.FrequencyRank.Valid {
 		val := int(row.FrequencyRank.Int32)
@@ -178,7 +178,7 @@ func (r *wordRepository) mapWordRow(row db.Word) *model.Word {
 		Romanization:    romanization,
 		ScriptCode:      scriptCode,
 		FrequencyRank:   frequencyRank,
-		Notes:           notes,
+		Note:            note,
 		CreatedAt:       row.CreatedAt.Time,
 		UpdatedAt:       row.UpdatedAt.Time,
 	}

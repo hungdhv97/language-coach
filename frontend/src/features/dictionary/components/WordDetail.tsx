@@ -50,11 +50,11 @@ export function WordDetail({ wordId }: WordDetailProps) {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Word Notes */}
-          {wordDetail.word.notes && (
+          {/* Word Note */}
+          {wordDetail.word.note && (
             <div className="p-3 bg-muted rounded-md">
               <p className="text-sm">
-                <strong>Ghi chú:</strong> {wordDetail.word.notes}
+                <strong>Ghi chú:</strong> {wordDetail.word.note}
               </p>
             </div>
           )}

@@ -33,7 +33,7 @@ export interface Word {
   romanization?: string;
   script_code?: string;
   frequency_rank?: number;
-  notes?: string;
+  note?: string;
   created_at: string;
   updated_at: string;
 }

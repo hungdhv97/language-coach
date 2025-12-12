@@ -1,14 +1,14 @@
 -- name: FindWordByID :one
 SELECT id, language_id, lemma, lemma_normalized, search_key,
        romanization, script_code, frequency_rank,
-       notes, created_at, updated_at
+       note, created_at, updated_at
 FROM words
 WHERE id = $1;
 
 -- name: FindWordsByIDs :many
 SELECT id, language_id, lemma, lemma_normalized, search_key,
        romanization, script_code, frequency_rank,
-       notes, created_at, updated_at
+       note, created_at, updated_at
 FROM words
 WHERE id = ANY($1::bigint[])
 ORDER BY id;
@@ -16,7 +16,7 @@ ORDER BY id;
 -- name: FindWordsByTopicAndLanguages :many
 SELECT DISTINCT w.id, w.language_id, w.lemma, w.lemma_normalized, w.search_key,
        w.romanization, w.script_code, w.frequency_rank,
-       w.notes, w.created_at, w.updated_at
+       w.note, w.created_at, w.updated_at
 FROM words w
 INNER JOIN word_topics wt ON w.id = wt.word_id
 WHERE wt.topic_id = sqlc.arg('topic_id')
@@ -35,7 +35,7 @@ LIMIT sqlc.arg('limit');
 -- name: FindWordsByLevelAndLanguages :many
 SELECT DISTINCT w.id, w.language_id, w.lemma, w.lemma_normalized, w.search_key,
        w.romanization, w.script_code, w.frequency_rank,
-       w.notes, w.created_at, w.updated_at
+       w.note, w.created_at, w.updated_at
 FROM words w
 INNER JOIN senses s ON w.id = s.word_id
 WHERE s.level_id = sqlc.arg('level_id')
@@ -53,7 +53,7 @@ LIMIT sqlc.arg('limit');
 -- name: FindTranslationsForWord :many
 SELECT DISTINCT tw.id, tw.language_id, tw.lemma, tw.lemma_normalized, tw.search_key,
        tw.romanization, tw.script_code, tw.frequency_rank,
-       tw.notes, tw.created_at, tw.updated_at
+       tw.note, tw.created_at, tw.updated_at
 FROM words sw
 INNER JOIN senses s ON sw.id = s.word_id
 INNER JOIN sense_translations st ON s.id = st.source_sense_id
@@ -66,7 +66,7 @@ LIMIT sqlc.arg('limit');
 -- name: SearchWords :many
 SELECT w.id, w.language_id, w.lemma, w.lemma_normalized, w.search_key,
        w.romanization, w.script_code, w.frequency_rank,
-       w.notes, w.created_at, w.updated_at
+       w.note, w.created_at, w.updated_at
 FROM words w
 WHERE w.language_id = sqlc.arg('language_id')
   AND (

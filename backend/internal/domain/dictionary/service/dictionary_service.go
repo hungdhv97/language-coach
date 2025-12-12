@@ -180,7 +180,7 @@ func (s *DictionaryService) getSenseTranslations(ctx context.Context, senseIDs [
 	query := `
 		SELECT st.source_sense_id, tw.id, tw.language_id, tw.lemma, tw.lemma_normalized, tw.search_key,
 		       tw.romanization, tw.script_code, tw.frequency_rank,
-		       tw.notes, tw.created_at, tw.updated_at
+		       tw.note, tw.created_at, tw.updated_at
 		FROM sense_translations st
 		INNER JOIN words tw ON st.target_word_id = tw.id
 		WHERE st.source_sense_id = ANY($1)
@@ -196,7 +196,7 @@ func (s *DictionaryService) getSenseTranslations(ctx context.Context, senseIDs [
 	for rows.Next() {
 		var senseID int64
 		var word model.Word
-		var lemmaNormalized, searchKey, romanization, scriptCode, notes *string
+		var lemmaNormalized, searchKey, romanization, scriptCode, note *string
 		var frequencyRank *int
 		if err := rows.Scan(
 			&senseID,
@@ -208,7 +208,7 @@ func (s *DictionaryService) getSenseTranslations(ctx context.Context, senseIDs [
 			&romanization,
 			&scriptCode,
 			&frequencyRank,
-			&notes,
+			&note,
 			&word.CreatedAt,
 			&word.UpdatedAt,
 		); err != nil {
@@ -219,7 +219,7 @@ func (s *DictionaryService) getSenseTranslations(ctx context.Context, senseIDs [
 		word.Romanization = romanization
 		word.ScriptCode = scriptCode
 		word.FrequencyRank = frequencyRank
-		word.Notes = notes
+		word.Note = note
 		result[senseID] = append(result[senseID], &word)
 	}
 

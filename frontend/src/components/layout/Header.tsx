@@ -45,7 +45,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="w-full flex h-16 items-center justify-between px-4">
+      <div className="w-full flex h-16 items-center justify-between px-4 relative">
         {/* Logo - Left */}
         <div className="flex items-center gap-2">
           <Button
@@ -58,7 +58,7 @@ export default function Header() {
         </div>
 
         {/* Navigation Links - Center */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden md:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname.startsWith(item.path);

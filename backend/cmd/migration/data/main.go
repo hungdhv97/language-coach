@@ -57,7 +57,7 @@ type WordJSON struct {
 	Romanization    *string             `json:"romanization,omitempty"`
 	ScriptCode      *string             `json:"script_code,omitempty"`
 	FrequencyRank   *int                `json:"frequency_rank,omitempty"`
-	Notes           *string             `json:"notes,omitempty"`
+	Note            *string             `json:"note,omitempty"`
 	Topics          []string            `json:"topics,omitempty"`
 	Pronunciations  []PronunciationJSON `json:"pronunciations,omitempty"`
 	Relations       []WordRelationJSON  `json:"relations,omitempty"`
@@ -87,7 +87,7 @@ type RelatedWordJSON struct {
 	Romanization    *string  `json:"romanization,omitempty"`
 	ScriptCode      *string  `json:"script_code,omitempty"`
 	FrequencyRank   *int     `json:"frequency_rank,omitempty"`
-	Notes           *string  `json:"notes,omitempty"`
+	Note            *string  `json:"note,omitempty"`
 	Topics          []string `json:"topics,omitempty"`
 }
 
@@ -128,7 +128,7 @@ type CharacterJSON struct {
 	ScriptCode  string                 `json:"script_code"`
 	Strokes     *int                   `json:"strokes,omitempty"`
 	Radical     *string                `json:"radical,omitempty"`
-	Level       *string                `json:"level,omitempty"`
+	Level       *string                `json:"level,omitempty"` // level code, will be converted to level_id
 	CharOrder   int                    `json:"char_order"`
 	Readings    []CharacterReadingJSON `json:"readings,omitempty"`
 }
@@ -544,7 +544,7 @@ INSERT INTO words (
     romanization,
     script_code,
     frequency_rank,
-    notes
+    note
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING id
@@ -558,7 +558,7 @@ SET
     romanization     = $4,
     script_code      = $5,
     frequency_rank   = $6,
-    notes            = $7,
+    note             = $7,
     updated_at       = CURRENT_TIMESTAMP
 WHERE id = $1
 `
@@ -581,7 +581,7 @@ WHERE id = $1
 			w.Romanization,
 			w.ScriptCode,
 			w.FrequencyRank,
-			w.Notes,
+			w.Note,
 		).Scan(&wordID); err != nil {
 			return 0, fmt.Errorf("insert word: %w", err)
 		}
@@ -599,7 +599,7 @@ WHERE id = $1
 		w.Romanization,
 		w.ScriptCode,
 		w.FrequencyRank,
-		w.Notes,
+		w.Note,
 	); err != nil {
 		return 0, fmt.Errorf("update word: %w", err)
 	}
@@ -656,7 +656,6 @@ func upsertWordDetails(
 		w.Relations,
 		languageCache,
 		wordCache,
-		posCache,
 	); err != nil {
 		return err
 	}
@@ -671,6 +670,7 @@ func upsertWordDetails(
 			w.Characters,
 			languageCache,
 			characterCache,
+			levelCache,
 		); err != nil {
 			return err
 		}
@@ -817,7 +817,6 @@ RETURNING id
 			s.Translations,
 			languageCache,
 			wordCache,
-			posCache,
 		); err != nil {
 			return err
 		}
@@ -846,7 +845,6 @@ func upsertSenseTranslations(
 	translations []SenseTranslationJSON,
 	languageCache map[string]int16,
 	wordCache map[string]int64,
-	posCache map[string]*int16,
 ) error {
 	if len(translations) == 0 {
 		return nil
@@ -867,14 +865,7 @@ RETURNING id
 			return err
 		}
 
-		targetWordID, err := upsertRelatedWord(
-			ctx,
-			tx,
-			targetLangID,
-			t.TargetWord,
-			wordCache,
-			posCache,
-		)
+		targetWordID, err := upsertRelatedWord(ctx, tx, targetLangID, t.TargetWord, wordCache)
 		if err != nil {
 			return err
 		}
@@ -991,7 +982,6 @@ func upsertWordRelations(
 	relations []WordRelationJSON,
 	languageCache map[string]int16,
 	wordCache map[string]int64,
-	posCache map[string]*int16,
 ) error {
 	if len(relations) == 0 {
 		return nil
@@ -1010,7 +1000,7 @@ SET note = EXCLUDED.note
 			return err
 		}
 
-		targetWordID, err := upsertRelatedWord(ctx, tx, targetLangID, r.TargetWord, wordCache, posCache)
+		targetWordID, err := upsertRelatedWord(ctx, tx, targetLangID, r.TargetWord, wordCache)
 		if err != nil {
 			return err
 		}
@@ -1036,14 +1026,7 @@ SET note = EXCLUDED.note
 }
 
 // upsertRelatedWord ensures target/related words exist in the words table and returns their id.
-func upsertRelatedWord(
-	ctx context.Context,
-	tx pgx.Tx,
-	languageID int16,
-	w RelatedWordJSON,
-	wordCache map[string]int64,
-	posCache map[string]*int16,
-) (int64, error) {
+func upsertRelatedWord(ctx context.Context, tx pgx.Tx, languageID int16, w RelatedWordJSON, wordCache map[string]int64) (int64, error) {
 	key := wordCacheKey(w.Language, w.Lemma)
 	if id, ok := wordCache[key]; ok {
 		return id, nil
@@ -1064,7 +1047,7 @@ INSERT INTO words (
     romanization,
     script_code,
     frequency_rank,
-    notes
+    note
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING id
@@ -1086,7 +1069,7 @@ RETURNING id
 			w.Romanization,
 			w.ScriptCode,
 			w.FrequencyRank,
-			w.Notes,
+			w.Note,
 		).Scan(&id); err != nil {
 			return 0, fmt.Errorf("insert related word: %w", err)
 		}
@@ -1106,6 +1089,7 @@ func upsertWordCharacters(
 	chars []CharacterJSON,
 	languageCache map[string]int16,
 	characterCache map[string]int64,
+	levelCache map[string]*int64,
 ) error {
 	if len(chars) == 0 {
 		return nil
@@ -1118,7 +1102,7 @@ WHERE literal = $1 AND script_code = $2
 `
 
 	const insertCharQ = `
-INSERT INTO characters (literal, simplified, traditional, script_code, strokes, radical, level)
+INSERT INTO characters (literal, simplified, traditional, script_code, strokes, radical, level_id)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING id
 `
@@ -1160,6 +1144,15 @@ WHERE id = $1
 			err := tx.QueryRow(ctx, selectCharQ, c.Literal, c.ScriptCode).Scan(&charID)
 			if err != nil {
 				if err == pgx.ErrNoRows {
+					// Convert level code to level_id
+					var levelID *int64
+					if c.Level != nil && *c.Level != "" {
+						levelID, err = getLevelID(ctx, pool, levelCache, c.Level)
+						if err != nil {
+							return fmt.Errorf("get level_id for character level %s: %w", *c.Level, err)
+						}
+					}
+
 					if err := tx.QueryRow(
 						ctx,
 						insertCharQ,
@@ -1169,7 +1162,7 @@ WHERE id = $1
 						c.ScriptCode,
 						c.Strokes,
 						c.Radical,
-						c.Level,
+						levelID,
 					).Scan(&charID); err != nil {
 						return fmt.Errorf("insert character: %w", err)
 					}

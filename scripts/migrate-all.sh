@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Migration Script
-# This script provides instructions for running database migrations (schema + data)
+# This script runs database migrations (schema + data) using Go
+# Default: Runs schema migration then all data migrations
 
 set -e
 
@@ -15,130 +16,216 @@ NC='\033[0m' # No Color
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+BACKEND_DIR="$PROJECT_ROOT/backend"
 
-echo -e "${BLUE}🗄️  Database Migration Guide${NC}"
-echo ""
-echo -e "${YELLOW}This script provides instructions for running database migrations (schema + data).${NC}"
-echo ""
+# Default database URL (can be overridden by DATABASE_URL env var)
+DEFAULT_DATABASE_URL="postgres://postgres:postgres@localhost:5500/english_coach?sslmode=disable"
 
-# Check if PostgreSQL is accessible
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}Prerequisites${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo ""
-echo "• PostgreSQL database running"
-echo "• Database credentials configured"
-echo ""
-echo "Start PostgreSQL (if not running):"
-echo "   docker-compose -f deploy/compose/docker-compose.yml up -d postgres"
-echo ""
+# Parse flags
+SCHEMA_ONLY=false
+DATA_ONLY=false
+DATA_INIT=false
+DATA_WORD_EN=false
+DATA_WORD_VI=false
+DATA_WORD_ZH=false
+HELP=false
 
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}Option 1: Run Migrations Locally (Go)${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo ""
-echo "Step 1: Run Schema Migration"
-echo ""
-echo "   cd backend"
-echo "   export DATABASE_URL='postgres://postgres:postgres@localhost:5500/english_coach?sslmode=disable'"
-echo "   go run cmd/migration/schema/main.go"
-echo ""
-echo "   Or build and run:"
-echo "   go build -o bin/migration-schema cmd/migration/schema/main.go"
-echo "   ./bin/migration-schema"
-echo ""
-echo "Step 2: Run Data Migration"
-echo ""
-echo "   cd backend"
-echo "   export DATABASE_URL='postgres://postgres:postgres@localhost:5500/english_coach?sslmode=disable'"
-echo "   go run cmd/migration/data/main.go"
-echo ""
-echo "   Or run specific data migrations:"
-echo "   go run cmd/migration/data/main.go --init              # Initial metadata only"
-echo "   go run cmd/migration/data/main.go --word-en           # English words only"
-echo "   go run cmd/migration/data/main.go --word-vi           # Vietnamese words only"
-echo "   go run cmd/migration/data/main.go --word-zh           # Chinese words only"
-echo "   go run cmd/migration/data/main.go --init --word-en    # Init + English words"
-echo ""
-echo "   Or build and run:"
-echo "   go build -o bin/migration-data cmd/migration/data/main.go"
-echo "   ./bin/migration-data"
-echo ""
+show_help() {
+    echo -e "${BLUE}🗄️  Database Migration Script${NC}"
+    echo ""
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Options:"
+    echo "  --schema-only          Run schema migration only"
+    echo "  --data-only            Run data migration only (skip schema)"
+    echo "  --data-init            Run data migration with --init flag (initial metadata only)"
+    echo "  --data-word-en         Run data migration with --word-en flag (English words only)"
+    echo "  --data-word-vi         Run data migration with --word-vi flag (Vietnamese words only)"
+    echo "  --data-word-zh         Run data migration with --word-zh flag (Chinese words only)"
+    echo "  --help, -h             Show this help message"
+    echo ""
+    echo "Default behavior (no flags):"
+    echo "  - Run schema migration"
+    echo "  - Then run all data migrations (init + word-en + word-vi + word-zh)"
+    echo ""
+    echo "Examples:"
+    echo "  $0                                    # Schema + all data (default)"
+    echo "  $0 --schema-only                      # Schema only"
+    echo "  $0 --data-only                        # All data only (skip schema)"
+    echo "  $0 --data-init                        # Data init only"
+    echo "  $0 --data-word-en                     # English words only"
+    echo "  $0 --data-init --data-word-en         # Init + English words"
+    echo ""
+    echo "Environment:"
+    echo "  DATABASE_URL                          Database connection string (optional)"
+    echo "                                        Default: $DEFAULT_DATABASE_URL"
+    echo ""
+}
 
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}Option 2: Run Migrations via Docker${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo ""
-echo "Step 1: Build the migration container"
-echo "   docker build -f deploy/docker/backend/Dockerfile -t english-coach-migration backend/"
-echo ""
-echo "Step 2: Run Schema Migration"
-echo "   docker run --rm \\"
-echo "     --network english-coach-network \\"
-echo "     -e DATABASE_URL='postgres://postgres:postgres@postgres:5432/english_coach?sslmode=disable' \\"
-echo "     -v \"\$(pwd)/backend:/app\" \\"
-echo "     -w /app \\"
-echo "     english-coach-migration \\"
-echo "     go run cmd/migration/schema/main.go"
-echo ""
-echo "Step 3: Run Data Migration"
-echo "   docker run --rm \\"
-echo "     --network english-coach-network \\"
-echo "     -e DATABASE_URL='postgres://postgres:postgres@postgres:5432/english_coach?sslmode=disable' \\"
-echo "     -v \"\$(pwd)/backend:/app\" \\"
-echo "     -w /app \\"
-echo "     english-coach-migration \\"
-echo "     go run cmd/migration/data/main.go"
-echo ""
-echo "   Or run specific data migrations:"
-echo "   docker run --rm \\"
-echo "     --network english-coach-network \\"
-echo "     -e DATABASE_URL='postgres://postgres:postgres@postgres:5432/english_coach?sslmode=disable' \\"
-echo "     -v \"\$(pwd)/backend:/app\" \\"
-echo "     -w /app \\"
-echo "     english-coach-migration \\"
-echo "     go run cmd/migration/data/main.go --init --word-en"
-echo ""
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --schema-only)
+            SCHEMA_ONLY=true
+            shift
+            ;;
+        --data-only)
+            DATA_ONLY=true
+            shift
+            ;;
+        --data-init)
+            DATA_INIT=true
+            shift
+            ;;
+        --data-word-en)
+            DATA_WORD_EN=true
+            shift
+            ;;
+        --data-word-vi)
+            DATA_WORD_VI=true
+            shift
+            ;;
+        --data-word-zh)
+            DATA_WORD_ZH=true
+            shift
+            ;;
+        --help|-h)
+            HELP=true
+            shift
+            ;;
+        *)
+            echo -e "${RED}Unknown option: $1${NC}"
+            echo ""
+            show_help
+            exit 1
+            ;;
+    esac
+done
 
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}Option 3: Run Migrations Manually (psql)${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo ""
-echo "Schema Migration:"
-echo "   psql -h localhost -U postgres -d english_coach -f backend/internal/infrastructure/db/migrations/schema/0001_init_schema.sql"
-echo ""
-echo "Data Migration:"
-echo "   Note: Data migration must be run via Go program (not directly via psql)"
-echo "   Use Option 1 or Option 2 above for data migration"
-echo ""
+# Show help if requested
+if [ "$HELP" = true ]; then
+    show_help
+    exit 0
+fi
 
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}Migration Files${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo ""
-echo "Schema:"
-echo "   backend/internal/infrastructure/db/migrations/schema/0001_init_schema.sql"
-echo ""
-echo "Data:"
-echo "   backend/internal/infrastructure/db/migrations/data/0001_init_data.json"
-echo "   backend/internal/infrastructure/db/migrations/data/0002_word_en.jsonl"
-echo "   backend/internal/infrastructure/db/migrations/data/0003_word_vi.jsonl"
-echo "   backend/internal/infrastructure/db/migrations/data/0004_word_zh.jsonl"
-echo ""
+# Set database URL if not already set
+if [ -z "$DATABASE_URL" ]; then
+    export DATABASE_URL="$DEFAULT_DATABASE_URL"
+fi
 
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}Verification${NC}"
+echo -e "${BLUE}🗄️  Database Migration Script${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-echo "After running migrations, verify:"
-echo ""
-echo "1. Schema tables created:"
-echo "   psql -h localhost -U postgres -d english_coach -c \"\\dt\""
-echo ""
-echo "2. Data seeded (check record counts):"
-echo "   psql -h localhost -U postgres -d english_coach -c \"SELECT COUNT(*) FROM languages;\""
-echo "   psql -h localhost -U postgres -d english_coach -c \"SELECT COUNT(*) FROM words;\""
-echo ""
-echo -e "${GREEN}For more details, see migration files in backend/internal/infrastructure/db/migrations/${NC}"
+echo -e "${YELLOW}Database URL:${NC} $DATABASE_URL"
 echo ""
 
+# Check if backend directory exists
+if [ ! -d "$BACKEND_DIR" ]; then
+    echo -e "${RED}Error: Backend directory not found at $BACKEND_DIR${NC}"
+    exit 1
+fi
+
+# Determine what to run
+RUN_SCHEMA=false
+RUN_DATA=false
+DATA_FLAGS=""
+
+if [ "$SCHEMA_ONLY" = true ]; then
+    RUN_SCHEMA=true
+    RUN_DATA=false
+elif [ "$DATA_ONLY" = true ]; then
+    RUN_SCHEMA=false
+    RUN_DATA=true
+    # Build data flags
+    if [ "$DATA_INIT" = true ]; then
+        DATA_FLAGS="$DATA_FLAGS --init"
+    fi
+    if [ "$DATA_WORD_EN" = true ]; then
+        DATA_FLAGS="$DATA_FLAGS --word-en"
+    fi
+    if [ "$DATA_WORD_VI" = true ]; then
+        DATA_FLAGS="$DATA_FLAGS --word-vi"
+    fi
+    if [ "$DATA_WORD_ZH" = true ]; then
+        DATA_FLAGS="$DATA_FLAGS --word-zh"
+    fi
+    # If no data flags specified, run all
+    if [ -z "$DATA_FLAGS" ]; then
+        DATA_FLAGS=""  # Empty means run all (default behavior of data migration)
+    fi
+else
+    # Default: run schema then all data
+    RUN_SCHEMA=true
+    RUN_DATA=true
+    # Check if specific data flags were provided
+    if [ "$DATA_INIT" = true ] || [ "$DATA_WORD_EN" = true ] || [ "$DATA_WORD_VI" = true ] || [ "$DATA_WORD_ZH" = true ]; then
+        if [ "$DATA_INIT" = true ]; then
+            DATA_FLAGS="$DATA_FLAGS --init"
+        fi
+        if [ "$DATA_WORD_EN" = true ]; then
+            DATA_FLAGS="$DATA_FLAGS --word-en"
+        fi
+        if [ "$DATA_WORD_VI" = true ]; then
+            DATA_FLAGS="$DATA_FLAGS --word-vi"
+        fi
+        if [ "$DATA_WORD_ZH" = true ]; then
+            DATA_FLAGS="$DATA_FLAGS --word-zh"
+        fi
+    else
+        # No specific data flags, run all (empty DATA_FLAGS)
+        DATA_FLAGS=""
+    fi
+fi
+
+# Run Schema Migration
+if [ "$RUN_SCHEMA" = true ]; then
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${GREEN}Step 1: Running Schema Migration${NC}"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    
+    cd "$BACKEND_DIR"
+    
+    if ! go run cmd/migration/schema/main.go; then
+        echo -e "${RED}Schema migration failed!${NC}"
+        exit 1
+    fi
+    
+    echo ""
+    echo -e "${GREEN}✓ Schema migration completed successfully!${NC}"
+    echo ""
+fi
+
+# Run Data Migration
+if [ "$RUN_DATA" = true ]; then
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${GREEN}Step 2: Running Data Migration${NC}"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    
+    cd "$BACKEND_DIR"
+    
+    # Build the command
+    DATA_CMD="go run cmd/migration/data/main.go"
+    if [ -n "$DATA_FLAGS" ]; then
+        DATA_CMD="$DATA_CMD $DATA_FLAGS"
+    fi
+    
+    echo -e "${YELLOW}Running: $DATA_CMD${NC}"
+    echo ""
+    
+    if ! eval "$DATA_CMD"; then
+        echo -e "${RED}Data migration failed!${NC}"
+        exit 1
+    fi
+    
+    echo ""
+    echo -e "${GREEN}✓ Data migration completed successfully!${NC}"
+    echo ""
+fi
+
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${GREEN}✓ All migrations completed successfully!${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""

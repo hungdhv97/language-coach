@@ -1,3 +1,7 @@
+-- Drop and recreate the public schema
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+
 -- PostgreSQL Migration: Initial Schema
 
 CREATE TABLE languages (
@@ -42,7 +46,7 @@ CREATE TABLE words (
     romanization         VARCHAR(255), -- latin transcription (pinyin, Sino-Vietnamese, ...)
     script_code          VARCHAR(20), -- script code: 'Latn', 'Hani', ...
     frequency_rank       INTEGER, -- frequency/popularity rank
-    notes                TEXT, -- notes
+    note                 TEXT, -- notes
     created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- created at
     updated_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- updated at
     CONSTRAINT fk_words_language
@@ -172,7 +176,9 @@ CREATE TABLE characters (
     script_code VARCHAR(10) NOT NULL, -- script code: 'Hani' (Chinese), ...
     strokes     SMALLINT, -- stroke count
     radical     VARCHAR(10), -- radical
-    level       VARCHAR(20) -- level: 'HSK1', 'HSK2', ...
+    level_id    BIGINT, -- FK -> levels.id
+    CONSTRAINT fk_characters_level
+        FOREIGN KEY (level_id) REFERENCES levels(id)
 );
 
 CREATE TABLE character_readings (
