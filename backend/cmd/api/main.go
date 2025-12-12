@@ -98,6 +98,9 @@ func main() {
 	dictService := service.NewDictionaryService(
 		dictRepo.WordRepository(),
 		dictRepo.SenseRepository(),
+		dictRepo.LanguageRepository(),
+		dictRepo.LevelRepository(),
+		dictRepo.PartOfSpeechRepository(),
 		pool,
 		appLogger.Logger,
 	)

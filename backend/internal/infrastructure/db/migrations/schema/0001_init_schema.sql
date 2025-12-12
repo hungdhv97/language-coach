@@ -21,13 +21,14 @@ CREATE TABLE topics (
 
 CREATE TABLE levels (
     id                BIGSERIAL PRIMARY KEY, -- level id
-    code              VARCHAR(50) NOT NULL UNIQUE, -- level code: 'HSK1', 'A1', 'N3', ...
+    code              VARCHAR(50) NOT NULL, -- level code: 'HSK1', 'A1', 'N3', ...
     name              VARCHAR(100) NOT NULL, -- display name for the level
     description       TEXT, -- level description
     language_id       SMALLINT, -- FK -> languages.id (null if shared level)
     difficulty_order  SMALLINT, -- difficulty order (1 < 2 < 3 ...)
     CONSTRAINT fk_levels_lang
-        FOREIGN KEY (language_id) REFERENCES languages(id)
+        FOREIGN KEY (language_id) REFERENCES languages(id),
+    UNIQUE (language_id, code) -- unique code per language (null language_id = shared level)
 );
 
 CREATE INDEX idx_levels_lang ON levels(language_id, difficulty_order);
@@ -38,7 +39,6 @@ CREATE TABLE words (
     lemma                VARCHAR(255) NOT NULL, -- base form (headword)
     lemma_normalized     VARCHAR(255), -- normalized form (no diacritics, lower-case)
     search_key           VARCHAR(255), -- search key (pinyin, non-diacritics, ...)
-    part_of_speech_id    SMALLINT, -- FK -> parts_of_speech.id
     romanization         VARCHAR(255), -- latin transcription (pinyin, Sino-Vietnamese, ...)
     script_code          VARCHAR(20), -- script code: 'Latn', 'Hani', ...
     frequency_rank       INTEGER, -- frequency/popularity rank
@@ -46,9 +46,7 @@ CREATE TABLE words (
     created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- created at
     updated_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- updated at
     CONSTRAINT fk_words_language
-        FOREIGN KEY (language_id) REFERENCES languages(id),
-    CONSTRAINT fk_words_pos
-        FOREIGN KEY (part_of_speech_id) REFERENCES parts_of_speech(id)
+        FOREIGN KEY (language_id) REFERENCES languages(id)
 );
 
 CREATE INDEX idx_words_lang_lemma ON words(language_id, lemma);
@@ -59,6 +57,7 @@ CREATE TABLE senses (
     id                     BIGSERIAL PRIMARY KEY, -- sense id
     word_id                BIGINT NOT NULL, -- FK -> words.id
     sense_order            SMALLINT NOT NULL, -- order of the sense for a word
+    part_of_speech_id      SMALLINT NOT NULL, -- FK -> parts_of_speech.id
     definition             TEXT NOT NULL, -- sense definition
     definition_language_id SMALLINT NOT NULL, -- FK -> languages.id (language of definition)
     usage_label            VARCHAR(100), -- usage label: 'figurative', 'slang', ...
@@ -66,10 +65,13 @@ CREATE TABLE senses (
     note                   TEXT, -- notes
     CONSTRAINT fk_senses_word
         FOREIGN KEY (word_id) REFERENCES words(id),
+    CONSTRAINT fk_senses_pos
+        FOREIGN KEY (part_of_speech_id) REFERENCES parts_of_speech(id),
     CONSTRAINT fk_senses_def_lang
         FOREIGN KEY (definition_language_id) REFERENCES languages(id),
     CONSTRAINT fk_senses_level
-        FOREIGN KEY (level_id) REFERENCES levels(id)
+        FOREIGN KEY (level_id) REFERENCES levels(id),
+    UNIQUE (word_id, sense_order)
 );
 
 CREATE INDEX idx_senses_word_order ON senses(word_id, sense_order);
@@ -78,19 +80,17 @@ CREATE TABLE sense_translations (
     id                 BIGSERIAL PRIMARY KEY, -- sense translation id
     source_sense_id    BIGINT NOT NULL, -- FK -> senses.id (source sense)
     target_word_id     BIGINT NOT NULL, -- FK -> words.id (target word)
-    target_language_id SMALLINT NOT NULL, -- FK -> languages.id (target language)
     priority           SMALLINT DEFAULT 1, -- display priority (1 = highest)
     note               TEXT, -- notes
     CONSTRAINT fk_st_source_sense
         FOREIGN KEY (source_sense_id) REFERENCES senses(id),
     CONSTRAINT fk_st_target_word
         FOREIGN KEY (target_word_id) REFERENCES words(id),
-    CONSTRAINT fk_st_target_lang
-        FOREIGN KEY (target_language_id) REFERENCES languages(id)
+    UNIQUE (source_sense_id, target_word_id)
 );
 
 CREATE INDEX idx_st_source ON sense_translations(source_sense_id);
-CREATE INDEX idx_st_target ON sense_translations(target_language_id, target_word_id);
+CREATE INDEX idx_st_target_word ON sense_translations(target_word_id);
 
 CREATE TABLE word_relations (
     id            BIGSERIAL PRIMARY KEY, -- word relation id
@@ -101,7 +101,10 @@ CREATE TABLE word_relations (
     CONSTRAINT fk_wr_from
         FOREIGN KEY (from_word_id) REFERENCES words(id),
     CONSTRAINT fk_wr_to
-        FOREIGN KEY (to_word_id) REFERENCES words(id)
+        FOREIGN KEY (to_word_id) REFERENCES words(id),
+    CONSTRAINT chk_wr_different_words
+        CHECK (from_word_id <> to_word_id),
+    UNIQUE (from_word_id, to_word_id, relation_type)
 );
 
 CREATE INDEX idx_wr_from ON word_relations(from_word_id, relation_type);
@@ -141,7 +144,8 @@ CREATE TABLE example_translations (
     CONSTRAINT fk_ext_example
         FOREIGN KEY (example_id) REFERENCES examples(id),
     CONSTRAINT fk_ext_lang
-        FOREIGN KEY (language_id) REFERENCES languages(id)
+        FOREIGN KEY (language_id) REFERENCES languages(id),
+    UNIQUE (example_id, language_id)
 );
 
 CREATE INDEX idx_ext_example ON example_translations(example_id);
@@ -154,7 +158,8 @@ CREATE TABLE pronunciations (
     phonetic  VARCHAR(255), -- easier-to-read phonetic form: 's-kuul'
     audio_url VARCHAR(500), -- pronunciation audio URL
     CONSTRAINT fk_pron_word
-        FOREIGN KEY (word_id) REFERENCES words(id)
+        FOREIGN KEY (word_id) REFERENCES words(id),
+    UNIQUE (word_id, dialect)
 );
 
 CREATE INDEX idx_pron_word ON pronunciations(word_id);

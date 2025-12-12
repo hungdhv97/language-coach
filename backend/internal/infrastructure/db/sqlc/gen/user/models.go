@@ -79,6 +79,7 @@ type Sense struct {
 	ID                   int64       `json:"id"`
 	WordID               int64       `json:"word_id"`
 	SenseOrder           int16       `json:"sense_order"`
+	PartOfSpeechID       int16       `json:"part_of_speech_id"`
 	Definition           string      `json:"definition"`
 	DefinitionLanguageID int16       `json:"definition_language_id"`
 	UsageLabel           pgtype.Text `json:"usage_label"`
@@ -87,12 +88,11 @@ type Sense struct {
 }
 
 type SenseTranslation struct {
-	ID               int64       `json:"id"`
-	SourceSenseID    int64       `json:"source_sense_id"`
-	TargetWordID     int64       `json:"target_word_id"`
-	TargetLanguageID int16       `json:"target_language_id"`
-	Priority         pgtype.Int2 `json:"priority"`
-	Note             pgtype.Text `json:"note"`
+	ID            int64       `json:"id"`
+	SourceSenseID int64       `json:"source_sense_id"`
+	TargetWordID  int64       `json:"target_word_id"`
+	Priority      pgtype.Int2 `json:"priority"`
+	Note          pgtype.Text `json:"note"`
 }
 
 type Topic struct {
@@ -199,7 +199,6 @@ type Word struct {
 	Lemma           string           `json:"lemma"`
 	LemmaNormalized pgtype.Text      `json:"lemma_normalized"`
 	SearchKey       pgtype.Text      `json:"search_key"`
-	PartOfSpeechID  pgtype.Int2      `json:"part_of_speech_id"`
 	Romanization    pgtype.Text      `json:"romanization"`
 	ScriptCode      pgtype.Text      `json:"script_code"`
 	FrequencyRank   pgtype.Int4      `json:"frequency_rank"`

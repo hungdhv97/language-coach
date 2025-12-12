@@ -63,3 +63,15 @@ type SenseRepository interface {
 	// FindByWordIDs returns senses for multiple words
 	FindByWordIDs(ctx context.Context, wordIDs []int64) (map[int64][]*model.Sense, error)
 }
+
+// PartOfSpeechRepository defines operations for part of speech data access
+type PartOfSpeechRepository interface {
+	// FindAll returns all parts of speech
+	FindAll(ctx context.Context) ([]*model.PartOfSpeech, error)
+	// FindByID returns a part of speech by ID
+	FindByID(ctx context.Context, id int16) (*model.PartOfSpeech, error)
+	// FindByCode returns a part of speech by code
+	FindByCode(ctx context.Context, code string) (*model.PartOfSpeech, error)
+	// FindByIDs returns parts of speech by their IDs
+	FindByIDs(ctx context.Context, ids []int16) (map[int16]*model.PartOfSpeech, error)
+}

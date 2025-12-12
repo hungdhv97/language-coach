@@ -144,11 +144,6 @@ export function DictionarySearch() {
                             </p>
                           )}
                         </div>
-                        {word.part_of_speech_id && (
-                          <span className="text-xs text-muted-foreground">
-                            POS: {word.part_of_speech_id}
-                          </span>
-                        )}
                       </div>
                     </CardContent>
                   </Card>

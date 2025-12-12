@@ -1,13 +1,13 @@
 -- name: FindWordByID :one
 SELECT id, language_id, lemma, lemma_normalized, search_key,
-       part_of_speech_id, romanization, script_code, frequency_rank,
+       romanization, script_code, frequency_rank,
        notes, created_at, updated_at
 FROM words
 WHERE id = $1;
 
 -- name: FindWordsByIDs :many
 SELECT id, language_id, lemma, lemma_normalized, search_key,
-       part_of_speech_id, romanization, script_code, frequency_rank,
+       romanization, script_code, frequency_rank,
        notes, created_at, updated_at
 FROM words
 WHERE id = ANY($1::bigint[])
@@ -15,7 +15,7 @@ ORDER BY id;
 
 -- name: FindWordsByTopicAndLanguages :many
 SELECT DISTINCT w.id, w.language_id, w.lemma, w.lemma_normalized, w.search_key,
-       w.part_of_speech_id, w.romanization, w.script_code, w.frequency_rank,
+       w.romanization, w.script_code, w.frequency_rank,
        w.notes, w.created_at, w.updated_at
 FROM words w
 INNER JOIN word_topics wt ON w.id = wt.word_id
@@ -34,7 +34,7 @@ LIMIT sqlc.arg('limit');
 
 -- name: FindWordsByLevelAndLanguages :many
 SELECT DISTINCT w.id, w.language_id, w.lemma, w.lemma_normalized, w.search_key,
-       w.part_of_speech_id, w.romanization, w.script_code, w.frequency_rank,
+       w.romanization, w.script_code, w.frequency_rank,
        w.notes, w.created_at, w.updated_at
 FROM words w
 INNER JOIN senses s ON w.id = s.word_id
@@ -52,7 +52,7 @@ LIMIT sqlc.arg('limit');
 
 -- name: FindTranslationsForWord :many
 SELECT DISTINCT tw.id, tw.language_id, tw.lemma, tw.lemma_normalized, tw.search_key,
-       tw.part_of_speech_id, tw.romanization, tw.script_code, tw.frequency_rank,
+       tw.romanization, tw.script_code, tw.frequency_rank,
        tw.notes, tw.created_at, tw.updated_at
 FROM words sw
 INNER JOIN senses s ON sw.id = s.word_id
@@ -65,7 +65,7 @@ LIMIT sqlc.arg('limit');
 
 -- name: SearchWords :many
 SELECT w.id, w.language_id, w.lemma, w.lemma_normalized, w.search_key,
-       w.part_of_speech_id, w.romanization, w.script_code, w.frequency_rank,
+       w.romanization, w.script_code, w.frequency_rank,
        w.notes, w.created_at, w.updated_at
 FROM words w
 WHERE w.language_id = sqlc.arg('language_id')

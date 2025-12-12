@@ -35,29 +35,56 @@ export function WordDetail({ wordId }: WordDetailProps) {
       {/* Word Header */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">{wordDetail.word.lemma}</CardTitle>
-          {wordDetail.word.romanization && (
-            <p className="text-muted-foreground">{wordDetail.word.romanization}</p>
-          )}
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <CardTitle className="text-2xl">{wordDetail.word.lemma}</CardTitle>
+              {wordDetail.word.romanization && (
+                <p className="text-muted-foreground mt-1">{wordDetail.word.romanization}</p>
+              )}
+            </div>
+            {wordDetail.word.frequency_rank && (
+              <div className="text-sm text-muted-foreground">
+                Tần suất: #{wordDetail.word.frequency_rank}
+              </div>
+            )}
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Word Notes */}
+          {wordDetail.word.notes && (
+            <div className="p-3 bg-muted rounded-md">
+              <p className="text-sm">
+                <strong>Ghi chú:</strong> {wordDetail.word.notes}
+              </p>
+            </div>
+          )}
+
           {/* Pronunciations */}
           {wordDetail.pronunciations.length > 0 && (
             <div className="space-y-2">
               <h3 className="font-semibold">Phát âm:</h3>
-              <div className="space-y-1">
+              <div className="space-y-2">
                 {wordDetail.pronunciations.map((pron) => (
-                  <div key={pron.id} className="text-sm">
-                    {pron.ipa && <span className="font-mono">{pron.ipa}</span>}
-                    {pron.phonetic && (
-                      <span className="ml-2 text-muted-foreground">
-                        ({pron.phonetic})
-                      </span>
-                    )}
-                    {pron.dialect && (
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        [{pron.dialect}]
-                      </span>
+                  <div key={pron.id} className="flex items-center gap-2 text-sm">
+                    <div className="flex-1">
+                      {pron.ipa && <span className="font-mono">{pron.ipa}</span>}
+                      {pron.phonetic && (
+                        <span className="ml-2 text-muted-foreground">
+                          ({pron.phonetic})
+                        </span>
+                      )}
+                      {pron.dialect && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          [{pron.dialect}]
+                        </span>
+                      )}
+                    </div>
+                    {pron.audio_url && (
+                      <audio controls className="h-8">
+                        <source src={pron.audio_url} type="audio/mpeg" />
+                        <source src={pron.audio_url} type="audio/wav" />
+                        Trình duyệt của bạn không hỗ trợ phát audio.
+                      </audio>
                     )}
                   </div>
                 ))}
@@ -74,14 +101,35 @@ export function WordDetail({ wordId }: WordDetailProps) {
           {wordDetail.senses.map((sense) => (
             <Card key={sense.id}>
               <CardHeader>
-                <CardTitle className="text-lg">
-                  {sense.sense_order}. {sense.definition}
-                </CardTitle>
-                {sense.usage_label && (
-                  <p className="text-sm text-muted-foreground">
-                    {sense.usage_label}
-                  </p>
-                )}
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-4">
+                    <CardTitle className="text-lg flex-1">
+                      {sense.sense_order}. {sense.definition}
+                    </CardTitle>
+                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                      {sense.part_of_speech_name && (
+                        <span className="px-2 py-1 bg-primary/10 rounded">
+                          {sense.part_of_speech_name}
+                        </span>
+                      )}
+                      {sense.level_name && (
+                        <span className="px-2 py-1 bg-secondary rounded">
+                          {sense.level_name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    {sense.definition_language_name && (
+                      <span>Ngôn ngữ định nghĩa: {sense.definition_language_name}</span>
+                    )}
+                    {sense.usage_label && (
+                      <span className="px-2 py-1 bg-accent rounded">
+                        {sense.usage_label}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Translations */}
@@ -95,6 +143,11 @@ export function WordDetail({ wordId }: WordDetailProps) {
                           className="px-2 py-1 bg-secondary rounded text-sm"
                         >
                           {translation.lemma}
+                          {translation.romanization && (
+                            <span className="ml-1 text-xs text-muted-foreground">
+                              ({translation.romanization})
+                            </span>
+                          )}
                         </span>
                       ))}
                     </div>
@@ -105,12 +158,21 @@ export function WordDetail({ wordId }: WordDetailProps) {
                 {sense.examples.length > 0 && (
                   <div>
                     <h3 className="font-semibold mb-2">Ví dụ:</h3>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {sense.examples.map((example) => (
-                        <div key={example.id} className="text-sm">
-                          <p className="italic">{example.content}</p>
+                        <div key={example.id} className="text-sm space-y-1">
+                          <div className="flex items-start gap-2">
+                            <p className="italic flex-1">{example.content}</p>
+                            {example.audio_url && (
+                              <audio controls className="h-8 flex-shrink-0">
+                                <source src={example.audio_url} type="audio/mpeg" />
+                                <source src={example.audio_url} type="audio/wav" />
+                                Trình duyệt của bạn không hỗ trợ phát audio.
+                              </audio>
+                            )}
+                          </div>
                           {example.source && (
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-xs text-muted-foreground">
                               Nguồn: {example.source}
                             </p>
                           )}
@@ -121,9 +183,11 @@ export function WordDetail({ wordId }: WordDetailProps) {
                 )}
 
                 {sense.note && (
-                  <p className="text-sm text-muted-foreground">
-                    <strong>Ghi chú:</strong> {sense.note}
-                  </p>
+                  <div className="p-3 bg-muted rounded-md">
+                    <p className="text-sm">
+                      <strong>Ghi chú:</strong> {sense.note}
+                    </p>
+                  </div>
                 )}
               </CardContent>
             </Card>

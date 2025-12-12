@@ -30,7 +30,6 @@ export interface Word {
   lemma: string;
   lemma_normalized?: string;
   search_key?: string;
-  part_of_speech_id?: number;
   romanization?: string;
   script_code?: string;
   frequency_rank?: number;
@@ -43,6 +42,7 @@ export interface Sense {
   id: number;
   word_id: number;
   sense_order: number;
+  part_of_speech_id: number;
   definition: string;
   definition_language_id: number;
   usage_label?: string;
@@ -71,10 +71,14 @@ export interface Pronunciation {
 export interface SenseDetail {
   id: number;
   sense_order: number;
+  part_of_speech_id: number;
+  part_of_speech_name?: string;
   definition: string;
   definition_language_id: number;
+  definition_language_name?: string;
   usage_label?: string;
   level_id?: number;
+  level_name?: string;
   note?: string;
   translations: Word[];
   examples: Example[];

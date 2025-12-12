@@ -48,15 +48,10 @@ type SeedData struct {
 }
 
 // Word JSONL models (0002/0003/0004_word_*.jsonl)
+// New format: all fields at top level, no entries array
 type WordJSON struct {
-	Language   string          `json:"language"`
-	Lemma      string          `json:"lemma"`
-	Entries    []WordJSONEntry `json:"entries"`
-	Characters []CharacterJSON `json:"characters,omitempty"` // used mainly for Chinese words
-}
-
-type WordJSONEntry struct {
-	PartOfSpeech    string              `json:"part_of_speech"`
+	Language        string              `json:"language"`
+	Lemma           string              `json:"lemma"`
 	LemmaNormalized *string             `json:"lemma_normalized,omitempty"`
 	SearchKey       *string             `json:"search_key,omitempty"`
 	Romanization    *string             `json:"romanization,omitempty"`
@@ -64,9 +59,10 @@ type WordJSONEntry struct {
 	FrequencyRank   *int                `json:"frequency_rank,omitempty"`
 	Notes           *string             `json:"notes,omitempty"`
 	Topics          []string            `json:"topics,omitempty"`
-	Relations       []WordRelationJSON  `json:"relations,omitempty"`
 	Pronunciations  []PronunciationJSON `json:"pronunciations,omitempty"`
+	Relations       []WordRelationJSON  `json:"relations,omitempty"`
 	Senses          []SenseJSON         `json:"senses,omitempty"`
+	Characters      []CharacterJSON     `json:"characters,omitempty"` // used mainly for Chinese words
 }
 
 type PronunciationJSON struct {
@@ -97,6 +93,7 @@ type RelatedWordJSON struct {
 
 type SenseJSON struct {
 	Order              int                    `json:"order"`
+	PartOfSpeech       string                 `json:"part_of_speech"`
 	DefinitionLanguage string                 `json:"definition_language"`
 	Definition         string                 `json:"definition"`
 	UsageLabel         *string                `json:"usage_label,omitempty"`
@@ -339,10 +336,9 @@ VALUES (
     END,
     $5
 )
-ON CONFLICT (code) DO UPDATE
+ON CONFLICT (language_id, code) DO UPDATE
 SET name = EXCLUDED.name,
     description = EXCLUDED.description,
-    language_id = EXCLUDED.language_id,
     difficulty_order = EXCLUDED.difficulty_order;
 `
 	for _, lv := range levels {
@@ -397,6 +393,7 @@ func upsertWordsFromJSONL(ctx context.Context, pool *pgxpool.Pool, languageCode,
 	defer tx.Rollback(ctx)
 
 	lineNumber := 0
+	wordCount := 0
 	for scanner.Scan() {
 		lineNumber++
 		line := scanner.Bytes()
@@ -409,34 +406,27 @@ func upsertWordsFromJSONL(ctx context.Context, pool *pgxpool.Pool, languageCode,
 			return fmt.Errorf("decode word json (line %d): %w", lineNumber, err)
 		}
 
-		// Each entry becomes a row in words table plus its details
-		for _, e := range w.Entries {
-			posID, err := getPartOfSpeechID(ctx, tx, posCache, e.PartOfSpeech)
-			if err != nil {
-				return fmt.Errorf("get part_of_speech_id (%s): %w", e.PartOfSpeech, err)
-			}
+		// Upsert the word (single word per line in new format)
+		wordID, err := upsertSingleWord(ctx, tx, langID, w.Lemma, w)
+		if err != nil {
+			return fmt.Errorf("upsert word %s at line %d: %w", w.Lemma, lineNumber, err)
+		}
+		wordCount++
 
-			wordID, err := upsertSingleWord(ctx, tx, langID, w.Lemma, e, posID)
-			if err != nil {
-				return fmt.Errorf("upsert word %s (%s): %w", w.Lemma, e.PartOfSpeech, err)
-			}
-
-			if err := upsertWordDetails(
-				ctx,
-				pool,
-				tx,
-				wordID,
-				w,
-				e,
-				languageCache,
-				posCache,
-				topicCache,
-				levelCache,
-				wordCache,
-				characterCache,
-			); err != nil {
-				return fmt.Errorf("upsert word details %s (%s): %w", w.Lemma, e.PartOfSpeech, err)
-			}
+		if err := upsertWordDetails(
+			ctx,
+			pool,
+			tx,
+			wordID,
+			w,
+			languageCache,
+			posCache,
+			topicCache,
+			levelCache,
+			wordCache,
+			characterCache,
+		); err != nil {
+			return fmt.Errorf("upsert word details %s at line %d: %w", w.Lemma, lineNumber, err)
 		}
 	}
 
@@ -444,10 +434,15 @@ func upsertWordsFromJSONL(ctx context.Context, pool *pgxpool.Pool, languageCode,
 		return fmt.Errorf("scan jsonl: %w", err)
 	}
 
+	if wordCount == 0 {
+		return fmt.Errorf("no words found in file %s", filePath)
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit tx: %w", err)
 	}
 
+	fmt.Printf("  Processed %d words from %s\n", wordCount, filePath)
 	return nil
 }
 
@@ -528,17 +523,16 @@ func getLevelID(ctx context.Context, pool *pgxpool.Pool, cache map[string]*int64
 }
 
 // Cache key for words (for related/translation targets).
-func wordCacheKey(lang, lemma, pos string) string {
-	return fmt.Sprintf("%s|%s|%s", lang, lemma, pos)
+func wordCacheKey(lang, lemma string) string {
+	return fmt.Sprintf("%s|%s", lang, lemma)
 }
 
-func upsertSingleWord(ctx context.Context, tx pgx.Tx, languageID int16, lemma string, e WordJSONEntry, partOfSpeechID *int16) (int64, error) {
+func upsertSingleWord(ctx context.Context, tx pgx.Tx, languageID int16, lemma string, w WordJSON) (int64, error) {
 	const selectQ = `
 SELECT id
 FROM words
 WHERE language_id = $1
   AND lemma = $2
-  AND part_of_speech_id IS NOT DISTINCT FROM $3
 `
 
 	const insertQ = `
@@ -547,13 +541,12 @@ INSERT INTO words (
     lemma,
     lemma_normalized,
     search_key,
-    part_of_speech_id,
     romanization,
     script_code,
     frequency_rank,
     notes
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING id
 `
 
@@ -562,17 +555,16 @@ UPDATE words
 SET
     lemma_normalized = $2,
     search_key       = $3,
-    part_of_speech_id = $4,
-    romanization     = $5,
-    script_code      = $6,
-    frequency_rank   = $7,
-    notes            = $8,
+    romanization     = $4,
+    script_code      = $5,
+    frequency_rank   = $6,
+    notes            = $7,
     updated_at       = CURRENT_TIMESTAMP
 WHERE id = $1
 `
 
 	var wordID int64
-	err := tx.QueryRow(ctx, selectQ, languageID, lemma, partOfSpeechID).Scan(&wordID)
+	err := tx.QueryRow(ctx, selectQ, languageID, lemma).Scan(&wordID)
 	if err != nil {
 		if err != pgx.ErrNoRows {
 			return 0, fmt.Errorf("select existing word: %w", err)
@@ -584,13 +576,12 @@ WHERE id = $1
 			insertQ,
 			languageID,
 			lemma,
-			e.LemmaNormalized,
-			e.SearchKey,
-			partOfSpeechID,
-			e.Romanization,
-			e.ScriptCode,
-			e.FrequencyRank,
-			e.Notes,
+			w.LemmaNormalized,
+			w.SearchKey,
+			w.Romanization,
+			w.ScriptCode,
+			w.FrequencyRank,
+			w.Notes,
 		).Scan(&wordID); err != nil {
 			return 0, fmt.Errorf("insert word: %w", err)
 		}
@@ -603,13 +594,12 @@ WHERE id = $1
 		ctx,
 		updateQ,
 		wordID,
-		e.LemmaNormalized,
-		e.SearchKey,
-		partOfSpeechID,
-		e.Romanization,
-		e.ScriptCode,
-		e.FrequencyRank,
-		e.Notes,
+		w.LemmaNormalized,
+		w.SearchKey,
+		w.Romanization,
+		w.ScriptCode,
+		w.FrequencyRank,
+		w.Notes,
 	); err != nil {
 		return 0, fmt.Errorf("update word: %w", err)
 	}
@@ -625,7 +615,6 @@ func upsertWordDetails(
 	tx pgx.Tx,
 	wordID int64,
 	w WordJSON,
-	entry WordJSONEntry,
 	languageCache map[string]int16,
 	posCache map[string]*int16,
 	topicCache map[string]int64,
@@ -634,12 +623,12 @@ func upsertWordDetails(
 	characterCache map[string]int64,
 ) error {
 	// Topics
-	if err := upsertWordTopics(ctx, pool, tx, wordID, entry.Topics, topicCache); err != nil {
+	if err := upsertWordTopics(ctx, pool, tx, wordID, w.Topics, topicCache); err != nil {
 		return err
 	}
 
 	// Pronunciations
-	if err := upsertWordPronunciations(ctx, tx, wordID, entry.Pronunciations); err != nil {
+	if err := upsertWordPronunciations(ctx, tx, wordID, w.Pronunciations); err != nil {
 		return err
 	}
 
@@ -649,7 +638,7 @@ func upsertWordDetails(
 		pool,
 		tx,
 		wordID,
-		entry,
+		w.Senses,
 		languageCache,
 		levelCache,
 		wordCache,
@@ -664,7 +653,7 @@ func upsertWordDetails(
 		pool,
 		tx,
 		wordID,
-		entry.Relations,
+		w.Relations,
 		languageCache,
 		wordCache,
 		posCache,
@@ -737,39 +726,18 @@ func upsertWordPronunciations(
 		return nil
 	}
 
-	const selectQ = `
-SELECT id
-FROM pronunciations
-WHERE word_id = $1 AND dialect = $2 AND COALESCE(ipa, '') = COALESCE($3, '') AND COALESCE(phonetic, '') = COALESCE($4, '')
-`
-
 	const insertQ = `
 INSERT INTO pronunciations (word_id, dialect, ipa, phonetic, audio_url)
 VALUES ($1, $2, $3, $4, $5)
-RETURNING id
-`
-
-	const updateQ = `
-UPDATE pronunciations
-SET audio_url = $2
-WHERE id = $1
+ON CONFLICT (word_id, dialect) DO UPDATE
+SET ipa = EXCLUDED.ipa,
+    phonetic = EXCLUDED.phonetic,
+    audio_url = EXCLUDED.audio_url
 `
 
 	for _, p := range prons {
-		var existingID int64
-		err := tx.QueryRow(ctx, selectQ, wordID, p.Dialect, p.IPA, p.Phonetic).Scan(&existingID)
-		if err != nil {
-			if err == pgx.ErrNoRows {
-				if err := tx.QueryRow(ctx, insertQ, wordID, p.Dialect, p.IPA, p.Phonetic, p.AudioURL).Scan(&existingID); err != nil {
-					return fmt.Errorf("insert pronunciation: %w", err)
-				}
-				continue
-			}
-			return fmt.Errorf("select pronunciation: %w", err)
-		}
-
-		if _, err := tx.Exec(ctx, updateQ, existingID, p.AudioURL); err != nil {
-			return fmt.Errorf("update pronunciation: %w", err)
+		if _, err := tx.Exec(ctx, insertQ, wordID, p.Dialect, p.IPA, p.Phonetic, p.AudioURL); err != nil {
+			return fmt.Errorf("upsert pronunciation: %w", err)
 		}
 	}
 
@@ -783,38 +751,29 @@ func upsertWordSenses(
 	pool *pgxpool.Pool,
 	tx pgx.Tx,
 	wordID int64,
-	entry WordJSONEntry,
+	senses []SenseJSON,
 	languageCache map[string]int16,
 	levelCache map[string]*int64,
 	wordCache map[string]int64,
 	posCache map[string]*int16,
 ) error {
-	if len(entry.Senses) == 0 {
+	if len(senses) == 0 {
 		return nil
 	}
 
-	const selectSenseQ = `
-SELECT id
-FROM senses
-WHERE word_id = $1 AND sense_order = $2 AND definition_language_id = $3
-`
-
 	const insertSenseQ = `
-INSERT INTO senses (word_id, sense_order, definition, definition_language_id, usage_label, level_id, note)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO senses (word_id, sense_order, part_of_speech_id, definition, definition_language_id, usage_label, level_id, note)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (word_id, sense_order) DO UPDATE
+SET part_of_speech_id = EXCLUDED.part_of_speech_id,
+    definition = EXCLUDED.definition,
+    usage_label = EXCLUDED.usage_label,
+    level_id = EXCLUDED.level_id,
+    note = EXCLUDED.note
 RETURNING id
 `
 
-	const updateSenseQ = `
-UPDATE senses
-SET definition = $2,
-    usage_label = $3,
-    level_id = $4,
-    note = $5
-WHERE id = $1
-`
-
-	for _, s := range entry.Senses {
+	for _, s := range senses {
 		defLangID, err := getLanguageIDWithCache(ctx, pool, languageCache, s.DefinitionLanguage)
 		if err != nil {
 			return err
@@ -825,38 +784,28 @@ WHERE id = $1
 			return err
 		}
 
-		var senseID int64
-		err = tx.QueryRow(ctx, selectSenseQ, wordID, s.Order, defLangID).Scan(&senseID)
+		posID, err := getPartOfSpeechID(ctx, tx, posCache, s.PartOfSpeech)
 		if err != nil {
-			if err == pgx.ErrNoRows {
-				if err := tx.QueryRow(
-					ctx,
-					insertSenseQ,
-					wordID,
-					s.Order,
-					s.Definition,
-					defLangID,
-					s.UsageLabel,
-					levelID,
-					s.Note,
-				).Scan(&senseID); err != nil {
-					return fmt.Errorf("insert sense: %w", err)
-				}
-			} else {
-				return fmt.Errorf("select sense: %w", err)
-			}
-		} else {
-			if _, err := tx.Exec(
-				ctx,
-				updateSenseQ,
-				senseID,
-				s.Definition,
-				s.UsageLabel,
-				levelID,
-				s.Note,
-			); err != nil {
-				return fmt.Errorf("update sense: %w", err)
-			}
+			return fmt.Errorf("get part_of_speech_id (%s): %w", s.PartOfSpeech, err)
+		}
+		if posID == nil {
+			return fmt.Errorf("part_of_speech is required for sense but was empty or not found: %s", s.PartOfSpeech)
+		}
+
+		var senseID int64
+		if err := tx.QueryRow(
+			ctx,
+			insertSenseQ,
+			wordID,
+			s.Order,
+			posID,
+			s.Definition,
+			defLangID,
+			s.UsageLabel,
+			levelID,
+			s.Note,
+		).Scan(&senseID); err != nil {
+			return fmt.Errorf("upsert sense: %w", err)
 		}
 
 		// Translations for this sense
@@ -903,22 +852,13 @@ func upsertSenseTranslations(
 		return nil
 	}
 
-	const selectQ = `
-SELECT id
-FROM sense_translations
-WHERE source_sense_id = $1 AND target_word_id = $2 AND target_language_id = $3 AND priority = $4
-`
-
 	const insertQ = `
-INSERT INTO sense_translations (source_sense_id, target_word_id, target_language_id, priority, note)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO sense_translations (source_sense_id, target_word_id, priority, note)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (source_sense_id, target_word_id) DO UPDATE
+SET priority = EXCLUDED.priority,
+    note = EXCLUDED.note
 RETURNING id
-`
-
-	const updateQ = `
-UPDATE sense_translations
-SET note = $2
-WHERE id = $1
 `
 
 	for _, t := range translations {
@@ -939,28 +879,15 @@ WHERE id = $1
 			return err
 		}
 
-		var id int64
-		err = tx.QueryRow(ctx, selectQ, senseID, targetWordID, targetLangID, t.Priority).Scan(&id)
-		if err != nil {
-			if err == pgx.ErrNoRows {
-				if err := tx.QueryRow(
-					ctx,
-					insertQ,
-					senseID,
-					targetWordID,
-					targetLangID,
-					t.Priority,
-					t.Note,
-				).Scan(&id); err != nil {
-					return fmt.Errorf("insert sense_translation: %w", err)
-				}
-			} else {
-				return fmt.Errorf("select sense_translation: %w", err)
-			}
-		} else {
-			if _, err := tx.Exec(ctx, updateQ, id, t.Note); err != nil {
-				return fmt.Errorf("update sense_translation: %w", err)
-			}
+		if _, err := tx.Exec(
+			ctx,
+			insertQ,
+			senseID,
+			targetWordID,
+			t.Priority,
+			t.Note,
+		); err != nil {
+			return fmt.Errorf("upsert sense_translation: %w", err)
 		}
 	}
 
@@ -997,22 +924,11 @@ SET audio_url = $2
 WHERE id = $1
 `
 
-	const selectTransQ = `
-SELECT id
-FROM example_translations
-WHERE example_id = $1 AND language_id = $2
-`
-
 	const insertTransQ = `
 INSERT INTO example_translations (example_id, language_id, content)
 VALUES ($1, $2, $3)
-RETURNING id
-`
-
-	const updateTransQ = `
-UPDATE example_translations
-SET content = $2
-WHERE id = $1
+ON CONFLICT (example_id, language_id) DO UPDATE
+SET content = EXCLUDED.content
 `
 
 	for _, ex := range examples {
@@ -1050,26 +966,14 @@ WHERE id = $1
 				return err
 			}
 
-			var trID int64
-			err = tx.QueryRow(ctx, selectTransQ, exampleID, trLangID).Scan(&trID)
-			if err != nil {
-				if err == pgx.ErrNoRows {
-					if err := tx.QueryRow(
-						ctx,
-						insertTransQ,
-						exampleID,
-						trLangID,
-						tr.Content,
-					).Scan(&trID); err != nil {
-						return fmt.Errorf("insert example_translation: %w", err)
-					}
-				} else {
-					return fmt.Errorf("select example_translation: %w", err)
-				}
-			} else {
-				if _, err := tx.Exec(ctx, updateTransQ, trID, tr.Content); err != nil {
-					return fmt.Errorf("update example_translation: %w", err)
-				}
+			if _, err := tx.Exec(
+				ctx,
+				insertTransQ,
+				exampleID,
+				trLangID,
+				tr.Content,
+			); err != nil {
+				return fmt.Errorf("upsert example_translation: %w", err)
 			}
 		}
 	}
@@ -1093,22 +997,11 @@ func upsertWordRelations(
 		return nil
 	}
 
-	const selectQ = `
-SELECT id
-FROM word_relations
-WHERE from_word_id = $1 AND to_word_id = $2 AND relation_type = $3
-`
-
 	const insertQ = `
 INSERT INTO word_relations (from_word_id, to_word_id, relation_type, note)
 VALUES ($1, $2, $3, $4)
-RETURNING id
-`
-
-	const updateQ = `
-UPDATE word_relations
-SET note = $2
-WHERE id = $1
+ON CONFLICT (from_word_id, to_word_id, relation_type) DO UPDATE
+SET note = EXCLUDED.note
 `
 
 	for _, r := range relations {
@@ -1122,27 +1015,20 @@ WHERE id = $1
 			return err
 		}
 
-		var id int64
-		err = tx.QueryRow(ctx, selectQ, fromWordID, targetWordID, r.RelationType).Scan(&id)
-		if err != nil {
-			if err == pgx.ErrNoRows {
-				if err := tx.QueryRow(
-					ctx,
-					insertQ,
-					fromWordID,
-					targetWordID,
-					r.RelationType,
-					r.Note,
-				).Scan(&id); err != nil {
-					return fmt.Errorf("insert word_relation: %w", err)
-				}
-			} else {
-				return fmt.Errorf("select word_relation: %w", err)
-			}
-		} else {
-			if _, err := tx.Exec(ctx, updateQ, id, r.Note); err != nil {
-				return fmt.Errorf("update word_relation: %w", err)
-			}
+		// Skip if from_word_id == to_word_id (CHECK constraint will prevent this)
+		if fromWordID == targetWordID {
+			continue
+		}
+
+		if _, err := tx.Exec(
+			ctx,
+			insertQ,
+			fromWordID,
+			targetWordID,
+			r.RelationType,
+			r.Note,
+		); err != nil {
+			return fmt.Errorf("upsert word_relation: %w", err)
 		}
 	}
 
@@ -1158,24 +1044,15 @@ func upsertRelatedWord(
 	wordCache map[string]int64,
 	posCache map[string]*int16,
 ) (int64, error) {
-	key := wordCacheKey(w.Language, w.Lemma, w.PartOfSpeech)
+	key := wordCacheKey(w.Language, w.Lemma)
 	if id, ok := wordCache[key]; ok {
 		return id, nil
-	}
-
-	var posID *int16
-	if w.PartOfSpeech != "" {
-		var err error
-		posID, err = getPartOfSpeechID(ctx, tx, posCache, w.PartOfSpeech)
-		if err != nil {
-			return 0, err
-		}
 	}
 
 	const selectQ = `
 SELECT id
 FROM words
-WHERE language_id = $1 AND lemma = $2 AND part_of_speech_id IS NOT DISTINCT FROM $3
+WHERE language_id = $1 AND lemma = $2
 `
 
 	const insertQ = `
@@ -1184,18 +1061,17 @@ INSERT INTO words (
     lemma,
     lemma_normalized,
     search_key,
-    part_of_speech_id,
     romanization,
     script_code,
     frequency_rank,
     notes
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING id
 `
 
 	var id int64
-	err := tx.QueryRow(ctx, selectQ, languageID, w.Lemma, posID).Scan(&id)
+	err := tx.QueryRow(ctx, selectQ, languageID, w.Lemma).Scan(&id)
 	if err != nil {
 		if err != pgx.ErrNoRows {
 			return 0, fmt.Errorf("select related word: %w", err)
@@ -1207,7 +1083,6 @@ RETURNING id
 			w.Lemma,
 			w.LemmaNormalized,
 			w.SearchKey,
-			posID,
 			w.Romanization,
 			w.ScriptCode,
 			w.FrequencyRank,

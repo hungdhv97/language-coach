@@ -55,3 +55,10 @@ func (r *DictionaryRepository) SenseRepository() port.SenseRepository {
 		DictionaryRepository: r,
 	}
 }
+
+// PartOfSpeechRepository returns a PartOfSpeechRepository implementation
+func (r *DictionaryRepository) PartOfSpeechRepository() port.PartOfSpeechRepository {
+	return &partOfSpeechRepository{
+		DictionaryRepository: r,
+	}
+}

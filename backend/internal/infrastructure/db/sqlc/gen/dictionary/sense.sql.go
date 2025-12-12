@@ -10,7 +10,7 @@ import (
 )
 
 const findSensesByWordID = `-- name: FindSensesByWordID :many
-SELECT id, word_id, sense_order, definition, definition_language_id,
+SELECT id, word_id, sense_order, part_of_speech_id, definition, definition_language_id,
        usage_label, level_id, note
 FROM senses
 WHERE word_id = $1
@@ -30,6 +30,7 @@ func (q *Queries) FindSensesByWordID(ctx context.Context, wordID int64) ([]Sense
 			&i.ID,
 			&i.WordID,
 			&i.SenseOrder,
+			&i.PartOfSpeechID,
 			&i.Definition,
 			&i.DefinitionLanguageID,
 			&i.UsageLabel,
@@ -47,7 +48,7 @@ func (q *Queries) FindSensesByWordID(ctx context.Context, wordID int64) ([]Sense
 }
 
 const findSensesByWordIDs = `-- name: FindSensesByWordIDs :many
-SELECT id, word_id, sense_order, definition, definition_language_id,
+SELECT id, word_id, sense_order, part_of_speech_id, definition, definition_language_id,
        usage_label, level_id, note
 FROM senses
 WHERE word_id = ANY($1::bigint[])
@@ -67,6 +68,7 @@ func (q *Queries) FindSensesByWordIDs(ctx context.Context, dollar_1 []int64) ([]
 			&i.ID,
 			&i.WordID,
 			&i.SenseOrder,
+			&i.PartOfSpeechID,
 			&i.Definition,
 			&i.DefinitionLanguageID,
 			&i.UsageLabel,

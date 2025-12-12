@@ -13,13 +13,17 @@ type WordDetail struct {
 
 // SenseDetail represents detailed information about a sense
 type SenseDetail struct {
-	ID                   int64            `json:"id"`
-	SenseOrder           int16            `json:"sense_order"`
-	Definition           string           `json:"definition"`
-	DefinitionLanguageID int16            `json:"definition_language_id"`
-	UsageLabel           *string          `json:"usage_label,omitempty"`
-	LevelID              *int64           `json:"level_id,omitempty"`
-	Note                 *string          `json:"note,omitempty"`
-	Translations         []*model.Word    `json:"translations"`
-	Examples             []*model.Example `json:"examples"`
+	ID                     int64            `json:"id"`
+	SenseOrder             int16            `json:"sense_order"`
+	PartOfSpeechID         int16            `json:"part_of_speech_id"`
+	PartOfSpeechName       *string          `json:"part_of_speech_name,omitempty"`
+	Definition             string           `json:"definition"`
+	DefinitionLanguageID   int16            `json:"definition_language_id"`
+	DefinitionLanguageName *string          `json:"definition_language_name,omitempty"`
+	UsageLabel             *string          `json:"usage_label,omitempty"`
+	LevelID                *int64           `json:"level_id,omitempty"`
+	LevelName              *string          `json:"level_name,omitempty"`
+	Note                   *string          `json:"note,omitempty"`
+	Translations           []*model.Word    `json:"translations"`
+	Examples               []*model.Example `json:"examples"`
 }
