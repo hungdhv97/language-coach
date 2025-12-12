@@ -164,10 +164,25 @@ func (s *DictionaryService) GetWordDetail(ctx context.Context, wordID int64) (*d
 		}
 	}
 
+	// Get topics for word
+	topics, err := s.getWordTopics(ctx, wordID)
+	if err != nil {
+		s.logger.Warn("failed to fetch word topics", zap.Error(err))
+	} else {
+		word.Topics = topics
+	}
+
+	// Get relations for word
+	relations, err := s.getWordRelations(ctx, wordID)
+	if err != nil {
+		s.logger.Warn("failed to fetch word relations", zap.Error(err))
+	}
+
 	return &dto.WordDetail{
 		Word:           word,
 		Senses:         senseDetails,
 		Pronunciations: pronunciations,
+		Relations:      relations,
 	}, nil
 }
 
@@ -249,6 +264,7 @@ func (s *DictionaryService) getExamples(ctx context.Context, senseIDs []int64) (
 	defer rows.Close()
 
 	result := make(map[int64][]*model.Example)
+	exampleMap := make(map[int64]*model.Example)
 	for rows.Next() {
 		var example model.Example
 		var audioURL, source *string
@@ -264,11 +280,49 @@ func (s *DictionaryService) getExamples(ctx context.Context, senseIDs []int64) (
 		}
 		example.AudioURL = audioURL
 		example.Source = source
+		example.Translations = []model.ExampleTranslationSimple{}
+		exampleMap[example.ID] = &example
 		result[example.SourceSenseID] = append(result[example.SourceSenseID], &example)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+
+	// Fetch example translations
+	if len(exampleMap) > 0 {
+		exampleIDs := make([]int64, 0, len(exampleMap))
+		for id := range exampleMap {
+			exampleIDs = append(exampleIDs, id)
+		}
+
+		transQuery := `
+			SELECT et.example_id, l.code, et.content
+			FROM example_translations et
+			INNER JOIN languages l ON et.language_id = l.id
+			WHERE et.example_id = ANY($1)
+			ORDER BY et.example_id
+		`
+		transRows, err := s.pool.Query(ctx, transQuery, exampleIDs)
+		if err != nil {
+			s.logger.Warn("failed to fetch example translations", zap.Error(err))
+		} else {
+			defer transRows.Close()
+			for transRows.Next() {
+				var exampleID int64
+				var langCode, content string
+				if err := transRows.Scan(&exampleID, &langCode, &content); err != nil {
+					s.logger.Warn("failed to scan example translation", zap.Error(err))
+					continue
+				}
+				if example, ok := exampleMap[exampleID]; ok {
+					example.Translations = append(example.Translations, model.ExampleTranslationSimple{
+						Language: langCode,
+						Content:  content,
+					})
+				}
+			}
+		}
 	}
 
 	return result, nil
@@ -314,4 +368,103 @@ func (s *DictionaryService) getPronunciations(ctx context.Context, wordID int64)
 	}
 
 	return pronunciations, nil
+}
+
+// getWordTopics retrieves topic codes for a word
+func (s *DictionaryService) getWordTopics(ctx context.Context, wordID int64) ([]string, error) {
+	query := `
+		SELECT t.code
+		FROM word_topics wt
+		INNER JOIN topics t ON wt.topic_id = t.id
+		WHERE wt.word_id = $1
+		ORDER BY t.code
+	`
+	rows, err := s.pool.Query(ctx, query, wordID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var topics []string
+	for rows.Next() {
+		var code string
+		if err := rows.Scan(&code); err != nil {
+			return nil, err
+		}
+		topics = append(topics, code)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return topics, nil
+}
+
+// getWordRelations retrieves relations for a word
+func (s *DictionaryService) getWordRelations(ctx context.Context, wordID int64) ([]*model.WordRelation, error) {
+	query := `
+		SELECT wr.relation_type, wr.note, 
+		       tw.id, tw.language_id, tw.lemma, tw.lemma_normalized, tw.search_key,
+		       tw.romanization, tw.script_code, tw.frequency_rank, tw.note,
+		       tw.created_at, tw.updated_at
+		FROM word_relations wr
+		INNER JOIN words tw ON wr.to_word_id = tw.id
+		WHERE wr.from_word_id = $1
+		ORDER BY wr.relation_type, tw.lemma
+	`
+	rows, err := s.pool.Query(ctx, query, wordID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var relations []*model.WordRelation
+	for rows.Next() {
+		var relation model.WordRelation
+		var targetWord model.Word
+		var lemmaNormalized, searchKey, romanization, scriptCode, note, targetNote *string
+		var frequencyRank *int
+		if err := rows.Scan(
+			&relation.RelationType,
+			&note,
+			&targetWord.ID,
+			&targetWord.LanguageID,
+			&targetWord.Lemma,
+			&lemmaNormalized,
+			&searchKey,
+			&romanization,
+			&scriptCode,
+			&frequencyRank,
+			&targetNote,
+			&targetWord.CreatedAt,
+			&targetWord.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		relation.Note = note
+		targetWord.LemmaNormalized = lemmaNormalized
+		targetWord.SearchKey = searchKey
+		targetWord.Romanization = romanization
+		targetWord.ScriptCode = scriptCode
+		targetWord.FrequencyRank = frequencyRank
+		targetWord.Note = targetNote
+
+		// Get topics for target word
+		targetTopics, err := s.getWordTopics(ctx, targetWord.ID)
+		if err != nil {
+			s.logger.Warn("failed to fetch topics for related word", zap.Int64("word_id", targetWord.ID), zap.Error(err))
+		} else {
+			targetWord.Topics = targetTopics
+		}
+
+		relation.TargetWord = &targetWord
+		relations = append(relations, &relation)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return relations, nil
 }

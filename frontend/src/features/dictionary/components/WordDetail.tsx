@@ -50,6 +50,23 @@ export function WordDetail({ wordId }: WordDetailProps) {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Topics */}
+          {wordDetail.word.topics && wordDetail.word.topics.length > 0 && (
+            <div>
+              <h3 className="font-semibold mb-2">Chủ đề:</h3>
+              <div className="flex flex-wrap gap-2">
+                {wordDetail.word.topics.map((topic, index) => (
+                  <span
+                    key={index}
+                    className="px-2 py-1 bg-primary/10 text-primary rounded text-sm"
+                  >
+                    {topic}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Word Note */}
           {wordDetail.word.note && (
             <div className="p-3 bg-muted rounded-md">
@@ -171,6 +188,20 @@ export function WordDetail({ wordId }: WordDetailProps) {
                               </audio>
                             )}
                           </div>
+                          {/* Example Translations */}
+                          {example.translations && example.translations.length > 0 && (
+                            <div className="pl-4 space-y-1">
+                              {example.translations.map((translation, idx) => (
+                                <p
+                                  key={idx}
+                                  className="text-xs text-muted-foreground"
+                                >
+                                  <span className="font-medium">{translation.language}:</span>{' '}
+                                  {translation.content}
+                                </p>
+                              ))}
+                            </div>
+                          )}
                           {example.source && (
                             <p className="text-xs text-muted-foreground">
                               Nguồn: {example.source}
@@ -192,6 +223,50 @@ export function WordDetail({ wordId }: WordDetailProps) {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* Word Relations */}
+      {wordDetail.relations && wordDetail.relations.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Từ liên quan:</h2>
+          <div className="space-y-3">
+            {wordDetail.relations.map((relation, index) => (
+              <Card key={index}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="px-2 py-1 bg-secondary rounded text-xs font-medium">
+                          {relation.relation_type === 'synonym' && 'Đồng nghĩa'}
+                          {relation.relation_type === 'antonym' && 'Trái nghĩa'}
+                          {relation.relation_type === 'related' && 'Liên quan'}
+                        </span>
+                        <span className="font-semibold text-lg">
+                          {relation.target_word.lemma}
+                        </span>
+                        {relation.target_word.romanization && (
+                          <span className="text-sm text-muted-foreground">
+                            ({relation.target_word.romanization})
+                          </span>
+                        )}
+                      </div>
+                      {relation.note && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {relation.note}
+                        </p>
+                      )}
+                      {relation.target_word.note && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {relation.target_word.note}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
     </div>

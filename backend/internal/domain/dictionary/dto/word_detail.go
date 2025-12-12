@@ -9,6 +9,7 @@ type WordDetail struct {
 	Word           *model.Word            `json:"word"`
 	Senses         []SenseDetail          `json:"senses"`
 	Pronunciations []*model.Pronunciation `json:"pronunciations"`
+	Relations      []*model.WordRelation  `json:"relations,omitempty"`
 }
 
 // SenseDetail represents detailed information about a sense

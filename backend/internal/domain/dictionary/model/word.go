@@ -13,6 +13,7 @@ type Word struct {
 	ScriptCode      *string   `json:"script_code,omitempty"`
 	FrequencyRank   *int      `json:"frequency_rank,omitempty"`
 	Note            *string   `json:"note,omitempty"`
+	Topics          []string  `json:"topics,omitempty"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }

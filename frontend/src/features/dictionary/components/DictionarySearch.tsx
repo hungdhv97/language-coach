@@ -3,26 +3,33 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useDebounce } from '@/hooks/useDebounce';
 import { dictionaryQueries } from '@/entities/dictionary/api/dictionary.queries';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { WordDetail } from './WordDetail';
 import type { Word, Language } from '@/entities/dictionary/model/dictionary.types';
 
 export function DictionarySearch() {
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [languageId, setLanguageId] = useState<number | ''>('');
-  const [currentPage, setCurrentPage] = useState(0);
-  const pageSize = 20;
+  const [selectedWordId, setSelectedWordId] = useState<number | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const debouncedQuery = useDebounce(searchQuery, 500);
+  const maxResults = 5;
 
   // Fetch languages
   const { data: languages = [], isLoading: languagesLoading } = dictionaryQueries.useLanguages();
+
+  // Set default language to English when languages are loaded
+  useEffect(() => {
+    if (languages.length > 0 && !languageId) {
+      const englishLang = languages.find((lang: Language) => lang.code === 'en');
+      if (englishLang) {
+        setLanguageId(englishLang.id);
+      }
+    }
+  }, [languages, languageId]);
 
   const {
     data: searchResults,
@@ -31,71 +38,122 @@ export function DictionarySearch() {
   } = dictionaryQueries.useSearchWords(
     debouncedQuery,
     languageId ? Number(languageId) : 0,
-    pageSize,
-    currentPage * pageSize,
+    maxResults,
+    0,
     debouncedQuery.length > 0 && !!languageId
   );
 
-  const totalPages = searchResults ? Math.ceil(searchResults.total / pageSize) : 0;
-
-  // Reset page when query or language changes
+  // Reset selected word when search query changes
   useEffect(() => {
-    setCurrentPage(0);
+    setSelectedWordId(null);
+  }, [debouncedQuery, languageId]);
+
+  // Show dropdown when typing
+  useEffect(() => {
+    if (languageId && debouncedQuery.length > 0) {
+      setIsDropdownOpen(true);
+    } else {
+      setIsDropdownOpen(false);
+    }
   }, [debouncedQuery, languageId]);
 
   const handleWordClick = (wordId: number) => {
-    navigate(`/dictionary/words/${wordId}`);
+    setSelectedWordId(wordId);
+    setIsDropdownOpen(false);
   };
+
+  const showDropdown = 
+    isDropdownOpen &&
+    languageId && 
+    debouncedQuery.length > 0 && 
+    !isError && 
+    (isLoading || searchResults !== undefined);
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="language-select">Ngôn ngữ</Label>
-        <Select
-          value={languageId ? String(languageId) : undefined}
-          onValueChange={(value) => setLanguageId(value ? Number(value) : '')}
-          disabled={languagesLoading}
-        >
-          <SelectTrigger id="language-select">
-            <SelectValue placeholder="Chọn ngôn ngữ để tra cứu" />
-          </SelectTrigger>
-          <SelectContent>
-            {languages.map((lang: Language) => (
-              <SelectItem key={lang.id} value={String(lang.id)}>
-                {lang.native_name || lang.name} ({lang.code})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex gap-2">
-        <input
-          type="text"
-          placeholder={languageId ? "Tìm kiếm từ..." : "Vui lòng chọn ngôn ngữ trước"}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          disabled={!languageId}
-          className={cn(
-            "flex-1 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm",
-            "ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium",
-            "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2",
-            "focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+      {/* Language selector and search bar */}
+      <div className="flex flex-col sm:flex-row gap-2">
+        {/* Search input with dropdown */}
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            placeholder={languageId ? "Tìm kiếm từ..." : "Vui lòng chọn ngôn ngữ trước"}
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setIsDropdownOpen(true);
+            }}
+            onFocus={() => {
+              if (languageId && debouncedQuery.length > 0) {
+                setIsDropdownOpen(true);
+              }
+            }}
+            disabled={!languageId}
+            className={cn(
+              "w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm",
+              "ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium",
+              "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2",
+              "focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            )}
+          />
+          
+          {/* Dropdown results */}
+          {showDropdown && (
+            <div className="absolute z-50 w-full mt-1 bg-popover text-popover-foreground rounded-md border shadow-md max-h-[300px] overflow-y-auto">
+              {isLoading ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  Đang tìm kiếm...
+                </div>
+              ) : searchResults && searchResults.words.length === 0 ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  Không tìm thấy từ nào phù hợp với "{debouncedQuery}"
+                </div>
+              ) : searchResults && searchResults.words.length > 0 ? (
+                <div className="p-1">
+                  {searchResults.words.map((word: Word) => (
+                    <div
+                      key={word.id}
+                      onClick={() => handleWordClick(word.id)}
+                      className={cn(
+                        "cursor-pointer rounded-sm px-2 py-1.5 text-sm transition-colors",
+                        "hover:bg-accent hover:text-accent-foreground",
+                        selectedWordId === word.id && "bg-accent"
+                      )}
+                    >
+                      <div className="font-medium">{word.lemma}</div>
+                      {word.romanization && (
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {word.romanization}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           )}
-        />
+        </div>
+        
+        {/* Language selector - above on small screens, right on larger screens */}
+        <div className="w-full sm:w-auto sm:min-w-[140px]">
+          <Select
+            value={languageId ? String(languageId) : undefined}
+            onValueChange={(value) => setLanguageId(value ? Number(value) : '')}
+            disabled={languagesLoading}
+          >
+            <SelectTrigger id="language-select" className="w-full">
+              <SelectValue placeholder="Chọn ngôn ngữ" />
+            </SelectTrigger>
+            <SelectContent align="start" side="bottom">
+              {languages.map((lang: Language) => (
+                <SelectItem key={lang.id} value={String(lang.id)}>
+                  {lang.native_name || lang.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-
-      {isLoading && debouncedQuery.length > 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          Đang tìm kiếm...
-        </div>
-      )}
-
-      {isError && (
-        <div className="text-center py-8 text-destructive">
-          Có lỗi xảy ra khi tìm kiếm. Vui lòng thử lại.
-        </div>
-      )}
 
       {!languageId && (
         <div className="text-center py-8 text-muted-foreground">
@@ -109,74 +167,17 @@ export function DictionarySearch() {
         </div>
       )}
 
-      {!isLoading && !isError && debouncedQuery.length > 0 && searchResults && (
-        <>
-          {searchResults.words.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Không tìm thấy từ nào phù hợp với "{debouncedQuery}"
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  Tìm thấy {searchResults.total} kết quả
-                  {searchResults.total > 0 && (
-                    <span className="ml-2">
-                      (Trang {currentPage + 1} / {totalPages})
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="space-y-2">
-                {searchResults.words.map((word: Word) => (
-                  <Card
-                    key={word.id}
-                    className="cursor-pointer hover:bg-accent transition-colors"
-                    onClick={() => handleWordClick(word.id)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold text-lg">{word.lemma}</h3>
-                          {word.romanization && (
-                            <p className="text-sm text-muted-foreground">
-                              {word.romanization}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+      {isError && (
+        <div className="text-center py-8 text-destructive">
+          Có lỗi xảy ra khi tìm kiếm. Vui lòng thử lại.
+        </div>
+      )}
 
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 pt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
-                    disabled={currentPage === 0 || isLoading}
-                  >
-                    Trước
-                  </Button>
-                  <span className="text-sm text-muted-foreground px-4">
-                    Trang {currentPage + 1} / {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))}
-                    disabled={currentPage >= totalPages - 1 || isLoading}
-                  >
-                    Sau
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </>
+      {/* Word Detail - shown below when a word is selected */}
+      {selectedWordId && (
+        <div className="mt-4">
+          <WordDetail wordId={selectedWordId} />
+        </div>
       )}
     </div>
   );

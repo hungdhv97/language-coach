@@ -34,8 +34,15 @@ export interface Word {
   script_code?: string;
   frequency_rank?: number;
   note?: string;
+  topics?: string[];
   created_at: string;
   updated_at: string;
+}
+
+export interface WordRelation {
+  relation_type: 'synonym' | 'antonym' | 'related';
+  note?: string;
+  target_word: Word;
 }
 
 export interface Sense {
@@ -50,6 +57,11 @@ export interface Sense {
   note?: string;
 }
 
+export interface ExampleTranslation {
+  language: string;
+  content: string;
+}
+
 export interface Example {
   id: number;
   source_sense_id: number;
@@ -57,6 +69,7 @@ export interface Example {
   content: string;
   audio_url?: string;
   source?: string;
+  translations?: ExampleTranslation[];
 }
 
 export interface Pronunciation {
@@ -88,6 +101,7 @@ export interface WordDetail {
   word: Word;
   senses: SenseDetail[];
   pronunciations: Pronunciation[];
+  relations?: WordRelation[];
 }
 
 export interface WordSearchResponse {
