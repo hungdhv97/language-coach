@@ -147,7 +147,7 @@ export function DictionarySearch() {
             <SelectContent align="start" side="bottom">
               {languages.map((lang: Language) => (
                 <SelectItem key={lang.id} value={String(lang.id)}>
-                  {lang.native_name || lang.name}
+                  {lang.name}
                 </SelectItem>
               ))}
             </SelectContent>

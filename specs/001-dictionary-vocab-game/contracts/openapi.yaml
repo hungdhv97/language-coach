@@ -431,10 +431,6 @@ components:
         name:
           type: string
           example: English
-        nativeName:
-          type: string
-          nullable: true
-          example: English
 
     Topic:
       type: object
@@ -510,6 +506,20 @@ components:
         frequencyRank:
           type: integer
           nullable: true
+        note:
+          type: string
+          nullable: true
+        topics:
+          type: array
+          items:
+            $ref: '#/components/schemas/Topic'
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
     Sense:
       type: object
@@ -533,9 +543,6 @@ components:
         definitionLanguageId:
           type: integer
           format: int32
-        usageLabel:
-          type: string
-          nullable: true
         levelId:
           type: integer
           format: int64
@@ -596,6 +603,12 @@ components:
     Pronunciation:
       type: object
       properties:
+        id:
+          type: integer
+          format: int64
+        wordId:
+          type: integer
+          format: int64
         dialect:
           type: string
           nullable: true
@@ -609,52 +622,89 @@ components:
           type: string
           nullable: true
 
-    WordDetail:
+    SenseDetail:
       type: object
       required:
         - id
-        - language
-        - lemma
+        - senseOrder
+        - definition
       properties:
         id:
           type: integer
           format: int64
-        language:
-          $ref: '#/components/schemas/Language'
-        lemma:
-          type: string
-        lemmaNormalized:
-          type: string
-          nullable: true
-        partOfSpeech:
-          type: string
-          nullable: true
-        romanization:
-          type: string
-          nullable: true
-        frequencyRank:
+        senseOrder:
           type: integer
+          format: int32
+        partOfSpeechId:
+          type: integer
+          format: int32
+        partOfSpeechName:
+          type: string
           nullable: true
-        senses:
-          type: array
-          items:
-            $ref: '#/components/schemas/Sense'
+        definition:
+          type: string
+        definitionLanguageId:
+          type: integer
+          format: int32
+        levelId:
+          type: integer
+          format: int64
+          nullable: true
+        levelName:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
         translations:
           type: array
           items:
-            $ref: '#/components/schemas/Translation'
+            $ref: '#/components/schemas/Word'
         examples:
           type: array
           items:
             $ref: '#/components/schemas/Example'
+
+    WordRelation:
+      type: object
+      required:
+        - relationType
+        - targetWord
+      properties:
+        relationType:
+          type: string
+          enum:
+            - synonym
+            - antonym
+            - related
+        note:
+          type: string
+          nullable: true
+        targetWord:
+          $ref: '#/components/schemas/Word'
+
+    WordDetail:
+      type: object
+      required:
+        - word
+        - senses
+        - pronunciations
+      properties:
+        word:
+          $ref: '#/components/schemas/Word'
+        senses:
+          type: array
+          items:
+            $ref: '#/components/schemas/SenseDetail'
         pronunciations:
           type: array
           items:
             $ref: '#/components/schemas/Pronunciation'
-        topics:
+        relations:
           type: array
           items:
-            $ref: '#/components/schemas/Topic'
+            $ref: '#/components/schemas/WordRelation'
+          nullable: true
 
     DictionarySearchResponse:
       type: object

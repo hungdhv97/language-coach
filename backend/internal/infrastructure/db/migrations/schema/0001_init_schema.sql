@@ -7,8 +7,7 @@ CREATE SCHEMA public;
 CREATE TABLE languages (
     id           SMALLSERIAL PRIMARY KEY, -- language id
     code         VARCHAR(10) NOT NULL UNIQUE, -- language code: 'en', 'vi', 'zh', ...
-    name         VARCHAR(100) NOT NULL, -- language name (English)
-    native_name  VARCHAR(100) -- native name: 'Tiếng Việt', '中文'
+    name         VARCHAR(100) NOT NULL -- language name (English)
 );
 
 CREATE TABLE parts_of_speech (

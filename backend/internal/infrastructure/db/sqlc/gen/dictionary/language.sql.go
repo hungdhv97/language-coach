@@ -10,7 +10,7 @@ import (
 )
 
 const findAllLanguages = `-- name: FindAllLanguages :many
-SELECT id, code, name, native_name 
+SELECT id, code, name 
 FROM languages 
 ORDER BY code
 `
@@ -24,12 +24,7 @@ func (q *Queries) FindAllLanguages(ctx context.Context) ([]Language, error) {
 	items := []Language{}
 	for rows.Next() {
 		var i Language
-		if err := rows.Scan(
-			&i.ID,
-			&i.Code,
-			&i.Name,
-			&i.NativeName,
-		); err != nil {
+		if err := rows.Scan(&i.ID, &i.Code, &i.Name); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -41,7 +36,7 @@ func (q *Queries) FindAllLanguages(ctx context.Context) ([]Language, error) {
 }
 
 const findLanguageByCode = `-- name: FindLanguageByCode :one
-SELECT id, code, name, native_name 
+SELECT id, code, name 
 FROM languages 
 WHERE code = $1
 `
@@ -49,17 +44,12 @@ WHERE code = $1
 func (q *Queries) FindLanguageByCode(ctx context.Context, code string) (Language, error) {
 	row := q.db.QueryRow(ctx, findLanguageByCode, code)
 	var i Language
-	err := row.Scan(
-		&i.ID,
-		&i.Code,
-		&i.Name,
-		&i.NativeName,
-	)
+	err := row.Scan(&i.ID, &i.Code, &i.Name)
 	return i, err
 }
 
 const findLanguageByID = `-- name: FindLanguageByID :one
-SELECT id, code, name, native_name 
+SELECT id, code, name 
 FROM languages 
 WHERE id = $1
 `
@@ -67,11 +57,6 @@ WHERE id = $1
 func (q *Queries) FindLanguageByID(ctx context.Context, id int16) (Language, error) {
 	row := q.db.QueryRow(ctx, findLanguageByID, id)
 	var i Language
-	err := row.Scan(
-		&i.ID,
-		&i.Code,
-		&i.Name,
-		&i.NativeName,
-	)
+	err := row.Scan(&i.ID, &i.Code, &i.Name)
 	return i, err
 }

@@ -21,15 +21,10 @@ func (r *languageRepository) FindAll(ctx context.Context) ([]*model.Language, er
 
 	languages := make([]*model.Language, 0, len(rows))
 	for _, row := range rows {
-		var nativeName *string
-		if row.NativeName.Valid {
-			nativeName = &row.NativeName.String
-		}
 		languages = append(languages, &model.Language{
-			ID:         row.ID,
-			Code:       row.Code,
-			Name:       row.Name,
-			NativeName: nativeName,
+			ID:   row.ID,
+			Code: row.Code,
+			Name: row.Name,
 		})
 	}
 
@@ -43,16 +38,10 @@ func (r *languageRepository) FindByID(ctx context.Context, id int16) (*model.Lan
 		return nil, common.MapPgError(err)
 	}
 
-	var nativeName *string
-	if row.NativeName.Valid {
-		nativeName = &row.NativeName.String
-	}
-
 	return &model.Language{
-		ID:         row.ID,
-		Code:       row.Code,
-		Name:       row.Name,
-		NativeName: nativeName,
+		ID:   row.ID,
+		Code: row.Code,
+		Name: row.Name,
 	}, nil
 }
 
@@ -63,15 +52,9 @@ func (r *languageRepository) FindByCode(ctx context.Context, code string) (*mode
 		return nil, common.MapPgError(err)
 	}
 
-	var nativeName *string
-	if row.NativeName.Valid {
-		nativeName = &row.NativeName.String
-	}
-
 	return &model.Language{
-		ID:         row.ID,
-		Code:       row.Code,
-		Name:       row.Name,
-		NativeName: nativeName,
+		ID:   row.ID,
+		Code: row.Code,
+		Name: row.Name,
 	}, nil
 }

@@ -151,7 +151,7 @@ A Vietnamese user looks up words in the multilingual dictionary to find translat
 
 ### Key Entities *(include if feature involves data)*
 
-- **Language**: Represents a supported language in the system (e.g., Vietnamese, English, Chinese). Key attributes: code, name, native name. Relationships: linked to words, game sessions, and translations.
+- **Language**: Represents a supported language in the system (e.g., Vietnamese, English, Chinese). Key attributes: code, name. Relationships: linked to words, game sessions, and translations.
 
 - **Word**: Represents a vocabulary word in a specific language. Key attributes: lemma (base form), normalized form, search key, part of speech, romanization. Relationships: belongs to a language, has multiple senses, can be translated to words in other languages.
 

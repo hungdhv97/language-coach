@@ -60,7 +60,7 @@ export function WordDetail({ wordId }: WordDetailProps) {
                     key={index}
                     className="px-2 py-1 bg-primary/10 text-primary rounded text-sm"
                   >
-                    {topic}
+                    {topic.name}
                   </span>
                 ))}
               </div>
@@ -135,16 +135,6 @@ export function WordDetail({ wordId }: WordDetailProps) {
                         </span>
                       )}
                     </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    {sense.definition_language_name && (
-                      <span>Ngôn ngữ định nghĩa: {sense.definition_language_name}</span>
-                    )}
-                    {sense.usage_label && (
-                      <span className="px-2 py-1 bg-accent rounded">
-                        {sense.usage_label}
-                      </span>
-                    )}
                   </div>
                 </div>
               </CardHeader>

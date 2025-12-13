@@ -147,7 +147,7 @@ export default function GameConfigPage() {
                       <SelectContent>
                         {languages.map((lang: Language) => (
                           <SelectItem key={lang.id} value={String(lang.id)}>
-                            {lang.native_name || lang.name} ({lang.code})
+                            {lang.name} ({lang.code})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -168,7 +168,7 @@ export default function GameConfigPage() {
                       <SelectContent>
                         {languages.map((lang: Language) => (
                           <SelectItem key={lang.id} value={String(lang.id)}>
-                            {lang.native_name || lang.name} ({lang.code})
+                            {lang.name} ({lang.code})
                           </SelectItem>
                         ))}
                       </SelectContent>

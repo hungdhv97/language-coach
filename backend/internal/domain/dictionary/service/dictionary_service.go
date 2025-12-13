@@ -148,9 +148,6 @@ func (s *DictionaryService) GetWordDetail(ctx context.Context, wordID int64) (*d
 			s.logger.Warn("failed to fetch language name", zap.Int16("language_id", langID), zap.Error(err))
 		} else {
 			name := lang.Name
-			if lang.NativeName != nil {
-				name = *lang.NativeName
-			}
 			langMap[langID] = &name
 		}
 	}
@@ -176,19 +173,17 @@ func (s *DictionaryService) GetWordDetail(ctx context.Context, wordID int64) (*d
 		}
 
 		senseDetails[i] = dto.SenseDetail{
-			ID:                     sense.ID,
-			SenseOrder:             sense.SenseOrder,
-			PartOfSpeechID:         sense.PartOfSpeechID,
-			PartOfSpeechName:       posMap[sense.PartOfSpeechID],
-			Definition:             sense.Definition,
-			DefinitionLanguageID:   sense.DefinitionLanguageID,
-			DefinitionLanguageName: langMap[sense.DefinitionLanguageID],
-			UsageLabel:             sense.UsageLabel,
-			LevelID:                sense.LevelID,
-			LevelName:              levelName,
-			Note:                   sense.Note,
-			Translations:           senseTranslations,
-			Examples:               senseExamples,
+			ID:                   sense.ID,
+			SenseOrder:           sense.SenseOrder,
+			PartOfSpeechID:       sense.PartOfSpeechID,
+			PartOfSpeechName:     posMap[sense.PartOfSpeechID],
+			Definition:           sense.Definition,
+			DefinitionLanguageID: sense.DefinitionLanguageID,
+			LevelID:              sense.LevelID,
+			LevelName:            levelName,
+			Note:                 sense.Note,
+			Translations:         senseTranslations,
+			Examples:             senseExamples,
 		}
 	}
 
@@ -406,10 +401,10 @@ func (s *DictionaryService) getPronunciations(ctx context.Context, wordID int64)
 	return pronunciations, nil
 }
 
-// getWordTopics retrieves topic codes for a word
-func (s *DictionaryService) getWordTopics(ctx context.Context, wordID int64) ([]string, error) {
+// getWordTopics retrieves topic objects (with code and name) for a word
+func (s *DictionaryService) getWordTopics(ctx context.Context, wordID int64) ([]*model.Topic, error) {
 	query := `
-		SELECT t.code
+		SELECT t.id, t.code, t.name
 		FROM word_topics wt
 		INNER JOIN topics t ON wt.topic_id = t.id
 		WHERE wt.word_id = $1
@@ -421,21 +416,21 @@ func (s *DictionaryService) getWordTopics(ctx context.Context, wordID int64) ([]
 	}
 	defer rows.Close()
 
-	var topics []string
+	var topics []*model.Topic
 	for rows.Next() {
-		var code string
-		if err := rows.Scan(&code); err != nil {
+		var topic model.Topic
+		if err := rows.Scan(&topic.ID, &topic.Code, &topic.Name); err != nil {
 			return nil, err
 		}
-		topics = append(topics, code)
+		topics = append(topics, &topic)
 	}
 
 	if err := rows.Err(); err != nil {
-		return []string{}, err
+		return []*model.Topic{}, err
 	}
 
 	if topics == nil {
-		return []string{}, nil
+		return []*model.Topic{}, nil
 	}
 
 	return topics, nil

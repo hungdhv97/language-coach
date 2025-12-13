@@ -2,18 +2,15 @@
   "languages": [
     {
       "code": "en",
-      "name": "Tiếng Anh",
-      "native_name": "English"
+      "name": "Tiếng Anh"
     },
     {
       "code": "vi",
-      "name": "Tiếng Việt",
-      "native_name": "Tiếng Việt"
+      "name": "Tiếng Việt"
     },
     {
       "code": "zh",
-      "name": "Tiếng Trung",
-      "native_name": "中文"
+      "name": "Tiếng Trung"
     }
   ],
   "parts_of_speech": [

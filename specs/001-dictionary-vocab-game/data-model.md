@@ -17,7 +17,6 @@ Represents a supported language in the system.
 - `id` (SMALLINT, Primary Key, AUTO_INCREMENT): Unique identifier
 - `code` (VARCHAR(10), NOT NULL, UNIQUE): Language code (e.g., 'en', 'vi', 'zh')
 - `name` (VARCHAR(100), NOT NULL): Language name in English (e.g., 'English')
-- `native_name` (VARCHAR(100), NULLABLE): Native language name (e.g., 'Tiếng Việt', '中文')
 
 **Relationships**:
 - One-to-many: Words, Senses, Game Sessions

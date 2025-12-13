@@ -45,10 +45,9 @@ type ExampleTranslation struct {
 }
 
 type Language struct {
-	ID         int16       `json:"id"`
-	Code       string      `json:"code"`
-	Name       string      `json:"name"`
-	NativeName pgtype.Text `json:"native_name"`
+	ID   int16  `json:"id"`
+	Code string `json:"code"`
+	Name string `json:"name"`
 }
 
 type Level struct {

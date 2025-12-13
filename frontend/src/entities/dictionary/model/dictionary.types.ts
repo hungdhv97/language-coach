@@ -6,7 +6,6 @@ export interface Language {
   id: number;
   code: string;
   name: string;
-  native_name?: string;
 }
 
 export interface Topic {
@@ -34,7 +33,7 @@ export interface Word {
   script_code?: string;
   frequency_rank?: number;
   note?: string;
-  topics?: string[];
+  topics?: Topic[];
   created_at: string;
   updated_at: string;
 }
@@ -88,8 +87,6 @@ export interface SenseDetail {
   part_of_speech_name?: string;
   definition: string;
   definition_language_id: number;
-  definition_language_name?: string;
-  usage_label?: string;
   level_id?: number;
   level_name?: string;
   note?: string;

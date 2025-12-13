@@ -17,9 +17,8 @@ import (
 
 // Seed data models for initial JSON (0001_init_data.json)
 type Language struct {
-	Code       string `json:"code"`
-	Name       string `json:"name"`
-	NativeName string `json:"native_name"`
+	Code string `json:"code"`
+	Name string `json:"name"`
 }
 
 type PartOfSpeech struct {
@@ -279,14 +278,13 @@ func runInit(ctx context.Context, pool *pgxpool.Pool, filePath string) error {
 
 func upsertLanguages(ctx context.Context, tx pgx.Tx, langs []Language) error {
 	const q = `
-INSERT INTO languages (code, name, native_name)
-VALUES ($1, $2, $3)
+INSERT INTO languages (code, name)
+VALUES ($1, $2)
 ON CONFLICT (code) DO UPDATE
-SET name = EXCLUDED.name,
-    native_name = EXCLUDED.native_name;
+SET name = EXCLUDED.name;
 `
 	for _, l := range langs {
-		if _, err := tx.Exec(ctx, q, l.Code, l.Name, l.NativeName); err != nil {
+		if _, err := tx.Exec(ctx, q, l.Code, l.Name); err != nil {
 			return fmt.Errorf("upsert language %s: %w", l.Code, err)
 		}
 	}
