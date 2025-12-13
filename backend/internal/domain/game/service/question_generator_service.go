@@ -122,7 +122,10 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 	// Collect all target words for wrong answer options
 	allTargetWords := make(map[int64]*dictModel.Word)
 
-	for i, sourceWord := range selectedWords {
+	// Track question order separately to ensure sequential ordering even when words are skipped
+	questionOrder := int16(0)
+
+	for _, sourceWord := range selectedWords {
 		// Get correct translation
 		translations, err := s.wordRepo.FindTranslationsForWord(
 			ctx, sourceWord.ID, targetLanguageID, 10,
@@ -143,16 +146,19 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 			allTargetWords[trans.ID] = trans
 		}
 
+		// Increment question order for each successfully created question
+		questionOrder++
+
 		// Create question
 		question := &model.GameQuestion{
-			SessionID:          sessionID,
-			QuestionOrder:      int16(i + 1),
-			QuestionType:       "word_to_translation",
-			SourceWordID:       sourceWord.ID,
+			SessionID:           sessionID,
+			QuestionOrder:       questionOrder,
+			QuestionType:        "word_to_translation",
+			SourceWordID:        sourceWord.ID,
 			CorrectTargetWordID: correctWord.ID,
-			SourceLanguageID:   sourceLanguageID,
-			TargetLanguageID:   targetLanguageID,
-			CreatedAt:          time.Now(),
+			SourceLanguageID:    sourceLanguageID,
+			TargetLanguageID:    targetLanguageID,
+			CreatedAt:           time.Now(),
 		}
 		questions = append(questions, question)
 	}
@@ -225,7 +231,7 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 		for j, word := range allAnswers {
 			option := &model.GameQuestionOption{
 				QuestionID:   question.ID, // Will be set after question is saved
-				OptionLabel:   labels[j],
+				OptionLabel:  labels[j],
 				TargetWordID: word.ID,
 				IsCorrect:    j == correctIndex,
 			}
@@ -249,4 +255,3 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 
 	return questions, options, nil
 }
-

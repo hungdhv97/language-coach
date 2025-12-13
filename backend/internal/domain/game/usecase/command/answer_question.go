@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/english-coach/backend/internal/domain/game/dto"
 	"github.com/english-coach/backend/internal/domain/game/model"
@@ -45,6 +46,11 @@ func (uc *SubmitAnswerUseCase) Execute(ctx context.Context, req *dto.SubmitAnswe
 		return nil, fmt.Errorf("failed to find question: %w", err)
 	}
 
+	// Check if question is nil
+	if question == nil {
+		return nil, fmt.Errorf("question not found")
+	}
+
 	// Verify question belongs to session
 	if question.SessionID != sessionID {
 		return nil, fmt.Errorf("question does not belong to session")
@@ -79,6 +85,7 @@ func (uc *SubmitAnswerUseCase) Execute(ctx context.Context, req *dto.SubmitAnswe
 		SelectedOptionID: &req.SelectedOptionID,
 		IsCorrect:        isCorrect,
 		ResponseTimeMs:   req.ResponseTimeMs,
+		AnsweredAt:       time.Now(),
 	}
 
 	if err := uc.answerRepo.Create(ctx, answer); err != nil {
@@ -115,4 +122,3 @@ func (uc *SubmitAnswerUseCase) Execute(ctx context.Context, req *dto.SubmitAnswe
 
 	return answer, nil
 }
-

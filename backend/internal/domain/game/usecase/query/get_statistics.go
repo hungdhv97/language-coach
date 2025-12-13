@@ -42,6 +42,11 @@ func (uc *GetSessionStatisticsUseCase) Execute(ctx context.Context, sessionID, u
 		return nil, fmt.Errorf("failed to find session: %w", err)
 	}
 
+	// Check if session is nil
+	if session == nil {
+		return nil, fmt.Errorf("session not found")
+	}
+
 	// Verify session belongs to user
 	if session.UserID != userID {
 		return nil, fmt.Errorf("session does not belong to user")
@@ -111,4 +116,3 @@ func (uc *GetSessionStatisticsUseCase) Execute(ctx context.Context, sessionID, u
 
 	return stats, nil
 }
-

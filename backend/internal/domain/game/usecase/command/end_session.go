@@ -38,6 +38,11 @@ func (uc *EndGameSessionUseCase) Execute(ctx context.Context, sessionID int64) e
 		return fmt.Errorf("failed to find session: %w", err)
 	}
 
+	// Check if session is nil
+	if session == nil {
+		return fmt.Errorf("session not found")
+	}
+
 	// Check if already ended
 	if session.EndedAt != nil {
 		return fmt.Errorf("session already ended")
@@ -61,4 +66,3 @@ func (uc *EndGameSessionUseCase) Execute(ctx context.Context, sessionID int64) e
 
 	return nil
 }
-

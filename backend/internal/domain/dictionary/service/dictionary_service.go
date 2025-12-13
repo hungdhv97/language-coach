@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/english-coach/backend/internal/domain/dictionary/dto"
 	"github.com/english-coach/backend/internal/domain/dictionary/model"
@@ -48,6 +49,11 @@ func (s *DictionaryService) GetWordDetail(ctx context.Context, wordID int64) (*d
 	word, err := s.wordRepo.FindByID(ctx, wordID)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if word is nil
+	if word == nil {
+		return nil, fmt.Errorf("word not found")
 	}
 
 	// Get senses

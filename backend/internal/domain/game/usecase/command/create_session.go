@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/english-coach/backend/internal/domain/game/dto"
 	"github.com/english-coach/backend/internal/domain/game/model"
@@ -54,6 +55,7 @@ func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.Create
 		LevelID:          req.LevelID,
 		TotalQuestions:   0, // Will be set when questions are generated
 		CorrectQuestions: 0,
+		StartedAt:        time.Now(),
 	}
 
 	// Save session to database first (needed for question generation)
