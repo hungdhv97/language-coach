@@ -2,266 +2,426 @@
   "languages": [
     {
       "code": "en",
-      "name": "English",
+      "name": "Tiếng Anh",
       "native_name": "English"
     },
     {
       "code": "vi",
-      "name": "Vietnamese",
+      "name": "Tiếng Việt",
       "native_name": "Tiếng Việt"
     },
     {
       "code": "zh",
-      "name": "Chinese",
+      "name": "Tiếng Trung",
       "native_name": "中文"
     }
   ],
   "parts_of_speech": [
     {
       "code": "n",
-      "name": "Noun"
+      "name": "Danh từ"
     },
     {
       "code": "pn",
-      "name": "Pronoun"
+      "name": "Đại từ"
     },
     {
       "code": "v",
-      "name": "Verb"
+      "name": "Động từ"
     },
     {
       "code": "aux",
-      "name": "Auxiliary"
+      "name": "Trợ động từ"
     },
     {
       "code": "adj",
-      "name": "Adjective"
+      "name": "Tính từ"
     },
     {
       "code": "adv",
-      "name": "Adverb"
+      "name": "Trạng từ"
     },
     {
       "code": "det",
-      "name": "Determiner"
+      "name": "Từ hạn định"
     },
     {
       "code": "prep",
-      "name": "Preposition"
+      "name": "Giới từ"
     },
     {
       "code": "conj",
-      "name": "Conjunction"
+      "name": "Liên từ"
     },
     {
       "code": "prt",
-      "name": "Particle"
+      "name": "Tiểu từ"
     },
     {
       "code": "intj",
-      "name": "Interjection"
+      "name": "Thán từ"
     },
     {
       "code": "num",
-      "name": "Numeral"
+      "name": "Số từ"
     },
     {
       "code": "clf",
-      "name": "Classifier"
+      "name": "Lượng từ / Danh từ chỉ loại"
+    },
+    {
+      "code": "propn",
+      "name": "Danh từ riêng"
+    },
+    {
+      "code": "modal",
+      "name": "Động từ khuyết thiếu"
+    },
+    {
+      "code": "phrv",
+      "name": "Cụm động từ"
+    },
+    {
+      "code": "ger",
+      "name": "Danh động từ"
+    },
+    {
+      "code": "inf",
+      "name": "Động từ nguyên mẫu"
+    },
+    {
+      "code": "part",
+      "name": "Phân từ"
+    },
+    {
+      "code": "det_art",
+      "name": "Mạo từ"
+    },
+    {
+      "code": "det_pos",
+      "name": "Từ sở hữu"
+    },
+    {
+      "code": "det_dem",
+      "name": "Từ chỉ định"
+    },
+    {
+      "code": "det_q",
+      "name": "Từ nghi vấn"
+    },
+    {
+      "code": "abbr",
+      "name": "Từ viết tắt"
+    },
+    {
+      "code": "idiom",
+      "name": "Thành ngữ"
+    },
+    {
+      "code": "phrase",
+      "name": "Cụm từ"
+    },
+    {
+      "code": "coll",
+      "name": "Cụm từ cố định"
     }
   ],
   "topics": [
     {
       "code": "general",
-      "name": "General"
+      "name": "Chung"
     },
     {
       "code": "greetings",
-      "name": "Greetings"
+      "name": "Chào hỏi"
     },
     {
       "code": "daily_life",
-      "name": "Daily life"
+      "name": "Cuộc sống hằng ngày"
     },
     {
       "code": "family",
-      "name": "Family"
+      "name": "Gia đình"
     },
     {
       "code": "education",
-      "name": "Education"
+      "name": "Giáo dục"
     },
     {
       "code": "work",
-      "name": "Work"
+      "name": "Công việc"
     },
     {
       "code": "business",
-      "name": "Business"
+      "name": "Kinh doanh"
     },
     {
       "code": "travel",
-      "name": "Travel"
+      "name": "Du lịch"
     },
     {
       "code": "food_and_drink",
-      "name": "Food and drink"
+      "name": "Ẩm thực"
     },
     {
       "code": "shopping",
-      "name": "Shopping"
+      "name": "Mua sắm"
     },
     {
       "code": "health",
-      "name": "Health"
+      "name": "Sức khỏe"
     },
     {
       "code": "technology",
-      "name": "Technology"
+      "name": "Công nghệ"
     },
     {
       "code": "entertainment",
-      "name": "Entertainment"
+      "name": "Giải trí"
     },
     {
       "code": "sports",
-      "name": "Sports"
+      "name": "Thể thao"
     },
     {
       "code": "nature",
-      "name": "Nature"
+      "name": "Thiên nhiên"
     },
     {
       "code": "culture",
-      "name": "Culture"
+      "name": "Văn hóa"
     },
     {
       "code": "society",
-      "name": "Society"
+      "name": "Xã hội"
     },
     {
       "code": "grammar",
-      "name": "Grammar"
+      "name": "Ngữ pháp"
     },
     {
       "code": "basic",
-      "name": "Basic vocabulary"
+      "name": "Từ vựng cơ bản"
     },
     {
       "code": "possession",
-      "name": "Possession"
+      "name": "Sở hữu"
     },
     {
       "code": "experience",
-      "name": "Experience"
+      "name": "Trải nghiệm"
     },
     {
       "code": "informal",
-      "name": "Informal"
+      "name": "Giao tiếp thân mật"
     },
     {
       "code": "meeting",
-      "name": "Meeting"
+      "name": "Họp hành"
     },
     {
       "code": "event",
-      "name": "Event"
+      "name": "Sự kiện"
     },
     {
       "code": "activity",
-      "name": "Activity"
+      "name": "Hoạt động"
     },
     {
       "code": "auxiliary",
-      "name": "Auxiliary verbs"
+      "name": "Trợ động từ"
     },
     {
       "code": "perfect",
-      "name": "Perfect tense"
+      "name": "Thì hoàn thành"
+    },
+    {
+      "code": "emotion",
+      "name": "Cảm xúc"
+    },
+    {
+      "code": "communication",
+      "name": "Giao tiếp"
+    },
+    {
+      "code": "relationship",
+      "name": "Mối quan hệ"
+    },
+    {
+      "code": "time",
+      "name": "Thời gian"
+    },
+    {
+      "code": "place",
+      "name": "Địa điểm"
+    },
+    {
+      "code": "direction",
+      "name": "Phương hướng"
+    },
+    {
+      "code": "transportation",
+      "name": "Giao thông"
+    },
+    {
+      "code": "housing",
+      "name": "Nhà ở"
+    },
+    {
+      "code": "finance",
+      "name": "Tài chính"
+    },
+    {
+      "code": "banking",
+      "name": "Ngân hàng"
+    },
+    {
+      "code": "law",
+      "name": "Pháp luật"
+    },
+    {
+      "code": "politics",
+      "name": "Chính trị"
+    },
+    {
+      "code": "science",
+      "name": "Khoa học"
+    },
+    {
+      "code": "environment",
+      "name": "Môi trường"
+    },
+    {
+      "code": "internet",
+      "name": "Internet"
+    },
+    {
+      "code": "social_media",
+      "name": "Mạng xã hội"
+    },
+    {
+      "code": "email",
+      "name": "Email & thư tín"
+    },
+    {
+      "code": "presentation",
+      "name": "Thuyết trình"
+    },
+    {
+      "code": "job_interview",
+      "name": "Phỏng vấn xin việc"
+    },
+    {
+      "code": "customer_service",
+      "name": "Chăm sóc khách hàng"
+    },
+    {
+      "code": "emergency",
+      "name": "Tình huống khẩn cấp"
+    },
+    {
+      "code": "weather",
+      "name": "Thời tiết"
+    },
+    {
+      "code": "numbers",
+      "name": "Số đếm"
+    },
+    {
+      "code": "colors",
+      "name": "Màu sắc"
+    },
+    {
+      "code": "feelings",
+      "name": "Cảm giác & cảm xúc"
+    },
+    {
+      "code": "opinions",
+      "name": "Ý kiến & quan điểm"
     }
   ],
   "levels": [
     {
       "code": "A1",
-      "name": "A1 - Beginner",
-      "description": "Basic user; can understand and use very simple everyday expressions.",
+      "name": "A1 - Sơ cấp",
+      "description": "Người học cơ bản; có thể hiểu và sử dụng các mẫu câu, cách diễn đạt rất đơn giản trong giao tiếp hằng ngày.",
       "language": null,
       "difficulty_order": 1
     },
     {
       "code": "A2",
-      "name": "A2 - Elementary",
-      "description": "Basic user; can understand frequently used expressions related to areas of most immediate relevance.",
+      "name": "A2 - Cơ bản",
+      "description": "Người học cơ bản; có thể hiểu các cách diễn đạt thường dùng liên quan đến những nhu cầu quen thuộc và gần gũi.",
       "language": null,
       "difficulty_order": 2
     },
     {
       "code": "B1",
-      "name": "B1 - Intermediate",
-      "description": "Independent user; can deal with most situations likely to arise whilst travelling.",
+      "name": "B1 - Trung cấp",
+      "description": "Người học độc lập; có thể xử lý hầu hết các tình huống thường gặp khi đi du lịch hoặc sinh hoạt hằng ngày.",
       "language": null,
       "difficulty_order": 3
     },
     {
       "code": "B2",
-      "name": "B2 - Upper intermediate",
-      "description": "Independent user; can interact with a degree of fluency and spontaneity.",
+      "name": "B2 - Trung cấp cao",
+      "description": "Người học độc lập; có thể giao tiếp khá trôi chảy và tự nhiên với người bản ngữ.",
       "language": null,
       "difficulty_order": 4
     },
     {
       "code": "C1",
-      "name": "C1 - Advanced",
-      "description": "Proficient user; can express ideas fluently and spontaneously without much obvious searching for expressions.",
+      "name": "C1 - Cao cấp",
+      "description": "Người học thành thạo; có thể diễn đạt ý tưởng một cách trôi chảy, tự nhiên mà không phải mất nhiều thời gian tìm từ.",
       "language": null,
       "difficulty_order": 5
     },
     {
       "code": "C2",
-      "name": "C2 - Proficiency",
-      "description": "Proficient user; can understand with ease virtually everything heard or read.",
+      "name": "C2 - Thành thạo",
+      "description": "Người học thành thạo; có thể dễ dàng hiểu hầu như mọi nội dung nghe hoặc đọc được.",
       "language": null,
       "difficulty_order": 6
     },
     {
       "code": "HSK1",
-      "name": "HSK 1",
-      "description": "Elementary level Chinese; can understand and use very simple Chinese phrases.",
+      "name": "HSK 1 - Sơ cấp 1",
+      "description": "Trình độ tiếng Trung sơ cấp; có thể hiểu và sử dụng các câu, cụm từ tiếng Trung rất đơn giản.",
       "language": "zh",
       "difficulty_order": 1
     },
     {
       "code": "HSK2",
-      "name": "HSK 2",
-      "description": "Elementary level Chinese; can communicate in simple and routine tasks.",
+      "name": "HSK 2 - Sơ cấp 2",
+      "description": "Trình độ tiếng Trung sơ cấp; có thể giao tiếp trong các tình huống quen thuộc và công việc hằng ngày đơn giản.",
       "language": "zh",
       "difficulty_order": 2
     },
     {
       "code": "HSK3",
-      "name": "HSK 3",
-      "description": "Intermediate Chinese; can communicate about familiar topics in daily life.",
+      "name": "HSK 3 - Trung cấp",
+      "description": "Trình độ tiếng Trung trung cấp; có thể giao tiếp về các chủ đề quen thuộc trong cuộc sống hằng ngày.",
       "language": "zh",
       "difficulty_order": 3
     },
     {
       "code": "HSK4",
-      "name": "HSK 4",
-      "description": "Upper intermediate Chinese; can discuss a relatively wide range of topics.",
+      "name": "HSK 4 - Trung cấp cao",
+      "description": "Trình độ tiếng Trung trung cấp cao; có thể thảo luận về nhiều chủ đề với vốn từ và cấu trúc tương đối đa dạng.",
       "language": "zh",
       "difficulty_order": 4
     },
     {
       "code": "HSK5",
-      "name": "HSK 5",
-      "description": "Advanced Chinese; can read Chinese newspapers and magazines and enjoy films and plays.",
+      "name": "HSK 5 - Cao cấp",
+      "description": "Trình độ tiếng Trung cao cấp; có thể đọc báo, tạp chí tiếng Trung và thưởng thức phim ảnh, kịch nói.",
       "language": "zh",
       "difficulty_order": 5
     },
     {
       "code": "HSK6",
-      "name": "HSK 6",
-      "description": "Proficient Chinese; can easily understand any information communicated in Chinese.",
+      "name": "HSK 6 - Thành thạo",
+      "description": "Trình độ tiếng Trung thành thạo; có thể dễ dàng hiểu mọi thông tin được truyền đạt bằng tiếng Trung.",
       "language": "zh",
       "difficulty_order": 6
     }

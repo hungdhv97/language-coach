@@ -63,7 +63,14 @@ func (uc *RegisterUserUseCase) Execute(ctx context.Context, input RegisterUserIn
 	// Check if email already exists
 	if input.Email != nil && *input.Email != "" {
 		existing, err := uc.userRepo.FindByEmail(ctx, *input.Email)
-		if err == nil && existing != nil {
+		if err != nil {
+			uc.logger.Error("failed to check if email exists",
+				zap.Error(err),
+				zap.String("email", *input.Email),
+			)
+			return nil, fmt.Errorf("failed to check if email exists: %w", err)
+		}
+		if existing != nil {
 			return nil, ErrEmailExists
 		}
 	}
@@ -71,7 +78,14 @@ func (uc *RegisterUserUseCase) Execute(ctx context.Context, input RegisterUserIn
 	// Check if username already exists
 	if input.Username != nil && *input.Username != "" {
 		existing, err := uc.userRepo.FindByUsername(ctx, *input.Username)
-		if err == nil && existing != nil {
+		if err != nil {
+			uc.logger.Error("failed to check if username exists",
+				zap.Error(err),
+				zap.Stringp("username", input.Username),
+			)
+			return nil, fmt.Errorf("failed to check if username exists: %w", err)
+		}
+		if existing != nil {
 			return nil, ErrUsernameExists
 		}
 	}
