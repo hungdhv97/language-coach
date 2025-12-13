@@ -45,9 +45,14 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 	var err error
 
 	if mode == "topic" && topicID != nil {
-		// Fetch more words than needed to have options for wrong answers
+		// Fetch up to questionCount*3 words to have options for wrong answers
+		// But request at least questionCount words (up to max available)
+		maxWordsToFetch := questionCount * 3
+		if maxWordsToFetch > 60 { // Cap at 60 (20*3) to avoid excessive queries
+			maxWordsToFetch = 60
+		}
 		sourceWords, err = s.wordRepo.FindWordsByTopicAndLanguages(
-			ctx, *topicID, sourceLanguageID, targetLanguageID, questionCount*3,
+			ctx, *topicID, sourceLanguageID, targetLanguageID, maxWordsToFetch,
 		)
 		if err != nil {
 			s.logger.Error("failed to fetch source words by topic",
@@ -56,7 +61,7 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 				zap.Int64("topic_id", *topicID),
 				zap.Int16("source_language_id", sourceLanguageID),
 				zap.Int16("target_language_id", targetLanguageID),
-				zap.Int("requested_limit", questionCount*3),
+				zap.Int("requested_limit", maxWordsToFetch),
 			)
 			return nil, nil, fmt.Errorf("failed to fetch source words: %w", err)
 		}
@@ -65,11 +70,17 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 			zap.Int16("source_language_id", sourceLanguageID),
 			zap.Int16("target_language_id", targetLanguageID),
 			zap.Int("word_count", len(sourceWords)),
-			zap.Int("requested_limit", questionCount*3),
+			zap.Int("requested_limit", maxWordsToFetch),
 		)
 	} else if mode == "level" && levelID != nil {
+		// Fetch up to questionCount*3 words to have options for wrong answers
+		// But request at least questionCount words (up to max available)
+		maxWordsToFetch := questionCount * 3
+		if maxWordsToFetch > 60 { // Cap at 60 (20*3) to avoid excessive queries
+			maxWordsToFetch = 60
+		}
 		sourceWords, err = s.wordRepo.FindWordsByLevelAndLanguages(
-			ctx, *levelID, sourceLanguageID, targetLanguageID, questionCount*3,
+			ctx, *levelID, sourceLanguageID, targetLanguageID, maxWordsToFetch,
 		)
 		if err != nil {
 			s.logger.Error("failed to fetch source words by level",
@@ -78,7 +89,7 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 				zap.Int64("level_id", *levelID),
 				zap.Int16("source_language_id", sourceLanguageID),
 				zap.Int16("target_language_id", targetLanguageID),
-				zap.Int("requested_limit", questionCount*3),
+				zap.Int("requested_limit", maxWordsToFetch),
 			)
 			return nil, nil, fmt.Errorf("failed to fetch source words: %w", err)
 		}
@@ -87,24 +98,24 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 			zap.Int16("source_language_id", sourceLanguageID),
 			zap.Int16("target_language_id", targetLanguageID),
 			zap.Int("word_count", len(sourceWords)),
-			zap.Int("requested_limit", questionCount*3),
+			zap.Int("requested_limit", maxWordsToFetch),
 		)
 	} else {
 		return nil, nil, fmt.Errorf("invalid mode or missing topic/level ID")
 	}
 
-	// Check if we have enough words
-	if len(sourceWords) < questionCount {
-		s.logger.Warn("insufficient words for question generation",
+	// Check if we have at least 1 word (minimum required)
+	if len(sourceWords) < 1 {
+		s.logger.Warn("no words available for question generation",
 			zap.String("mode", mode),
-			zap.Int("required", questionCount),
+			zap.Int("requested", questionCount),
 			zap.Int("available", len(sourceWords)),
 			zap.Any("topic_id", topicID),
 			zap.Any("level_id", levelID),
 			zap.Int16("source_language_id", sourceLanguageID),
 			zap.Int16("target_language_id", targetLanguageID),
 		)
-		return nil, nil, fmt.Errorf("insufficient words: need %d, have %d", questionCount, len(sourceWords))
+		return nil, nil, fmt.Errorf("insufficient words: need at least 1, have %d", len(sourceWords))
 	}
 
 	// Shuffle words for randomness
@@ -112,8 +123,18 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 		sourceWords[i], sourceWords[j] = sourceWords[j], sourceWords[i]
 	})
 
-	// Select exactly questionCount words
-	selectedWords := sourceWords[:questionCount]
+	// Select up to questionCount words (or all available if fewer)
+	// This allows games with 1-20 words depending on available data
+	wordsToSelect := questionCount
+	if len(sourceWords) < questionCount {
+		wordsToSelect = len(sourceWords)
+		s.logger.Info("using fewer words than requested",
+			zap.Int("requested", questionCount),
+			zap.Int("available", len(sourceWords)),
+			zap.Int("using", wordsToSelect),
+		)
+	}
+	selectedWords := sourceWords[:wordsToSelect]
 
 	// Generate questions
 	questions := make([]*model.GameQuestion, 0, questionCount)

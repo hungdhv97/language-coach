@@ -13,8 +13,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { userEndpoints } from '@/entities/user/api/user.endpoints';
 import { useAuthStore } from '@/shared/store/useAuthStore';
-import { Alert } from '@/components/ui/alert';
-import { LogOut } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { LogOut, AlertCircle } from 'lucide-react';
 
 const profileSchema = z.object({
   display_name: z.string().max(100).optional().or(z.literal('')),
@@ -112,7 +112,8 @@ export default function ProfilePage() {
           <CardContent>
             {error && (
               <Alert variant="destructive" className="mb-4">
-                Không thể tải thông tin profile
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>Không thể tải thông tin profile</AlertDescription>
               </Alert>
             )}
 

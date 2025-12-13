@@ -13,8 +13,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { userEndpoints } from '@/entities/user/api/user.endpoints';
 import { useAuthStore } from '@/shared/store/useAuthStore';
-import { Alert } from '@/components/ui/alert';
-import { Check, X, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Check, X, Loader2, AlertCircle } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 
 const registerSchema = z.object({
@@ -182,7 +182,10 @@ export default function RegisterPage() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {error && (
-                <Alert variant="destructive">{error}</Alert>
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
               )}
 
               <FormField

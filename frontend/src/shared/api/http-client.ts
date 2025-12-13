@@ -74,14 +74,21 @@ class HttpClient {
       if (!response.ok) {
         // Handle error response format
         if (data.error) {
-          const error: ApiError = {
+          const apiError: ApiError = {
             code: data.error.code || 'UNKNOWN_ERROR',
             message: data.error.message || 'An error occurred',
             details: data.error.details,
           };
+          // Throw an Error instance with the message, and attach ApiError properties
+          const error = new Error(apiError.message);
+          (error as any).code = apiError.code;
+          (error as any).details = apiError.details;
           throw error;
         }
-        const error: ApiError = data as ApiError;
+        const apiError: ApiError = data as ApiError;
+        const error = new Error(apiError.message || 'An error occurred');
+        (error as any).code = apiError.code;
+        (error as any).details = apiError.details;
         throw error;
       }
 
@@ -92,6 +99,14 @@ class HttpClient {
       clearTimeout(timeoutId);
       if (error instanceof Error) {
         throw error;
+      }
+      // If it's an ApiError object (plain object), convert it to Error
+      if (error && typeof error === 'object' && 'message' in error) {
+        const apiError = error as ApiError;
+        const err = new Error(apiError.message);
+        (err as any).code = apiError.code;
+        (err as any).details = apiError.details;
+        throw err;
       }
       throw new Error('Unknown error occurred');
     }

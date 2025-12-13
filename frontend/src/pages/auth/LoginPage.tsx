@@ -13,13 +13,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { userEndpoints } from '@/entities/user/api/user.endpoints';
 import { useAuthStore } from '@/shared/store/useAuthStore';
-import { Alert } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
+import { AlertCircle } from 'lucide-react';
 
 const loginSchema = z.object({
   emailOrUsername: z.string().min(1, 'Vui lòng nhập email hoặc username'),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
-  rememberMe: z.boolean().default(false),
+  rememberMe: z.boolean(),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -66,7 +67,9 @@ export default function LoginPage() {
       navigate('/games');
     },
     onError: (err: any) => {
-      setError(err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
+      // Extract error message from Error instance or ApiError object
+      const errorMessage = err?.message || err?.error?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
+      setError(errorMessage);
     },
   });
 
@@ -88,7 +91,10 @@ export default function LoginPage() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {error && (
-                <Alert variant="destructive">{error}</Alert>
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
               )}
 
               <FormField

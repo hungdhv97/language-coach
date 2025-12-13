@@ -10,10 +10,9 @@ import (
 	"github.com/english-coach/backend/internal/domain/game/dto"
 	"github.com/english-coach/backend/internal/domain/game/model"
 	"github.com/english-coach/backend/internal/domain/game/port"
+	"github.com/english-coach/backend/internal/shared/constants"
 	"go.uber.org/zap"
 )
-
-const DefaultQuestionCount = 10
 
 // CreateGameSessionUseCase handles game session creation
 type CreateGameSessionUseCase struct {
@@ -68,7 +67,7 @@ func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.Create
 		return nil, fmt.Errorf("failed to create game session: %w", err)
 	}
 
-	// Generate questions upfront
+	// Generate questions upfront - request up to MaxGameQuestionCount (20)
 	questions, options, err := uc.questionGenerator.GenerateQuestions(
 		ctx,
 		session.ID,
@@ -77,7 +76,7 @@ func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.Create
 		req.Mode,
 		req.TopicID,
 		req.LevelID,
-		DefaultQuestionCount,
+		constants.MaxGameQuestionCount,
 	)
 	if err != nil {
 		uc.logger.Error("failed to generate questions",
@@ -97,8 +96,8 @@ func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.Create
 		return nil, fmt.Errorf("failed to generate questions: %w", err)
 	}
 
-	// Check if we have enough questions
-	if len(questions) < DefaultQuestionCount {
+	// Check if we have at least the minimum required questions (1)
+	if len(questions) < constants.MinGameQuestionCount {
 		return nil, InsufficientWordsError
 	}
 
