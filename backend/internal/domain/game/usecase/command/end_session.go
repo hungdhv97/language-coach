@@ -2,10 +2,11 @@ package command
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	gameerror "github.com/english-coach/backend/internal/domain/game/error"
 	"github.com/english-coach/backend/internal/domain/game/port"
+	"github.com/english-coach/backend/internal/shared/errors"
 	"go.uber.org/zap"
 )
 
@@ -35,17 +36,17 @@ func (uc *EndGameSessionUseCase) Execute(ctx context.Context, sessionID int64) e
 			zap.Error(err),
 			zap.Int64("session_id", sessionID),
 		)
-		return fmt.Errorf("failed to find session: %w", err)
+		return errors.WrapError(err, "failed to find session")
 	}
 
 	// Check if session is nil
 	if session == nil {
-		return fmt.Errorf("Không tìm thấy phiên chơi")
+		return gameerror.ErrSessionNotFound
 	}
 
 	// Check if already ended
 	if session.EndedAt != nil {
-		return fmt.Errorf("Phiên chơi đã kết thúc")
+		return gameerror.ErrSessionEnded
 	}
 
 	// End session
@@ -54,7 +55,7 @@ func (uc *EndGameSessionUseCase) Execute(ctx context.Context, sessionID int64) e
 			zap.Error(err),
 			zap.Int64("session_id", sessionID),
 		)
-		return fmt.Errorf("failed to end session: %w", err)
+		return errors.WrapError(err, "failed to end session")
 	}
 
 	// Log session end

@@ -2,19 +2,12 @@ package command
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
+	usererror "github.com/english-coach/backend/internal/domain/user/error"
 	"github.com/english-coach/backend/internal/domain/user/port"
 	"github.com/english-coach/backend/internal/infrastructure/crypto"
+	"github.com/english-coach/backend/internal/shared/errors"
 	"go.uber.org/zap"
-)
-
-var (
-	ErrEmailRequired   = errors.New("Email hoặc tên đăng nhập là bắt buộc")
-	ErrEmailExists     = errors.New("Email đã tồn tại")
-	ErrUsernameExists  = errors.New("Tên đăng nhập đã tồn tại")
-	ErrInvalidPassword = errors.New("Mật khẩu phải có ít nhất 6 ký tự")
 )
 
 // RegisterUserUseCase handles user registration
@@ -53,11 +46,11 @@ type RegisterUserOutput struct {
 func (uc *RegisterUserUseCase) Execute(ctx context.Context, input RegisterUserInput) (*RegisterUserOutput, error) {
 	// Validate input
 	if (input.Email == nil || *input.Email == "") && (input.Username == nil || *input.Username == "") {
-		return nil, ErrEmailRequired
+		return nil, usererror.ErrEmailRequired
 	}
 
 	if len(input.Password) < 6 {
-		return nil, ErrInvalidPassword
+		return nil, usererror.ErrInvalidPassword
 	}
 
 	// Check if email already exists
@@ -68,10 +61,10 @@ func (uc *RegisterUserUseCase) Execute(ctx context.Context, input RegisterUserIn
 				zap.Error(err),
 				zap.String("email", *input.Email),
 			)
-			return nil, fmt.Errorf("failed to check if email exists: %w", err)
+			return nil, errors.WrapError(err, "failed to check if email exists")
 		}
 		if exists {
-			return nil, ErrEmailExists
+			return nil, usererror.ErrEmailExists
 		}
 	}
 
@@ -83,10 +76,10 @@ func (uc *RegisterUserUseCase) Execute(ctx context.Context, input RegisterUserIn
 				zap.Error(err),
 				zap.Stringp("username", input.Username),
 			)
-			return nil, fmt.Errorf("failed to check if username exists: %w", err)
+			return nil, errors.WrapError(err, "failed to check if username exists")
 		}
 		if exists {
-			return nil, ErrUsernameExists
+			return nil, usererror.ErrUsernameExists
 		}
 	}
 
@@ -94,14 +87,14 @@ func (uc *RegisterUserUseCase) Execute(ctx context.Context, input RegisterUserIn
 	passwordHash, err := crypto.HashPassword(input.Password)
 	if err != nil {
 		uc.logger.Error("failed to hash password", zap.Error(err))
-		return nil, fmt.Errorf("failed to hash password: %w", err)
+		return nil, errors.WrapError(err, "failed to hash password")
 	}
 
 	// Create user
 	user, err := uc.userRepo.Create(ctx, input.Email, input.Username, passwordHash)
 	if err != nil {
 		uc.logger.Error("failed to create user", zap.Error(err))
-		return nil, fmt.Errorf("failed to create user: %w", err)
+		return nil, errors.WrapError(err, "failed to create user")
 	}
 
 	return &RegisterUserOutput{

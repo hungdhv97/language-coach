@@ -2,12 +2,13 @@ package command
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/english-coach/backend/internal/domain/game/dto"
+	gameerror "github.com/english-coach/backend/internal/domain/game/error"
 	"github.com/english-coach/backend/internal/domain/game/model"
 	"github.com/english-coach/backend/internal/domain/game/port"
+	"github.com/english-coach/backend/internal/shared/errors"
 	"go.uber.org/zap"
 )
 
@@ -43,17 +44,17 @@ func (uc *SubmitAnswerUseCase) Execute(ctx context.Context, req *dto.SubmitAnswe
 			zap.Error(err),
 			zap.Int64("question_id", req.QuestionID),
 		)
-		return nil, fmt.Errorf("failed to find question: %w", err)
+		return nil, errors.WrapError(err, "failed to find question")
 	}
 
 	// Check if question is nil
 	if question == nil {
-		return nil, fmt.Errorf("Không tìm thấy câu hỏi")
+		return nil, gameerror.ErrQuestionNotFound
 	}
 
 	// Verify question belongs to session
 	if question.SessionID != sessionID {
-		return nil, fmt.Errorf("Câu hỏi không thuộc về phiên chơi này")
+		return nil, gameerror.ErrQuestionNotInSession
 	}
 
 	// Find the selected option
@@ -68,13 +69,13 @@ func (uc *SubmitAnswerUseCase) Execute(ctx context.Context, req *dto.SubmitAnswe
 	}
 
 	if selectedOption == nil {
-		return nil, fmt.Errorf("Không tìm thấy lựa chọn đã chọn")
+		return nil, gameerror.ErrOptionNotFound
 	}
 
 	// Check if answer already exists
 	existingAnswer, _ := uc.answerRepo.FindByQuestionID(ctx, req.QuestionID, sessionID, userID)
 	if existingAnswer != nil {
-		return nil, fmt.Errorf("Đã gửi câu trả lời cho câu hỏi này")
+		return nil, gameerror.ErrAnswerAlreadySubmitted
 	}
 
 	// Create answer
@@ -93,7 +94,7 @@ func (uc *SubmitAnswerUseCase) Execute(ctx context.Context, req *dto.SubmitAnswe
 			zap.Error(err),
 			zap.Int64("question_id", req.QuestionID),
 		)
-		return nil, fmt.Errorf("failed to create answer: %w", err)
+		return nil, errors.WrapError(err, "failed to create answer")
 	}
 
 	// Update session correct count if answer is correct

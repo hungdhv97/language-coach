@@ -2,20 +2,15 @@ package command
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
+	usererror "github.com/english-coach/backend/internal/domain/user/error"
 	"github.com/english-coach/backend/internal/domain/user/model"
 	"github.com/english-coach/backend/internal/domain/user/port"
 	"github.com/english-coach/backend/internal/infrastructure/auth"
 	"github.com/english-coach/backend/internal/infrastructure/crypto"
 	"github.com/english-coach/backend/internal/infrastructure/repository/common"
+	"github.com/english-coach/backend/internal/shared/errors"
 	"go.uber.org/zap"
-)
-
-var (
-	ErrInvalidCredentials = errors.New("Email hoặc tên đăng nhập không hợp lệ")
-	ErrUserInactive       = errors.New("Tài khoản người dùng đã bị vô hiệu hóa")
 )
 
 // LoginUseCase handles user login
@@ -64,29 +59,29 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 	} else if input.Username != nil && *input.Username != "" {
 		user, err = uc.userRepo.FindByUsername(ctx, *input.Username)
 	} else {
-		return nil, ErrInvalidCredentials
+		return nil, usererror.ErrInvalidCredentials
 	}
 
 	if err != nil {
 		if common.IsNotFound(err) {
-			return nil, ErrInvalidCredentials
+			return nil, usererror.ErrInvalidCredentials
 		}
 		uc.logger.Error("failed to find user", zap.Error(err))
-		return nil, fmt.Errorf("failed to find user: %w", err)
+		return nil, errors.WrapError(err, "failed to find user")
 	}
 
 	if user == nil {
-		return nil, ErrInvalidCredentials
+		return nil, usererror.ErrInvalidCredentials
 	}
 
 	// Check if user is active
 	if !user.IsActive {
-		return nil, ErrUserInactive
+		return nil, usererror.ErrUserInactive
 	}
 
 	// Verify password
 	if !crypto.CheckPasswordHash(input.Password, user.PasswordHash) {
-		return nil, ErrInvalidCredentials
+		return nil, usererror.ErrInvalidCredentials
 	}
 
 	// Generate JWT token
@@ -100,7 +95,7 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 	token, err := uc.jwtManager.GenerateToken(user.ID, username)
 	if err != nil {
 		uc.logger.Error("failed to generate token", zap.Error(err))
-		return nil, fmt.Errorf("failed to generate token: %w", err)
+		return nil, errors.WrapError(err, "failed to generate token")
 	}
 
 	return &LoginOutput{

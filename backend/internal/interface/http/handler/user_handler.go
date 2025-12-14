@@ -3,9 +3,12 @@ package handler
 import (
 	"net/http"
 
+	usererror "github.com/english-coach/backend/internal/domain/user/error"
 	"github.com/english-coach/backend/internal/domain/user/port"
 	"github.com/english-coach/backend/internal/domain/user/usecase/command"
 	"github.com/english-coach/backend/internal/domain/user/usecase/query"
+	"github.com/english-coach/backend/internal/interface/http/middleware"
+	commonerrors "github.com/english-coach/backend/internal/shared/errors"
 	"github.com/english-coach/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -57,21 +60,13 @@ func (h *UserHandler) Register(c *gin.Context) {
 
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.ErrorResponse(c, http.StatusBadRequest,
-			"INVALID_REQUEST",
-			"Dữ liệu yêu cầu không hợp lệ",
-			err.Error(),
-		)
+		middleware.SetError(c, commonerrors.ErrInvalidRequest.WithDetails(err.Error()))
 		return
 	}
 
 	// Validate that at least email or username is provided
 	if (req.Email == nil || *req.Email == "") && (req.Username == nil || *req.Username == "") {
-		response.ErrorResponse(c, http.StatusBadRequest,
-			"INVALID_REQUEST",
-			"Email hoặc tên đăng nhập là bắt buộc",
-			nil,
-		)
+		middleware.SetError(c, usererror.ErrEmailRequired)
 		return
 	}
 
@@ -83,34 +78,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 	})
 
 	if err != nil {
-		h.logger.Error("failed to register user",
-			zap.Error(err),
-			zap.String("path", c.Request.URL.Path),
-		)
-
-		statusCode := http.StatusInternalServerError
-		code := "INTERNAL_ERROR"
-		message := "Không thể đăng ký người dùng"
-
-		if err == command.ErrEmailRequired {
-			statusCode = http.StatusBadRequest
-			code = "EMAIL_REQUIRED"
-			message = err.Error()
-		} else if err == command.ErrEmailExists {
-			statusCode = http.StatusConflict
-			code = "EMAIL_EXISTS"
-			message = err.Error()
-		} else if err == command.ErrUsernameExists {
-			statusCode = http.StatusConflict
-			code = "USERNAME_EXISTS"
-			message = err.Error()
-		} else if err == command.ErrInvalidPassword {
-			statusCode = http.StatusBadRequest
-			code = "INVALID_PASSWORD"
-			message = err.Error()
-		}
-
-		response.ErrorResponse(c, statusCode, code, message, nil)
+		middleware.SetError(c, err)
 		return
 	}
 
@@ -142,21 +110,13 @@ func (h *UserHandler) Login(c *gin.Context) {
 
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.ErrorResponse(c, http.StatusBadRequest,
-			"INVALID_REQUEST",
-			"Dữ liệu yêu cầu không hợp lệ",
-			err.Error(),
-		)
+		middleware.SetError(c, commonerrors.ErrInvalidRequest.WithDetails(err.Error()))
 		return
 	}
 
 	// Validate that at least email or username is provided
 	if (req.Email == nil || *req.Email == "") && (req.Username == nil || *req.Username == "") {
-		response.ErrorResponse(c, http.StatusBadRequest,
-			"INVALID_REQUEST",
-			"Email hoặc tên đăng nhập là bắt buộc",
-			nil,
-		)
+		middleware.SetError(c, usererror.ErrEmailRequired)
 		return
 	}
 
@@ -167,26 +127,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 	})
 
 	if err != nil {
-		h.logger.Error("failed to login user",
-			zap.Error(err),
-			zap.String("path", c.Request.URL.Path),
-		)
-
-		statusCode := http.StatusUnauthorized
-		code := "UNAUTHORIZED"
-		message := "Thông tin đăng nhập không hợp lệ"
-
-		if err == command.ErrInvalidCredentials {
-			statusCode = http.StatusUnauthorized
-			code = "INVALID_CREDENTIALS"
-			message = err.Error()
-		} else if err == command.ErrUserInactive {
-			statusCode = http.StatusForbidden
-			code = "USER_INACTIVE"
-			message = err.Error()
-		}
-
-		response.ErrorResponse(c, statusCode, code, message, nil)
+		middleware.SetError(c, err)
 		return
 	}
 
@@ -200,43 +141,19 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 	// Get user ID from context (set by auth middleware)
 	userID, exists := c.Get("user_id")
 	if !exists {
-		response.ErrorResponse(c, http.StatusUnauthorized,
-			"UNAUTHORIZED",
-			"Người dùng chưa được xác thực",
-			nil,
-		)
+		middleware.SetError(c, commonerrors.ErrUnauthorized)
 		return
 	}
 
 	userIDInt64, ok := userID.(int64)
 	if !ok {
-		response.ErrorResponse(c, http.StatusInternalServerError,
-			"INTERNAL_ERROR",
-			"ID người dùng không hợp lệ",
-			nil,
-		)
+		middleware.SetError(c, commonerrors.ErrInternalError)
 		return
 	}
 
 	profile, err := h.getProfileUC.Execute(ctx, userIDInt64)
 	if err != nil {
-		h.logger.Error("failed to get user profile",
-			zap.Error(err),
-			zap.Int64("user_id", userIDInt64),
-			zap.String("path", c.Request.URL.Path),
-		)
-
-		statusCode := http.StatusInternalServerError
-		code := "INTERNAL_ERROR"
-		message := "Không thể lấy hồ sơ người dùng"
-
-		if err == query.ErrProfileNotFound {
-			statusCode = http.StatusNotFound
-			code = "PROFILE_NOT_FOUND"
-			message = err.Error()
-		}
-
-		response.ErrorResponse(c, statusCode, code, message, nil)
+		middleware.SetError(c, err)
 		return
 	}
 
@@ -258,31 +175,19 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	// Get user ID from context (set by auth middleware)
 	userID, exists := c.Get("user_id")
 	if !exists {
-		response.ErrorResponse(c, http.StatusUnauthorized,
-			"UNAUTHORIZED",
-			"Người dùng chưa được xác thực",
-			nil,
-		)
+		middleware.SetError(c, commonerrors.ErrUnauthorized)
 		return
 	}
 
 	userIDInt64, ok := userID.(int64)
 	if !ok {
-		response.ErrorResponse(c, http.StatusInternalServerError,
-			"INTERNAL_ERROR",
-			"ID người dùng không hợp lệ",
-			nil,
-		)
+		middleware.SetError(c, commonerrors.ErrInternalError)
 		return
 	}
 
 	var req UpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.ErrorResponse(c, http.StatusBadRequest,
-			"INVALID_REQUEST",
-			"Dữ liệu yêu cầu không hợp lệ",
-			err.Error(),
-		)
+		middleware.SetError(c, commonerrors.ErrInvalidRequest.WithDetails(err.Error()))
 		return
 	}
 
@@ -294,17 +199,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	})
 
 	if err != nil {
-		h.logger.Error("failed to update user profile",
-			zap.Error(err),
-			zap.Int64("user_id", userIDInt64),
-			zap.String("path", c.Request.URL.Path),
-		)
-
-		response.ErrorResponse(c, http.StatusInternalServerError,
-			"INTERNAL_ERROR",
-			"Không thể cập nhật hồ sơ người dùng",
-			nil,
-		)
+		middleware.SetError(c, err)
 		return
 	}
 
@@ -317,25 +212,13 @@ func (h *UserHandler) CheckEmailAvailability(c *gin.Context) {
 	email := c.Query("email")
 
 	if email == "" {
-		response.ErrorResponse(c, http.StatusBadRequest,
-			"INVALID_PARAMETER",
-			"Tham số email là bắt buộc",
-			nil,
-		)
+		middleware.SetError(c, commonerrors.ErrInvalidParameter.WithDetails("email parameter is required"))
 		return
 	}
 
 	exists, err := h.userRepo.CheckEmailExists(ctx, email)
 	if err != nil {
-		h.logger.Error("failed to check email availability",
-			zap.Error(err),
-			zap.String("email", email),
-		)
-		response.ErrorResponse(c, http.StatusInternalServerError,
-			"INTERNAL_ERROR",
-			"Không thể kiểm tra tính khả dụng của email",
-			nil,
-		)
+		middleware.SetError(c, err)
 		return
 	}
 
@@ -351,25 +234,13 @@ func (h *UserHandler) CheckUsernameAvailability(c *gin.Context) {
 	username := c.Query("username")
 
 	if username == "" {
-		response.ErrorResponse(c, http.StatusBadRequest,
-			"INVALID_PARAMETER",
-			"Tham số tên đăng nhập là bắt buộc",
-			nil,
-		)
+		middleware.SetError(c, commonerrors.ErrInvalidParameter.WithDetails("username parameter is required"))
 		return
 	}
 
 	exists, err := h.userRepo.CheckUsernameExists(ctx, username)
 	if err != nil {
-		h.logger.Error("failed to check username availability",
-			zap.Error(err),
-			zap.String("username", username),
-		)
-		response.ErrorResponse(c, http.StatusInternalServerError,
-			"INTERNAL_ERROR",
-			"Không thể kiểm tra tính khả dụng của tên đăng nhập",
-			nil,
-		)
+		middleware.SetError(c, err)
 		return
 	}
 

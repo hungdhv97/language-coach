@@ -8,7 +8,9 @@ import (
 
 	dictModel "github.com/english-coach/backend/internal/domain/dictionary/model"
 	dictPort "github.com/english-coach/backend/internal/domain/dictionary/port"
+	gameerror "github.com/english-coach/backend/internal/domain/game/error"
 	"github.com/english-coach/backend/internal/domain/game/model"
+	"github.com/english-coach/backend/internal/shared/errors"
 	"go.uber.org/zap"
 )
 
@@ -43,7 +45,7 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 
 	// Validate mode
 	if mode != "level" {
-		return nil, nil, fmt.Errorf("Chế độ không hợp lệ: %s (yêu cầu 'level')", mode)
+		return nil, nil, gameerror.ErrInvalidMode.WithDetails(fmt.Sprintf("mode: %s, required: 'level'", mode))
 	}
 
 	// Fetch source words by level and optional topics
@@ -66,7 +68,7 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 			zap.Int16("target_language_id", targetLanguageID),
 			zap.Int("requested_limit", maxWordsToFetch),
 		)
-		return nil, nil, fmt.Errorf("failed to fetch source words: %w", err)
+		return nil, nil, errors.WrapError(err, "failed to fetch source words")
 	}
 	s.logger.Info("fetched words by level and topics",
 		zap.Int64("level_id", levelID),
@@ -88,7 +90,7 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 			zap.Int16("source_language_id", sourceLanguageID),
 			zap.Int16("target_language_id", targetLanguageID),
 		)
-		return nil, nil, fmt.Errorf("Không đủ từ: cần ít nhất 1, có %d", len(sourceWords))
+		return nil, nil, gameerror.ErrInsufficientWords.WithDetails(fmt.Sprintf("required: 1, available: %d", len(sourceWords)))
 	}
 
 	// Shuffle words for randomness
@@ -167,7 +169,7 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 		// Get correct word
 		correctWord, exists := allTargetWords[question.CorrectTargetWordID]
 		if !exists {
-			return nil, nil, fmt.Errorf("Không tìm thấy từ đúng cho câu hỏi %d", i+1)
+			return nil, nil, gameerror.ErrQuestionNotFound.WithDetails(fmt.Sprintf("question_index: %d", i+1))
 		}
 
 		// Get wrong answer candidates (exclude correct answer)
@@ -188,7 +190,7 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 				if len(wrongCandidates) > 0 {
 					wrongCandidates = append(wrongCandidates, wrongCandidates[0])
 				} else {
-					return nil, nil, fmt.Errorf("Không đủ lựa chọn sai cho câu hỏi %d", i+1)
+					return nil, nil, gameerror.ErrOptionNotFound.WithDetails(fmt.Sprintf("question_index: %d", i+1))
 				}
 			}
 		}
@@ -217,7 +219,7 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 		}
 
 		if correctIndex == -1 {
-			return nil, nil, fmt.Errorf("Không tìm thấy câu trả lời đúng trong các lựa chọn đã xáo trộn")
+			return nil, nil, gameerror.ErrQuestionNotFound.WithDetails("correct answer not found in shuffled options")
 		}
 
 		// Create options (A, B, C, D)

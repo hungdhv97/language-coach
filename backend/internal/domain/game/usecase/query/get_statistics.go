@@ -2,11 +2,12 @@ package query
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/english-coach/backend/internal/domain/game/dto"
+	gameerror "github.com/english-coach/backend/internal/domain/game/error"
 	"github.com/english-coach/backend/internal/domain/game/port"
+	"github.com/english-coach/backend/internal/shared/errors"
 	"go.uber.org/zap"
 )
 
@@ -39,17 +40,17 @@ func (uc *GetSessionStatisticsUseCase) Execute(ctx context.Context, sessionID, u
 			zap.Error(err),
 			zap.Int64("session_id", sessionID),
 		)
-		return nil, fmt.Errorf("failed to find session: %w", err)
+		return nil, errors.WrapError(err, "failed to find session")
 	}
 
 	// Check if session is nil
 	if session == nil {
-		return nil, fmt.Errorf("Không tìm thấy phiên chơi")
+		return nil, gameerror.ErrSessionNotFound
 	}
 
 	// Verify session belongs to user
 	if session.UserID != userID {
-		return nil, fmt.Errorf("Phiên chơi không thuộc về người dùng này")
+		return nil, gameerror.ErrSessionNotOwned
 	}
 
 	// Get all answers for the session
@@ -59,7 +60,7 @@ func (uc *GetSessionStatisticsUseCase) Execute(ctx context.Context, sessionID, u
 			zap.Error(err),
 			zap.Int64("session_id", sessionID),
 		)
-		return nil, fmt.Errorf("failed to find answers: %w", err)
+		return nil, errors.WrapError(err, "failed to find answers")
 	}
 
 	// Calculate statistics

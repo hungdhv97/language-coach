@@ -2,9 +2,9 @@ package command
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/english-coach/backend/internal/domain/user/port"
+	"github.com/english-coach/backend/internal/shared/errors"
 	"go.uber.org/zap"
 )
 
@@ -47,7 +47,7 @@ func (uc *UpdateUserProfileUseCase) Execute(ctx context.Context, userID int64, i
 	profile, err := uc.profileRepo.Update(ctx, userID, input.DisplayName, input.AvatarURL, input.BirthDay, input.Bio)
 	if err != nil {
 		uc.logger.Error("failed to update user profile", zap.Error(err), zap.Int64("user_id", userID))
-		return nil, fmt.Errorf("failed to update user profile: %w", err)
+		return nil, errors.WrapError(err, "failed to update user profile")
 	}
 
 	var birthDayStr *string

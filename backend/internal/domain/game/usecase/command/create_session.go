@@ -2,15 +2,15 @@ package command
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/english-coach/backend/internal/domain/game/dto"
+	gameerror "github.com/english-coach/backend/internal/domain/game/error"
 	"github.com/english-coach/backend/internal/domain/game/model"
 	"github.com/english-coach/backend/internal/domain/game/port"
 	"github.com/english-coach/backend/internal/shared/constants"
+	"github.com/english-coach/backend/internal/shared/errors"
 	"go.uber.org/zap"
 )
 
@@ -41,7 +41,7 @@ func NewCreateGameSessionUseCase(
 func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.CreateGameSessionRequest, userID int64) (*model.GameSession, error) {
 	// Validate request
 	if err := req.Validate(); err != nil {
-		return nil, fmt.Errorf("validation error: %w", err)
+		return nil, errors.ErrValidationError.WithDetails(err.Error())
 	}
 
 	// Create game session model
@@ -72,7 +72,7 @@ func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.Create
 			zap.Int64("user_id", userID),
 			zap.String("mode", req.Mode),
 		)
-		return nil, fmt.Errorf("failed to create game session: %w", err)
+		return nil, errors.WrapError(err, "failed to create game session")
 	}
 
 	// Generate questions upfront - request up to MaxGameQuestionCount (20)
@@ -99,14 +99,14 @@ func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.Create
 		// Check for insufficient words error (FR-026)
 		// Error message format: "Không đủ từ: cần X, có Y"
 		if strings.Contains(err.Error(), "Không đủ từ") {
-			return nil, InsufficientWordsError
+			return nil, gameerror.ErrInsufficientWords
 		}
-		return nil, fmt.Errorf("failed to generate questions: %w", err)
+		return nil, errors.WrapError(err, "failed to generate questions")
 	}
 
 	// Check if we have at least the minimum required questions (1)
 	if len(questions) < constants.MinGameQuestionCount {
-		return nil, InsufficientWordsError
+		return nil, gameerror.ErrInsufficientWords
 	}
 
 	// Save questions and options
@@ -115,7 +115,7 @@ func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.Create
 			zap.Error(err),
 			zap.Int64("session_id", session.ID),
 		)
-		return nil, fmt.Errorf("failed to save questions: %w", err)
+		return nil, errors.WrapError(err, "failed to save questions")
 	}
 
 	// Update session with question count
@@ -140,6 +140,3 @@ func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.Create
 
 	return session, nil
 }
-
-// InsufficientWordsError represents the error when there are not enough words
-var InsufficientWordsError = errors.New("Không đủ từ vựng để tạo phiên chơi. Vui lòng chọn chủ đề hoặc cấp độ khác")

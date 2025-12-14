@@ -2,16 +2,12 @@ package query
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
+	usererror "github.com/english-coach/backend/internal/domain/user/error"
 	"github.com/english-coach/backend/internal/domain/user/model"
 	"github.com/english-coach/backend/internal/domain/user/port"
+	"github.com/english-coach/backend/internal/shared/errors"
 	"go.uber.org/zap"
-)
-
-var (
-	ErrProfileNotFound = errors.New("Không tìm thấy hồ sơ người dùng")
 )
 
 // GetUserProfileUseCase handles getting user profile
@@ -36,11 +32,11 @@ func (uc *GetUserProfileUseCase) Execute(ctx context.Context, userID int64) (*mo
 	profile, err := uc.profileRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		uc.logger.Error("failed to get user profile", zap.Error(err), zap.Int64("user_id", userID))
-		return nil, fmt.Errorf("failed to get user profile: %w", err)
+		return nil, errors.WrapError(err, "failed to get user profile")
 	}
 
 	if profile == nil {
-		return nil, ErrProfileNotFound
+		return nil, usererror.ErrProfileNotFound
 	}
 
 	return profile, nil

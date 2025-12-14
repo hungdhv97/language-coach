@@ -6,6 +6,8 @@ import (
 
 	"github.com/english-coach/backend/internal/domain/dictionary/port"
 	"github.com/english-coach/backend/internal/domain/dictionary/service"
+	"github.com/english-coach/backend/internal/interface/http/middleware"
+	commonerrors "github.com/english-coach/backend/internal/shared/errors"
 	"github.com/english-coach/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -46,15 +48,7 @@ func (h *DictionaryHandler) GetLanguages(c *gin.Context) {
 
 	languages, err := h.languageRepo.FindAll(ctx)
 	if err != nil {
-		h.logger.Error("failed to fetch languages",
-			zap.Error(err),
-			zap.String("path", c.Request.URL.Path),
-		)
-		response.ErrorResponse(c, http.StatusInternalServerError,
-			"INTERNAL_ERROR",
-			"Không thể lấy danh sách ngôn ngữ",
-			nil,
-		)
+		middleware.SetError(c, err)
 		return
 	}
 
@@ -67,15 +61,7 @@ func (h *DictionaryHandler) GetTopics(c *gin.Context) {
 
 	topics, err := h.topicRepo.FindAll(ctx)
 	if err != nil {
-		h.logger.Error("failed to fetch topics",
-			zap.Error(err),
-			zap.String("path", c.Request.URL.Path),
-		)
-		response.ErrorResponse(c, http.StatusInternalServerError,
-			"INTERNAL_ERROR",
-			"Không thể lấy danh sách chủ đề",
-			nil,
-		)
+		middleware.SetError(c, err)
 		return
 	}
 
@@ -90,26 +76,13 @@ func (h *DictionaryHandler) GetLevels(c *gin.Context) {
 	if languageIDStr != "" {
 		languageID, err := strconv.ParseInt(languageIDStr, 10, 16)
 		if err != nil {
-			response.ErrorResponse(c, http.StatusBadRequest,
-				"INVALID_PARAMETER",
-				"Tham số languageId không hợp lệ",
-				nil,
-			)
+			middleware.SetError(c, commonerrors.ErrInvalidParameter.WithDetails("invalid languageId"))
 			return
 		}
 
 		levels, err := h.levelRepo.FindByLanguageID(ctx, int16(languageID))
 		if err != nil {
-			h.logger.Error("failed to fetch levels by language",
-				zap.Error(err),
-				zap.String("path", c.Request.URL.Path),
-				zap.Int16("language_id", int16(languageID)),
-			)
-			response.ErrorResponse(c, http.StatusInternalServerError,
-				"INTERNAL_ERROR",
-				"Không thể lấy danh sách cấp độ",
-				nil,
-			)
+			middleware.SetError(c, err)
 			return
 		}
 
@@ -120,15 +93,7 @@ func (h *DictionaryHandler) GetLevels(c *gin.Context) {
 	// If no languageId provided, return all levels
 	levels, err := h.levelRepo.FindAll(ctx)
 	if err != nil {
-		h.logger.Error("failed to fetch levels",
-			zap.Error(err),
-			zap.String("path", c.Request.URL.Path),
-		)
-		response.ErrorResponse(c, http.StatusInternalServerError,
-			"INTERNAL_ERROR",
-			"Không thể lấy danh sách cấp độ",
-			nil,
-		)
+		middleware.SetError(c, err)
 		return
 	}
 
@@ -141,32 +106,20 @@ func (h *DictionaryHandler) SearchWords(c *gin.Context) {
 
 	query := c.Query("q")
 	if query == "" {
-		response.ErrorResponse(c, http.StatusBadRequest,
-			"INVALID_PARAMETER",
-			"Tham số tìm kiếm (q) là bắt buộc",
-			nil,
-		)
+		middleware.SetError(c, commonerrors.ErrInvalidParameter.WithDetails("query parameter (q) is required"))
 		return
 	}
 
 	// Parse language ID (required)
 	languageIDStr := c.Query("languageId")
 	if languageIDStr == "" {
-		response.ErrorResponse(c, http.StatusBadRequest,
-			"INVALID_PARAMETER",
-			"ID ngôn ngữ (languageId) là bắt buộc",
-			nil,
-		)
+		middleware.SetError(c, commonerrors.ErrInvalidParameter.WithDetails("languageId parameter is required"))
 		return
 	}
 
 	languageID, err := strconv.ParseInt(languageIDStr, 10, 16)
 	if err != nil {
-		response.ErrorResponse(c, http.StatusBadRequest,
-			"INVALID_PARAMETER",
-			"Tham số languageId không hợp lệ",
-			nil,
-		)
+		middleware.SetError(c, commonerrors.ErrInvalidParameter.WithDetails("invalid languageId"))
 		return
 	}
 	langID := int16(languageID)
@@ -176,11 +129,7 @@ func (h *DictionaryHandler) SearchWords(c *gin.Context) {
 	if limitStr := c.Query("limit"); limitStr != "" {
 		parsedLimit, err := strconv.Atoi(limitStr)
 		if err != nil || parsedLimit < 1 || parsedLimit > 100 {
-			response.ErrorResponse(c, http.StatusBadRequest,
-				"INVALID_PARAMETER",
-				"Tham số limit phải là số từ 1 đến 100",
-				nil,
-			)
+			middleware.SetError(c, commonerrors.ErrInvalidParameter.WithDetails("limit must be between 1 and 100"))
 			return
 		}
 		limit = parsedLimit
@@ -190,11 +139,7 @@ func (h *DictionaryHandler) SearchWords(c *gin.Context) {
 	if offsetStr := c.Query("offset"); offsetStr != "" {
 		parsedOffset, err := strconv.Atoi(offsetStr)
 		if err != nil || parsedOffset < 0 {
-			response.ErrorResponse(c, http.StatusBadRequest,
-				"INVALID_PARAMETER",
-				"Tham số offset phải là số không âm",
-				nil,
-			)
+			middleware.SetError(c, commonerrors.ErrInvalidParameter.WithDetails("offset must be non-negative"))
 			return
 		}
 		offset = parsedOffset
@@ -220,16 +165,7 @@ func (h *DictionaryHandler) SearchWords(c *gin.Context) {
 	// Search words
 	words, err := h.wordRepo.SearchWords(ctx, query, langID, limit, offset)
 	if err != nil {
-		logger.Error("failed to search words",
-			zap.Error(err),
-			zap.String("query", query),
-			zap.String("path", c.Request.URL.Path),
-		)
-		response.ErrorResponse(c, http.StatusInternalServerError,
-			"INTERNAL_ERROR",
-			"Không thể tìm kiếm từ",
-			nil,
-		)
+		middleware.SetError(c, err)
 		return
 	}
 
@@ -281,11 +217,7 @@ func (h *DictionaryHandler) GetWordDetail(c *gin.Context) {
 	wordIDStr := c.Param("wordId")
 	wordID, err := strconv.ParseInt(wordIDStr, 10, 64)
 	if err != nil {
-		response.ErrorResponse(c, http.StatusBadRequest,
-			"INVALID_PARAMETER",
-			"Tham số wordId không hợp lệ",
-			nil,
-		)
+		middleware.SetError(c, commonerrors.ErrInvalidParameter.WithDetails("invalid wordId"))
 		return
 	}
 
@@ -305,25 +237,12 @@ func (h *DictionaryHandler) GetWordDetail(c *gin.Context) {
 
 	wordDetail, err := h.dictionaryService.GetWordDetail(ctx, wordID)
 	if err != nil {
-		logger.Error("failed to get word detail",
-			zap.Error(err),
-			zap.Int64("word_id", wordID),
-			zap.String("path", c.Request.URL.Path),
-		)
-		response.ErrorResponse(c, http.StatusInternalServerError,
-			"INTERNAL_ERROR",
-			"Không thể lấy chi tiết từ",
-			nil,
-		)
+		middleware.SetError(c, err)
 		return
 	}
 
 	if wordDetail == nil || wordDetail.Word == nil {
-		response.ErrorResponse(c, http.StatusNotFound,
-			"NOT_FOUND",
-			"Không tìm thấy từ",
-			nil,
-		)
+		middleware.SetError(c, commonerrors.ErrNotFound)
 		return
 	}
 
