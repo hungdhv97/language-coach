@@ -11,27 +11,28 @@ type Logger struct {
 }
 
 // NewLogger creates a new structured logger using zap
-func NewLogger(level string) (*Logger, error) {
+func NewLogger(env string) (*Logger, error) {
 	var zapLevel zapcore.Level
-	switch level {
-	case "debug":
+	var config zap.Config
+
+	// Map environment to log level
+	switch env {
+	case "development":
 		zapLevel = zapcore.DebugLevel
-	case "info":
+		config = zap.NewDevelopmentConfig()
+	case "staging", "production":
 		zapLevel = zapcore.InfoLevel
-	case "warn":
-		zapLevel = zapcore.WarnLevel
-	case "error":
-		zapLevel = zapcore.ErrorLevel
+		config = zap.NewProductionConfig()
 	default:
 		zapLevel = zapcore.InfoLevel
+		config = zap.NewDevelopmentConfig()
 	}
 
-	config := zap.NewDevelopmentConfig()
 	config.Level = zap.NewAtomicLevelAt(zapLevel)
 	config.EncoderConfig.TimeKey = "timestamp"
 	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder // Thêm màu sắc cho level
-	config.EncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder      // Hiển thị caller ngắn gọn
+	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	config.EncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
 
 	logger, err := config.Build()
 	if err != nil {

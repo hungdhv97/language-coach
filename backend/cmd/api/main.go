@@ -34,7 +34,7 @@ func main() {
 	}
 
 	// Initialize logger
-	appLogger, err := logger.NewLogger(cfg.Logging.Level)
+	appLogger, err := logger.NewLogger(cfg.App.Env)
 	if err != nil {
 		log.Fatalf("Failed to initialize logger: %v", err)
 	}
