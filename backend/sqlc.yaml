@@ -3,15 +3,15 @@ sql:
   # Dictionary domain
   - engine: "postgresql"
     queries:
-      - "internal/infrastructure/db/sqlc/query/dictionary"
+      - "db/queries/dictionary"
     # Use only schema SQL files (no data) so sqlc can see table definitions.
     # This directory contains files like 0001_init_schema.sql.
     schema:
-      - "internal/infrastructure/db/migrations/schema"
+      - "db/migrations/schema"
     gen:
       go:
         package: "db"
-        out: "internal/infrastructure/db/sqlc/gen/dictionary"
+        out: "internal/platform/db/sqlc/gen/dictionary"
         sql_package: "pgx/v5"
         emit_json_tags: true
         emit_prepared_queries: false
@@ -22,13 +22,13 @@ sql:
   # Game domain
   - engine: "postgresql"
     queries:
-      - "internal/infrastructure/db/sqlc/query/game"
+      - "db/queries/game"
     schema:
-      - "internal/infrastructure/db/migrations/schema"
+      - "db/migrations/schema"
     gen:
       go:
         package: "db"
-        out: "internal/infrastructure/db/sqlc/gen/game"
+        out: "internal/platform/db/sqlc/gen/game"
         sql_package: "pgx/v5"
         emit_json_tags: true
         emit_prepared_queries: false
@@ -39,13 +39,13 @@ sql:
   # User domain
   - engine: "postgresql"
     queries:
-      - "internal/infrastructure/db/sqlc/query/user"
+      - "db/queries/user"
     schema:
-      - "internal/infrastructure/db/migrations/schema"
+      - "db/migrations/schema"
     gen:
       go:
         package: "db"
-        out: "internal/infrastructure/db/sqlc/gen/user"
+        out: "internal/platform/db/sqlc/gen/user"
         sql_package: "pgx/v5"
         emit_json_tags: true
         emit_prepared_queries: false

@@ -3,20 +3,20 @@ package command
 import (
 	"context"
 
-	"github.com/english-coach/backend/internal/domain/user/port"
+	"github.com/english-coach/backend/internal/modules/user/domain"
 	"github.com/english-coach/backend/internal/shared/errors"
 	"go.uber.org/zap"
 )
 
 // UpdateUserProfileUseCase handles updating user profile
 type UpdateUserProfileUseCase struct {
-	profileRepo port.UserProfileRepository
+	profileRepo domain.UserProfileRepository
 	logger      *zap.Logger
 }
 
 // NewUpdateUserProfileUseCase creates a new update user profile use case
 func NewUpdateUserProfileUseCase(
-	profileRepo port.UserProfileRepository,
+	profileRepo domain.UserProfileRepository,
 	logger *zap.Logger,
 ) *UpdateUserProfileUseCase {
 	return &UpdateUserProfileUseCase{

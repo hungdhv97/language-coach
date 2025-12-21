@@ -3,22 +3,21 @@ package command
 import (
 	"context"
 
-	usererrors "github.com/english-coach/backend/internal/domain/user/error"
-	"github.com/english-coach/backend/internal/domain/user/port"
-	"github.com/english-coach/backend/internal/infrastructure/crypto"
+	"github.com/english-coach/backend/internal/modules/user/domain"
+	"github.com/english-coach/backend/internal/shared/auth"
 	"github.com/english-coach/backend/internal/shared/errors"
 	"go.uber.org/zap"
 )
 
 // RegisterUserUseCase handles user registration
 type RegisterUserUseCase struct {
-	userRepo port.UserRepository
+	userRepo domain.UserRepository
 	logger   *zap.Logger
 }
 
 // NewRegisterUserUseCase creates a new register user use case
 func NewRegisterUserUseCase(
-	userRepo port.UserRepository,
+	userRepo domain.UserRepository,
 	logger *zap.Logger,
 ) *RegisterUserUseCase {
 	return &RegisterUserUseCase{
@@ -46,11 +45,11 @@ type RegisterUserOutput struct {
 func (uc *RegisterUserUseCase) Execute(ctx context.Context, input RegisterUserInput) (*RegisterUserOutput, error) {
 	// Validate input
 	if (input.Email == nil || *input.Email == "") && (input.Username == nil || *input.Username == "") {
-		return nil, usererrors.ErrEmailRequired
+		return nil, domain.ErrEmailRequired
 	}
 
 	if len(input.Password) < 6 {
-		return nil, usererrors.ErrInvalidPassword
+		return nil, domain.ErrInvalidPassword
 	}
 
 	// Check if email already exists
@@ -64,7 +63,7 @@ func (uc *RegisterUserUseCase) Execute(ctx context.Context, input RegisterUserIn
 			return nil, errors.WrapError(err, "failed to check if email exists")
 		}
 		if exists {
-			return nil, usererrors.ErrEmailExists
+			return nil, domain.ErrEmailExists
 		}
 	}
 
@@ -79,12 +78,12 @@ func (uc *RegisterUserUseCase) Execute(ctx context.Context, input RegisterUserIn
 			return nil, errors.WrapError(err, "failed to check if username exists")
 		}
 		if exists {
-			return nil, usererrors.ErrUsernameExists
+			return nil, domain.ErrUsernameExists
 		}
 	}
 
 	// Hash password
-	passwordHash, err := crypto.HashPassword(input.Password)
+	passwordHash, err := auth.HashPassword(input.Password)
 	if err != nil {
 		uc.logger.Error("failed to hash password", zap.Error(err))
 		return nil, errors.WrapError(err, "failed to hash password")

@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	appconfig "github.com/english-coach/backend/internal/config"
+	appconfig "github.com/english-coach/backend/configs"
 )
 
 // Seed data models for initial JSON (0001_init_data.json)
@@ -140,10 +140,10 @@ type CharacterReadingJSON struct {
 }
 
 const (
-	initDataPath   = "internal/infrastructure/db/migrations/data/0001_init_data.json"
-	wordEnDataPath = "internal/infrastructure/db/migrations/data/0002_word_en.jsonl"
-	wordViDataPath = "internal/infrastructure/db/migrations/data/0003_word_vi.jsonl"
-	wordZhDataPath = "internal/infrastructure/db/migrations/data/0004_word_zh.jsonl"
+	initDataPath   = "db/migrations/data/0001_init_data.json"
+	wordEnDataPath = "db/migrations/data/0002_word_en.jsonl"
+	wordViDataPath = "db/migrations/data/0003_word_vi.jsonl"
+	wordZhDataPath = "db/migrations/data/0004_word_zh.jsonl"
 )
 
 func main() {

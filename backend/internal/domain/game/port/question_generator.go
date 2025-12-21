@@ -3,7 +3,7 @@ package port
 import (
 	"context"
 
-	"github.com/english-coach/backend/internal/domain/game/model"
+	"github.com/english-coach/backend/internal/modules/game/domain"
 )
 
 // QuestionGenerator defines operations for generating game questions
@@ -20,5 +20,5 @@ type QuestionGenerator interface {
 		topicIDs []int64, // Optional array of topic IDs (nil/empty means all topics)
 		levelID int64, // Required level ID
 		questionCount int,
-	) ([]*model.GameQuestion, []*model.GameQuestionOption, error)
+	) ([]*domain.GameQuestion, []*domain.GameQuestionOption, error)
 }

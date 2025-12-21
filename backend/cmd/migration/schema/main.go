@@ -34,7 +34,7 @@ func main() {
 	}
 
 	// Read migration file
-	migrationPath := "internal/infrastructure/db/migrations/schema/0001_init_schema.sql"
+	migrationPath := "db/migrations/schema/0001_init_schema.sql"
 	if _, err := os.Stat(migrationPath); os.IsNotExist(err) {
 		// Try alternative path
 		migrationPath = filepath.Join("backend", migrationPath)

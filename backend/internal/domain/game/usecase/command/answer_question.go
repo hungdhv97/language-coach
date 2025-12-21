@@ -5,26 +5,24 @@ import (
 	"time"
 
 	"github.com/english-coach/backend/internal/domain/game/dto"
-	gameerrors "github.com/english-coach/backend/internal/domain/game/error"
-	"github.com/english-coach/backend/internal/domain/game/model"
-	"github.com/english-coach/backend/internal/domain/game/port"
+	"github.com/english-coach/backend/internal/modules/game/domain"
 	"github.com/english-coach/backend/internal/shared/errors"
 	"go.uber.org/zap"
 )
 
 // SubmitAnswerUseCase handles answer submission
 type SubmitAnswerUseCase struct {
-	answerRepo   port.GameAnswerRepository
-	questionRepo port.GameQuestionRepository
-	sessionRepo  port.GameSessionRepository
+	answerRepo   domain.GameAnswerRepository
+	questionRepo domain.GameQuestionRepository
+	sessionRepo  domain.GameSessionRepository
 	logger       *zap.Logger
 }
 
 // NewSubmitAnswerUseCase creates a new use case
 func NewSubmitAnswerUseCase(
-	answerRepo port.GameAnswerRepository,
-	questionRepo port.GameQuestionRepository,
-	sessionRepo port.GameSessionRepository,
+	answerRepo domain.GameAnswerRepository,
+	questionRepo domain.GameQuestionRepository,
+	sessionRepo domain.GameSessionRepository,
 	logger *zap.Logger,
 ) *SubmitAnswerUseCase {
 	return &SubmitAnswerUseCase{
@@ -36,7 +34,7 @@ func NewSubmitAnswerUseCase(
 }
 
 // Execute submits an answer to a question
-func (uc *SubmitAnswerUseCase) Execute(ctx context.Context, req *dto.SubmitAnswerRequest, sessionID, userID int64) (*model.GameAnswer, error) {
+func (uc *SubmitAnswerUseCase) Execute(ctx context.Context, req *dto.SubmitAnswerRequest, sessionID, userID int64) (*domain.GameAnswer, error) {
 	// Get question and options to verify the answer
 	question, options, err := uc.questionRepo.FindByID(ctx, req.QuestionID)
 	if err != nil {
@@ -49,16 +47,16 @@ func (uc *SubmitAnswerUseCase) Execute(ctx context.Context, req *dto.SubmitAnswe
 
 	// Check if question is nil
 	if question == nil {
-		return nil, gameerrors.ErrQuestionNotFound
+		return nil, domain.ErrQuestionNotFound
 	}
 
 	// Verify question belongs to session
 	if question.SessionID != sessionID {
-		return nil, gameerrors.ErrQuestionNotInSession
+		return nil, domain.ErrQuestionNotInSession
 	}
 
 	// Find the selected option
-	var selectedOption *model.GameQuestionOption
+	var selectedOption *domain.GameQuestionOption
 	var isCorrect bool
 	for _, opt := range options {
 		if opt.ID == req.SelectedOptionID {
@@ -69,17 +67,17 @@ func (uc *SubmitAnswerUseCase) Execute(ctx context.Context, req *dto.SubmitAnswe
 	}
 
 	if selectedOption == nil {
-		return nil, gameerrors.ErrOptionNotFound
+		return nil, domain.ErrOptionNotFound
 	}
 
 	// Check if answer already exists
 	existingAnswer, _ := uc.answerRepo.FindByQuestionID(ctx, req.QuestionID, sessionID, userID)
 	if existingAnswer != nil {
-		return nil, gameerrors.ErrAnswerAlreadySubmitted
+		return nil, domain.ErrAnswerAlreadySubmitted
 	}
 
 	// Create answer
-	answer := &model.GameAnswer{
+	answer := &domain.GameAnswer{
 		QuestionID:       req.QuestionID,
 		SessionID:        sessionID,
 		UserID:           userID,

@@ -7,21 +7,23 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/english-coach/backend/internal/config"
+	"github.com/english-coach/backend/configs"
 	"github.com/english-coach/backend/internal/domain/dictionary/service"
 	gamesvc "github.com/english-coach/backend/internal/domain/game/service"
 	gamecmd "github.com/english-coach/backend/internal/domain/game/usecase/command"
-	usercmd "github.com/english-coach/backend/internal/domain/user/usecase/command"
-	userqry "github.com/english-coach/backend/internal/domain/user/usecase/query"
-	"github.com/english-coach/backend/internal/infrastructure/auth"
-	"github.com/english-coach/backend/internal/infrastructure/db"
-	"github.com/english-coach/backend/internal/infrastructure/logger"
-	"github.com/english-coach/backend/internal/infrastructure/repository/dictionary"
-	gamerepo "github.com/english-coach/backend/internal/infrastructure/repository/game"
-	userrepo "github.com/english-coach/backend/internal/infrastructure/repository/user"
-	httpserver "github.com/english-coach/backend/internal/interface/http"
-	"github.com/english-coach/backend/internal/interface/http/handler"
-	"github.com/english-coach/backend/internal/interface/http/middleware"
+	userregister "github.com/english-coach/backend/internal/modules/user/usecase/register"
+	userlogin "github.com/english-coach/backend/internal/modules/user/usecase/login"
+	usergetprofile "github.com/english-coach/backend/internal/modules/user/usecase/get_profile"
+	userupdateprofile "github.com/english-coach/backend/internal/modules/user/usecase/update_profile"
+	"github.com/english-coach/backend/internal/shared/auth"
+	"github.com/english-coach/backend/internal/platform/db"
+	"github.com/english-coach/backend/internal/shared/logger"
+	"github.com/english-coach/backend/internal/modules/dictionary/infra/persistence/postgres/dictionary"
+	gamerepo "github.com/english-coach/backend/internal/modules/game/infra/persistence/postgres"
+	userrepo "github.com/english-coach/backend/internal/modules/user/infra/persistence/postgres/user"
+	httpserver "github.com/english-coach/backend/internal/transport/http"
+	"github.com/english-coach/backend/internal/transport/http/handler"
+	"github.com/english-coach/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -127,23 +129,23 @@ func main() {
 	)
 
 	// Initialize user use cases
-	registerUC := usercmd.NewRegisterUserUseCase(
+	registerUC := userregister.NewHandler(
 		userRepository.UserRepository(),
 		appLogger.Logger,
 	)
 
-	loginUC := usercmd.NewLoginUseCase(
+	loginUC := userlogin.NewHandler(
 		userRepository.UserRepository(),
 		jwtManager,
 		appLogger.Logger,
 	)
 
-	getProfileUC := userqry.NewGetUserProfileUseCase(
+	getProfileUC := usergetprofile.NewHandler(
 		userRepository.UserProfileRepository(),
 		appLogger.Logger,
 	)
 
-	updateProfileUC := usercmd.NewUpdateUserProfileUseCase(
+	updateProfileUC := userupdateprofile.NewHandler(
 		userRepository.UserProfileRepository(),
 		appLogger.Logger,
 	)

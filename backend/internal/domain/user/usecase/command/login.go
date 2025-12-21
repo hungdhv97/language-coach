@@ -3,26 +3,22 @@ package command
 import (
 	"context"
 
-	usererrors "github.com/english-coach/backend/internal/domain/user/error"
-	"github.com/english-coach/backend/internal/domain/user/model"
-	"github.com/english-coach/backend/internal/domain/user/port"
-	"github.com/english-coach/backend/internal/infrastructure/auth"
-	"github.com/english-coach/backend/internal/infrastructure/crypto"
-	"github.com/english-coach/backend/internal/infrastructure/repository/common"
+	"github.com/english-coach/backend/internal/modules/user/domain"
+	"github.com/english-coach/backend/internal/shared/auth"
 	"github.com/english-coach/backend/internal/shared/errors"
 	"go.uber.org/zap"
 )
 
 // LoginUseCase handles user login
 type LoginUseCase struct {
-	userRepo   port.UserRepository
+	userRepo   domain.UserRepository
 	jwtManager *auth.JWTManager
 	logger     *zap.Logger
 }
 
 // NewLoginUseCase creates a new login use case
 func NewLoginUseCase(
-	userRepo port.UserRepository,
+	userRepo domain.UserRepository,
 	jwtManager *auth.JWTManager,
 	logger *zap.Logger,
 ) *LoginUseCase {
@@ -51,7 +47,7 @@ type LoginOutput struct {
 // Execute executes the user login
 func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOutput, error) {
 	// Find user by email or username
-	var user *model.User
+	var user *domain.User
 	var err error
 
 	if input.Email != nil && *input.Email != "" {
@@ -59,29 +55,29 @@ func (uc *LoginUseCase) Execute(ctx context.Context, input LoginInput) (*LoginOu
 	} else if input.Username != nil && *input.Username != "" {
 		user, err = uc.userRepo.FindByUsername(ctx, *input.Username)
 	} else {
-		return nil, usererrors.ErrInvalidCredentials
+		return nil, domain.ErrInvalidCredentials
 	}
 
 	if err != nil {
-		if common.IsNotFound(err) {
-			return nil, usererrors.ErrInvalidCredentials
+		if errors.IsNotFound(err) {
+			return nil, domain.ErrInvalidCredentials
 		}
 		uc.logger.Error("failed to find user", zap.Error(err))
 		return nil, errors.WrapError(err, "failed to find user")
 	}
 
 	if user == nil {
-		return nil, usererrors.ErrInvalidCredentials
+		return nil, domain.ErrInvalidCredentials
 	}
 
 	// Check if user is active
 	if !user.IsActive {
-		return nil, usererrors.ErrUserInactive
+		return nil, domain.ErrUserInactive
 	}
 
 	// Verify password
-	if !crypto.CheckPasswordHash(input.Password, user.PasswordHash) {
-		return nil, usererrors.ErrInvalidCredentials
+	if !auth.CheckPasswordHash(input.Password, user.PasswordHash) {
+		return nil, domain.ErrInvalidCredentials
 	}
 
 	// Generate JWT token

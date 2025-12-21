@@ -5,30 +5,29 @@ import (
 	"fmt"
 
 	"github.com/english-coach/backend/internal/domain/dictionary/dto"
-	"github.com/english-coach/backend/internal/domain/dictionary/model"
-	"github.com/english-coach/backend/internal/domain/dictionary/port"
+	"github.com/english-coach/backend/internal/modules/dictionary/domain"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )
 
 // DictionaryService provides dictionary lookup functionality
 type DictionaryService struct {
-	wordRepo         port.WordRepository
-	senseRepo        port.SenseRepository
-	languageRepo     port.LanguageRepository
-	levelRepo        port.LevelRepository
-	partOfSpeechRepo port.PartOfSpeechRepository
+	wordRepo         domain.WordRepository
+	senseRepo        domain.SenseRepository
+	languageRepo     domain.LanguageRepository
+	levelRepo        domain.LevelRepository
+	partOfSpeechRepo domain.PartOfSpeechRepository
 	pool             *pgxpool.Pool
 	logger           *zap.Logger
 }
 
 // NewDictionaryService creates a new dictionary service
 func NewDictionaryService(
-	wordRepo port.WordRepository,
-	senseRepo port.SenseRepository,
-	languageRepo port.LanguageRepository,
-	levelRepo port.LevelRepository,
-	partOfSpeechRepo port.PartOfSpeechRepository,
+	wordRepo domain.WordRepository,
+	senseRepo domain.SenseRepository,
+	languageRepo domain.LanguageRepository,
+	levelRepo domain.LevelRepository,
+	partOfSpeechRepo domain.PartOfSpeechRepository,
 	pool *pgxpool.Pool,
 	logger *zap.Logger,
 ) *DictionaryService {
@@ -72,30 +71,30 @@ func (s *DictionaryService) GetWordDetail(ctx context.Context, wordID int64) (*d
 	translations, err := s.getSenseTranslations(ctx, senseIDs)
 	if err != nil {
 		s.logger.Warn("failed to fetch sense translations", zap.Error(err))
-		translations = make(map[int64][]*model.Word)
+		translations = make(map[int64][]*domain.Word)
 	}
 	if translations == nil {
-		translations = make(map[int64][]*model.Word)
+		translations = make(map[int64][]*domain.Word)
 	}
 
 	// Get examples for senses
 	examples, err := s.getExamples(ctx, senseIDs)
 	if err != nil {
 		s.logger.Warn("failed to fetch examples", zap.Error(err))
-		examples = make(map[int64][]*model.Example)
+		examples = make(map[int64][]*domain.Example)
 	}
 	if examples == nil {
-		examples = make(map[int64][]*model.Example)
+		examples = make(map[int64][]*domain.Example)
 	}
 
 	// Get pronunciations
 	pronunciations, err := s.getPronunciations(ctx, wordID)
 	if err != nil {
 		s.logger.Warn("failed to fetch pronunciations", zap.Error(err))
-		pronunciations = []*model.Pronunciation{}
+		pronunciations = []*domain.Pronunciation{}
 	}
 	if pronunciations == nil {
-		pronunciations = []*model.Pronunciation{}
+		pronunciations = []*domain.Pronunciation{}
 	}
 
 	// Get part of speech IDs and language IDs for lookup
@@ -165,11 +164,11 @@ func (s *DictionaryService) GetWordDetail(ctx context.Context, wordID int64) (*d
 		// Ensure translations and examples are not nil
 		senseTranslations := translations[sense.ID]
 		if senseTranslations == nil {
-			senseTranslations = []*model.Word{}
+			senseTranslations = []*domain.Word{}
 		}
 		senseExamples := examples[sense.ID]
 		if senseExamples == nil {
-			senseExamples = []*model.Example{}
+			senseExamples = []*domain.Example{}
 		}
 
 		senseDetails[i] = dto.SenseDetail{
@@ -199,10 +198,10 @@ func (s *DictionaryService) GetWordDetail(ctx context.Context, wordID int64) (*d
 	relations, err := s.getWordRelations(ctx, wordID)
 	if err != nil {
 		s.logger.Warn("failed to fetch word relations", zap.Error(err))
-		relations = []*model.WordRelation{}
+		relations = []*domain.WordRelation{}
 	}
 	if relations == nil {
-		relations = []*model.WordRelation{}
+		relations = []*domain.WordRelation{}
 	}
 
 	return &dto.WordDetail{
@@ -214,9 +213,9 @@ func (s *DictionaryService) GetWordDetail(ctx context.Context, wordID int64) (*d
 }
 
 // getSenseTranslations retrieves translations for given sense IDs
-func (s *DictionaryService) getSenseTranslations(ctx context.Context, senseIDs []int64) (map[int64][]*model.Word, error) {
+func (s *DictionaryService) getSenseTranslations(ctx context.Context, senseIDs []int64) (map[int64][]*domain.Word, error) {
 	if len(senseIDs) == 0 {
-		return make(map[int64][]*model.Word), nil
+		return make(map[int64][]*domain.Word), nil
 	}
 
 	query := `
@@ -234,10 +233,10 @@ func (s *DictionaryService) getSenseTranslations(ctx context.Context, senseIDs [
 	}
 	defer rows.Close()
 
-	result := make(map[int64][]*model.Word)
+	result := make(map[int64][]*domain.Word)
 	for rows.Next() {
 		var senseID int64
-		var word model.Word
+		var word domain.Word
 		var lemmaNormalized, searchKey, romanization, scriptCode, note *string
 		var frequencyRank *int
 		if err := rows.Scan(
@@ -273,9 +272,9 @@ func (s *DictionaryService) getSenseTranslations(ctx context.Context, senseIDs [
 }
 
 // getExamples retrieves examples for given sense IDs
-func (s *DictionaryService) getExamples(ctx context.Context, senseIDs []int64) (map[int64][]*model.Example, error) {
+func (s *DictionaryService) getExamples(ctx context.Context, senseIDs []int64) (map[int64][]*domain.Example, error) {
 	if len(senseIDs) == 0 {
-		return make(map[int64][]*model.Example), nil
+		return make(map[int64][]*domain.Example), nil
 	}
 
 	query := `
@@ -290,10 +289,10 @@ func (s *DictionaryService) getExamples(ctx context.Context, senseIDs []int64) (
 	}
 	defer rows.Close()
 
-	result := make(map[int64][]*model.Example)
-	exampleMap := make(map[int64]*model.Example)
+	result := make(map[int64][]*domain.Example)
+	exampleMap := make(map[int64]*domain.Example)
 	for rows.Next() {
-		var example model.Example
+		var example domain.Example
 		var audioURL, source *string
 		if err := rows.Scan(
 			&example.ID,
@@ -307,7 +306,7 @@ func (s *DictionaryService) getExamples(ctx context.Context, senseIDs []int64) (
 		}
 		example.AudioURL = audioURL
 		example.Source = source
-		example.Translations = []model.ExampleTranslationSimple{}
+		example.Translations = []domain.ExampleTranslationSimple{}
 		exampleMap[example.ID] = &example
 		result[example.SourceSenseID] = append(result[example.SourceSenseID], &example)
 	}
@@ -343,7 +342,7 @@ func (s *DictionaryService) getExamples(ctx context.Context, senseIDs []int64) (
 					continue
 				}
 				if example, ok := exampleMap[exampleID]; ok {
-					example.Translations = append(example.Translations, model.ExampleTranslationSimple{
+					example.Translations = append(example.Translations, domain.ExampleTranslationSimple{
 						Language: langCode,
 						Content:  content,
 					})
@@ -356,7 +355,7 @@ func (s *DictionaryService) getExamples(ctx context.Context, senseIDs []int64) (
 }
 
 // getPronunciations retrieves pronunciations for a word
-func (s *DictionaryService) getPronunciations(ctx context.Context, wordID int64) ([]*model.Pronunciation, error) {
+func (s *DictionaryService) getPronunciations(ctx context.Context, wordID int64) ([]*domain.Pronunciation, error) {
 	query := `
 		SELECT id, word_id, dialect, ipa, phonetic, audio_url
 		FROM pronunciations
@@ -365,13 +364,13 @@ func (s *DictionaryService) getPronunciations(ctx context.Context, wordID int64)
 	`
 	rows, err := s.pool.Query(ctx, query, wordID)
 	if err != nil {
-		return []*model.Pronunciation{}, err
+		return []*domain.Pronunciation{}, err
 	}
 	defer rows.Close()
 
-	var pronunciations []*model.Pronunciation
+	var pronunciations []*domain.Pronunciation
 	for rows.Next() {
-		var pron model.Pronunciation
+		var pron domain.Pronunciation
 		var dialect, ipa, phonetic, audioURL *string
 		if err := rows.Scan(
 			&pron.ID,
@@ -381,7 +380,7 @@ func (s *DictionaryService) getPronunciations(ctx context.Context, wordID int64)
 			&phonetic,
 			&audioURL,
 		); err != nil {
-			return []*model.Pronunciation{}, err
+			return []*domain.Pronunciation{}, err
 		}
 		pron.Dialect = dialect
 		pron.IPA = ipa
@@ -391,18 +390,18 @@ func (s *DictionaryService) getPronunciations(ctx context.Context, wordID int64)
 	}
 
 	if err := rows.Err(); err != nil {
-		return []*model.Pronunciation{}, err
+		return []*domain.Pronunciation{}, err
 	}
 
 	if pronunciations == nil {
-		return []*model.Pronunciation{}, nil
+		return []*domain.Pronunciation{}, nil
 	}
 
 	return pronunciations, nil
 }
 
 // getWordTopics retrieves topic objects (with code and name) for a word
-func (s *DictionaryService) getWordTopics(ctx context.Context, wordID int64) ([]*model.Topic, error) {
+func (s *DictionaryService) getWordTopics(ctx context.Context, wordID int64) ([]*domain.Topic, error) {
 	query := `
 		SELECT t.id, t.code, t.name
 		FROM word_topics wt
@@ -416,9 +415,9 @@ func (s *DictionaryService) getWordTopics(ctx context.Context, wordID int64) ([]
 	}
 	defer rows.Close()
 
-	var topics []*model.Topic
+	var topics []*domain.Topic
 	for rows.Next() {
-		var topic model.Topic
+		var topic domain.Topic
 		if err := rows.Scan(&topic.ID, &topic.Code, &topic.Name); err != nil {
 			return nil, err
 		}
@@ -426,18 +425,18 @@ func (s *DictionaryService) getWordTopics(ctx context.Context, wordID int64) ([]
 	}
 
 	if err := rows.Err(); err != nil {
-		return []*model.Topic{}, err
+		return []*domain.Topic{}, err
 	}
 
 	if topics == nil {
-		return []*model.Topic{}, nil
+		return []*domain.Topic{}, nil
 	}
 
 	return topics, nil
 }
 
 // getWordRelations retrieves relations for a word
-func (s *DictionaryService) getWordRelations(ctx context.Context, wordID int64) ([]*model.WordRelation, error) {
+func (s *DictionaryService) getWordRelations(ctx context.Context, wordID int64) ([]*domain.WordRelation, error) {
 	query := `
 		SELECT wr.relation_type, wr.note, 
 		       tw.id, tw.language_id, tw.lemma, tw.lemma_normalized, tw.search_key,
@@ -454,10 +453,10 @@ func (s *DictionaryService) getWordRelations(ctx context.Context, wordID int64) 
 	}
 	defer rows.Close()
 
-	var relations []*model.WordRelation
+	var relations []*domain.WordRelation
 	for rows.Next() {
-		var relation model.WordRelation
-		var targetWord model.Word
+		var relation domain.WordRelation
+		var targetWord domain.Word
 		var lemmaNormalized, searchKey, romanization, scriptCode, note, targetNote *string
 		var frequencyRank *int
 		if err := rows.Scan(
@@ -498,11 +497,11 @@ func (s *DictionaryService) getWordRelations(ctx context.Context, wordID int64) 
 	}
 
 	if err := rows.Err(); err != nil {
-		return []*model.WordRelation{}, err
+		return []*domain.WordRelation{}, err
 	}
 
 	if relations == nil {
-		return []*model.WordRelation{}, nil
+		return []*domain.WordRelation{}, nil
 	}
 
 	return relations, nil

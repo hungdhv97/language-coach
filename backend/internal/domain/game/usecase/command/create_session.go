@@ -6,9 +6,7 @@ import (
 	"time"
 
 	"github.com/english-coach/backend/internal/domain/game/dto"
-	gameerrors "github.com/english-coach/backend/internal/domain/game/error"
-	"github.com/english-coach/backend/internal/domain/game/model"
-	"github.com/english-coach/backend/internal/domain/game/port"
+	"github.com/english-coach/backend/internal/modules/game/domain"
 	"github.com/english-coach/backend/internal/shared/constants"
 	"github.com/english-coach/backend/internal/shared/errors"
 	"go.uber.org/zap"
@@ -16,17 +14,17 @@ import (
 
 // CreateGameSessionUseCase handles game session creation
 type CreateGameSessionUseCase struct {
-	sessionRepo       port.GameSessionRepository
-	questionRepo      port.GameQuestionRepository
-	questionGenerator port.QuestionGenerator
+	sessionRepo       domain.GameSessionRepository
+	questionRepo      domain.GameQuestionRepository
+	questionGenerator domain.QuestionGenerator
 	logger            *zap.Logger
 }
 
 // NewCreateGameSessionUseCase creates a new use case
 func NewCreateGameSessionUseCase(
-	sessionRepo port.GameSessionRepository,
-	questionRepo port.GameQuestionRepository,
-	questionGenerator port.QuestionGenerator,
+	sessionRepo domain.GameSessionRepository,
+	questionRepo domain.GameQuestionRepository,
+	questionGenerator domain.QuestionGenerator,
 	logger *zap.Logger,
 ) *CreateGameSessionUseCase {
 	return &CreateGameSessionUseCase{
@@ -38,7 +36,7 @@ func NewCreateGameSessionUseCase(
 }
 
 // Execute creates a new game session
-func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.CreateGameSessionRequest, userID int64) (*model.GameSession, error) {
+func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.CreateGameSessionRequest, userID int64) (*domain.GameSession, error) {
 	// Validate request
 	if err := req.Validate(); err != nil {
 		return nil, errors.ErrValidationError.WithDetails(err.Error())
@@ -53,7 +51,7 @@ func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.Create
 	}
 	levelID := &req.LevelID
 
-	session := &model.GameSession{
+	session := &domain.GameSession{
 		UserID:           userID,
 		Mode:             req.Mode,
 		SourceLanguageID: req.SourceLanguageID,
@@ -99,14 +97,14 @@ func (uc *CreateGameSessionUseCase) Execute(ctx context.Context, req *dto.Create
 		// Check for insufficient words error (FR-026)
 		// Error message format: "Không đủ từ: cần X, có Y"
 		if strings.Contains(err.Error(), "Không đủ từ") {
-			return nil, gameerrors.ErrInsufficientWords
+			return nil, domain.ErrInsufficientWords
 		}
 		return nil, errors.WrapError(err, "failed to generate questions")
 	}
 
 	// Check if we have at least the minimum required questions (1)
 	if len(questions) < constants.MinGameQuestionCount {
-		return nil, gameerrors.ErrInsufficientWords
+		return nil, domain.ErrInsufficientWords
 	}
 
 	// Save questions and options
