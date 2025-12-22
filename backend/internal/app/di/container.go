@@ -5,12 +5,12 @@ import (
 
 	config "github.com/english-coach/backend/configs"
 	dictusecase "github.com/english-coach/backend/internal/modules/dictionary/usecase/get_word_detail"
-	"github.com/english-coach/backend/internal/modules/dictionary/infra/persistence/postgres/dictionary"
+	dictrepo "github.com/english-coach/backend/internal/modules/dictionary/infra/persistence/postgres"
 	gamesvc "github.com/english-coach/backend/internal/modules/game/service"
 	gamecreatesession "github.com/english-coach/backend/internal/modules/game/usecase/create_session"
 	gamesubmitanswer "github.com/english-coach/backend/internal/modules/game/usecase/submit_answer"
 	gamerepo "github.com/english-coach/backend/internal/modules/game/infra/persistence/postgres"
-	userrepo "github.com/english-coach/backend/internal/modules/user/infra/persistence/postgres/user"
+	userrepo "github.com/english-coach/backend/internal/modules/user/infra/persistence/postgres"
 	usergetprofile "github.com/english-coach/backend/internal/modules/user/usecase/get_profile"
 	userlogin "github.com/english-coach/backend/internal/modules/user/usecase/login"
 	userregister "github.com/english-coach/backend/internal/modules/user/usecase/register"
@@ -37,7 +37,7 @@ type Container struct {
 	JWTManager *auth.JWTManager
 
 	// Repositories
-	DictionaryRepo *dictionary.DictionaryRepository
+	DictionaryRepo *dictrepo.DictionaryRepository
 	GameRepo       *gamerepo.GameRepository
 	UserRepo       *userrepo.UserRepository
 
@@ -111,7 +111,7 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 	container.JWTManager = auth.NewJWTManager(cfg.JWT.Secret, cfg.JWT.Expiration)
 
 	// Initialize repositories
-	container.DictionaryRepo = dictionary.NewDictionaryRepository(pool)
+	container.DictionaryRepo = dictrepo.NewDictionaryRepository(pool)
 	container.GameRepo = gamerepo.NewGameRepository(pool)
 	container.UserRepo = userrepo.NewUserRepository(pool)
 
