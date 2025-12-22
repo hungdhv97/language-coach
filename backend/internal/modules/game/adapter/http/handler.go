@@ -1,4 +1,4 @@
-package handler
+package http
 
 import (
 	"net/http"
@@ -7,15 +7,15 @@ import (
 	"github.com/english-coach/backend/internal/modules/game/domain"
 	gamecreatesession "github.com/english-coach/backend/internal/modules/game/usecase/create_session"
 	gamesubmitanswer "github.com/english-coach/backend/internal/modules/game/usecase/submit_answer"
-	"github.com/english-coach/backend/internal/transport/http/middleware"
 	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 	"github.com/english-coach/backend/internal/shared/response"
+	"github.com/english-coach/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
-// GameHandler handles game-related HTTP requests
-type GameHandler struct {
+// Handler handles game-related HTTP requests
+type Handler struct {
 	createSessionUC *gamecreatesession.Handler
 	submitAnswerUC  *gamesubmitanswer.Handler
 	questionRepo    domain.GameQuestionRepository
@@ -23,15 +23,15 @@ type GameHandler struct {
 	logger          *zap.Logger
 }
 
-// NewGameHandler creates a new game handler
-func NewGameHandler(
+// NewHandler creates a new game handler
+func NewHandler(
 	createSessionUC *gamecreatesession.Handler,
 	submitAnswerUC *gamesubmitanswer.Handler,
 	questionRepo domain.GameQuestionRepository,
 	sessionRepo domain.GameSessionRepository,
 	logger *zap.Logger,
-) *GameHandler {
-	return &GameHandler{
+) *Handler {
+	return &Handler{
 		createSessionUC: createSessionUC,
 		submitAnswerUC:  submitAnswerUC,
 		questionRepo:    questionRepo,
@@ -41,7 +41,7 @@ func NewGameHandler(
 }
 
 // CreateSession handles POST /api/v1/games/sessions
-func (h *GameHandler) CreateSession(c *gin.Context) {
+func (h *Handler) CreateSession(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Get user ID from context (set by auth middleware)
@@ -71,10 +71,19 @@ func (h *GameHandler) CreateSession(c *gin.Context) {
 	}
 
 	// Bind request
-	var input gamecreatesession.Input
-	if err := c.ShouldBindJSON(&input); err != nil {
+	var req CreateSessionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		middleware.SetError(c, sharederrors.ErrInvalidRequest.WithDetails(err.Error()))
 		return
+	}
+
+	// Convert to use case input
+	input := gamecreatesession.Input{
+		Mode:             req.Mode,
+		SourceLanguageID: req.SourceLanguageID,
+		TargetLanguageID: req.TargetLanguageID,
+		LevelID:          req.LevelID,
+		TopicIDs:         req.TopicIDs,
 	}
 
 	// Validate request
@@ -120,12 +129,11 @@ func (h *GameHandler) CreateSession(c *gin.Context) {
 }
 
 // GetSession handles GET /api/v1/games/sessions/{sessionId}
-func (h *GameHandler) GetSession(c *gin.Context) {
+func (h *Handler) GetSession(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	sessionIDStr := c.Param("sessionId")
-	sessionID, err := strconv.ParseInt(sessionIDStr, 10, 64)
-	if err != nil {
+	var req GetSessionRequest
+	if err := c.ShouldBindUri(&req); err != nil {
 		response.ErrorResponse(c, http.StatusBadRequest,
 			"INVALID_PARAMETER",
 			"ID phiên chơi không hợp lệ",
@@ -133,6 +141,7 @@ func (h *GameHandler) GetSession(c *gin.Context) {
 		)
 		return
 	}
+	sessionID := req.SessionID
 
 	// Get user ID
 	userID, exists := c.Get("user_id")
@@ -184,11 +193,6 @@ func (h *GameHandler) GetSession(c *gin.Context) {
 	}
 
 	// Build response
-	type QuestionWithOptions struct {
-		*domain.GameQuestion
-		Options []*domain.GameQuestionOption `json:"options"`
-	}
-
 	questionsWithOptions := make([]QuestionWithOptions, 0, len(questions))
 	for _, q := range questions {
 		questionsWithOptions = append(questionsWithOptions, QuestionWithOptions{
@@ -197,21 +201,18 @@ func (h *GameHandler) GetSession(c *gin.Context) {
 		})
 	}
 
-	responseData := gin.H{
-		"session":   session,
-		"questions": questionsWithOptions,
-	}
-
-	response.Success(c, http.StatusOK, responseData)
+	response.Success(c, http.StatusOK, GetSessionResponse{
+		Session:   session,
+		Questions: questionsWithOptions,
+	})
 }
 
 // SubmitAnswer handles POST /api/v1/games/sessions/{sessionId}/answers
-func (h *GameHandler) SubmitAnswer(c *gin.Context) {
+func (h *Handler) SubmitAnswer(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	sessionIDStr := c.Param("sessionId")
-	sessionID, err := strconv.ParseInt(sessionIDStr, 10, 64)
-	if err != nil {
+	var pathReq GetSessionRequest
+	if err := c.ShouldBindUri(&pathReq); err != nil {
 		response.ErrorResponse(c, http.StatusBadRequest,
 			"INVALID_PARAMETER",
 			"ID phiên chơi không hợp lệ",
@@ -219,6 +220,7 @@ func (h *GameHandler) SubmitAnswer(c *gin.Context) {
 		)
 		return
 	}
+	sessionID := pathReq.SessionID
 
 	// Get user ID
 	userID, exists := c.Get("user_id")
@@ -244,10 +246,17 @@ func (h *GameHandler) SubmitAnswer(c *gin.Context) {
 	}
 
 	// Bind request
-	var input gamesubmitanswer.Input
-	if err := c.ShouldBindJSON(&input); err != nil {
+	var req SubmitAnswerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		middleware.SetError(c, sharederrors.ErrInvalidRequest.WithDetails(err.Error()))
 		return
+	}
+
+	// Convert to use case input
+	input := gamesubmitanswer.Input{
+		QuestionID:       req.QuestionID,
+		SelectedOptionID: req.SelectedOptionID,
+		ResponseTimeMs:   req.ResponseTimeMs,
 	}
 
 	// Execute use case

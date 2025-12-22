@@ -6,6 +6,9 @@ import (
 	config "github.com/english-coach/backend/configs"
 	"github.com/english-coach/backend/internal/app/di"
 	"github.com/english-coach/backend/internal/app/lifecycle"
+	dictadapter "github.com/english-coach/backend/internal/modules/dictionary/adapter/http"
+	gameadapter "github.com/english-coach/backend/internal/modules/game/adapter/http"
+	useradapter "github.com/english-coach/backend/internal/modules/user/adapter/http"
 	"github.com/english-coach/backend/internal/transport/http"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -92,49 +95,10 @@ func registerRoutes(container *di.Container) {
 	// API v1 routes
 	apiV1 := router.Group("/api/v1")
 	{
-		// Auth routes: /api/v1/auth/... (public)
-		authGroup := apiV1.Group("/auth")
-		{
-			authGroup.POST("/register", container.UserHandler.Register)
-			authGroup.POST("/login", container.UserHandler.Login)
-			authGroup.GET("/check-email", container.UserHandler.CheckEmailAvailability)
-			authGroup.GET("/check-username", container.UserHandler.CheckUsernameAvailability)
-		}
-
-		// Reference routes: /api/v1/reference/... (public)
-		referenceGroup := apiV1.Group("/reference")
-		{
-			referenceGroup.GET("/languages", container.DictionaryHandler.GetLanguages)
-			referenceGroup.GET("/topics", container.DictionaryHandler.GetTopics)
-			referenceGroup.GET("/levels", container.DictionaryHandler.GetLevels)
-		}
-
-		// Dictionary routes: /api/v1/dictionary/... (public)
-		dictionaryGroup := apiV1.Group("/dictionary")
-		{
-			dictionaryGroup.GET("/search", container.DictionaryHandler.SearchWords)
-			dictionaryGroup.GET("/words/:wordId", container.DictionaryHandler.GetWordDetail)
-		}
-
-		// User routes: /api/v1/users/... (protected)
-		userGroup := apiV1.Group("/users")
-		userGroup.Use(container.AuthMiddleware)
-		{
-			userGroup.GET("/profile", container.UserHandler.GetProfile)
-			userGroup.PUT("/profile", container.UserHandler.UpdateProfile)
-		}
-
-		// Game routes: /api/v1/games/... (protected - requires login)
-		gameGroup := apiV1.Group("/games")
-		gameGroup.Use(container.AuthMiddleware)
-		{
-			sessionsGroup := gameGroup.Group("/sessions")
-			{
-				sessionsGroup.POST("", container.GameHandler.CreateSession)
-				sessionsGroup.GET("/:sessionId", container.GameHandler.GetSession)
-				sessionsGroup.POST("/:sessionId/answers", container.GameHandler.SubmitAnswer)
-			}
-		}
+		// Register module routes
+		useradapter.RegisterRoutes(apiV1, container.UserHandler, container.AuthMiddleware)
+		dictadapter.RegisterRoutes(apiV1, container.DictionaryHandler)
+		gameadapter.RegisterRoutes(apiV1, container.GameHandler, container.AuthMiddleware)
 	}
 }
 

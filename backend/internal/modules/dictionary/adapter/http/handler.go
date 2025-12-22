@@ -1,4 +1,4 @@
-package handler
+package http
 
 import (
 	"net/http"
@@ -14,26 +14,26 @@ import (
 	"go.uber.org/zap"
 )
 
-// DictionaryHandler handles dictionary-related HTTP requests
-type DictionaryHandler struct {
-	languageRepo      domain.LanguageRepository
-	topicRepo         domain.TopicRepository
-	levelRepo         domain.LevelRepository
-	wordRepo          domain.WordRepository
-	getWordDetailUC   *dictusecase.Handler
-	logger            *zap.Logger
+// Handler handles dictionary-related HTTP requests
+type Handler struct {
+	languageRepo    domain.LanguageRepository
+	topicRepo       domain.TopicRepository
+	levelRepo       domain.LevelRepository
+	wordRepo        domain.WordRepository
+	getWordDetailUC *dictusecase.Handler
+	logger          *zap.Logger
 }
 
-// NewDictionaryHandler creates a new dictionary handler
-func NewDictionaryHandler(
+// NewHandler creates a new dictionary handler
+func NewHandler(
 	languageRepo domain.LanguageRepository,
 	topicRepo domain.TopicRepository,
 	levelRepo domain.LevelRepository,
 	wordRepo domain.WordRepository,
 	getWordDetailUC *dictusecase.Handler,
 	logger *zap.Logger,
-) *DictionaryHandler {
-	return &DictionaryHandler{
+) *Handler {
+	return &Handler{
 		languageRepo:    languageRepo,
 		topicRepo:       topicRepo,
 		levelRepo:       levelRepo,
@@ -44,7 +44,7 @@ func NewDictionaryHandler(
 }
 
 // GetLanguages handles GET /api/v1/reference/languages
-func (h *DictionaryHandler) GetLanguages(c *gin.Context) {
+func (h *Handler) GetLanguages(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	languages, err := h.languageRepo.FindAll(ctx)
@@ -57,7 +57,7 @@ func (h *DictionaryHandler) GetLanguages(c *gin.Context) {
 }
 
 // GetTopics handles GET /api/v1/reference/topics
-func (h *DictionaryHandler) GetTopics(c *gin.Context) {
+func (h *Handler) GetTopics(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	topics, err := h.topicRepo.FindAll(ctx)
@@ -70,7 +70,7 @@ func (h *DictionaryHandler) GetTopics(c *gin.Context) {
 }
 
 // GetLevels handles GET /api/v1/reference/levels?languageId=...
-func (h *DictionaryHandler) GetLevels(c *gin.Context) {
+func (h *Handler) GetLevels(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	languageIDStr := c.Query("languageId")
@@ -102,7 +102,7 @@ func (h *DictionaryHandler) GetLevels(c *gin.Context) {
 }
 
 // SearchWords handles GET /api/v1/dictionary/search?q=...&languageId=...&limit=...&offset=...
-func (h *DictionaryHandler) SearchWords(c *gin.Context) {
+func (h *Handler) SearchWords(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	query := c.Query("q")
@@ -183,7 +183,7 @@ func (h *DictionaryHandler) SearchWords(c *gin.Context) {
 }
 
 // GetWordDetail handles GET /api/v1/dictionary/words/:wordId
-func (h *DictionaryHandler) GetWordDetail(c *gin.Context) {
+func (h *Handler) GetWordDetail(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	wordIDStr := c.Param("wordId")
@@ -227,3 +227,4 @@ func (h *DictionaryHandler) GetWordDetail(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, wordDetail)
 }
+

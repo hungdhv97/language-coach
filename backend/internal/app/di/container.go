@@ -4,12 +4,15 @@ import (
 	"context"
 
 	config "github.com/english-coach/backend/configs"
-	dictusecase "github.com/english-coach/backend/internal/modules/dictionary/usecase/get_word_detail"
+	dictadapter "github.com/english-coach/backend/internal/modules/dictionary/adapter/http"
 	dictrepo "github.com/english-coach/backend/internal/modules/dictionary/infra/persistence/postgres"
+	dictusecase "github.com/english-coach/backend/internal/modules/dictionary/usecase/get_word_detail"
+	gameadapter "github.com/english-coach/backend/internal/modules/game/adapter/http"
+	gamerepo "github.com/english-coach/backend/internal/modules/game/infra/persistence/postgres"
 	gamesvc "github.com/english-coach/backend/internal/modules/game/service"
 	gamecreatesession "github.com/english-coach/backend/internal/modules/game/usecase/create_session"
 	gamesubmitanswer "github.com/english-coach/backend/internal/modules/game/usecase/submit_answer"
-	gamerepo "github.com/english-coach/backend/internal/modules/game/infra/persistence/postgres"
+	useradapter "github.com/english-coach/backend/internal/modules/user/adapter/http"
 	userrepo "github.com/english-coach/backend/internal/modules/user/infra/persistence/postgres"
 	usergetprofile "github.com/english-coach/backend/internal/modules/user/usecase/get_profile"
 	userlogin "github.com/english-coach/backend/internal/modules/user/usecase/login"
@@ -54,9 +57,9 @@ type Container struct {
 	UpdateProfileUC     *userupdateprofile.Handler
 
 	// Handlers
-	DictionaryHandler *handler.DictionaryHandler
-	GameHandler       *handler.GameHandler
-	UserHandler       *handler.UserHandler
+	DictionaryHandler *dictadapter.Handler
+	GameHandler       *gameadapter.Handler
+	UserHandler       *useradapter.Handler
 	OpenAPIHandler    *handler.OpenAPIHandler
 
 	// HTTP Server
@@ -168,7 +171,7 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 	)
 
 	// Initialize handlers
-	container.DictionaryHandler = handler.NewDictionaryHandler(
+	container.DictionaryHandler = dictadapter.NewHandler(
 		container.DictionaryRepo.LanguageRepository(),
 		container.DictionaryRepo.TopicRepository(),
 		container.DictionaryRepo.LevelRepository(),
@@ -177,7 +180,7 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 		appLogger.Logger,
 	)
 
-	container.GameHandler = handler.NewGameHandler(
+	container.GameHandler = gameadapter.NewHandler(
 		container.CreateGameSessionUC,
 		container.SubmitAnswerUC,
 		container.GameRepo.GameQuestionRepo(),
@@ -185,7 +188,7 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 		appLogger.Logger,
 	)
 
-	container.UserHandler = handler.NewUserHandler(
+	container.UserHandler = useradapter.NewHandler(
 		container.RegisterUC,
 		container.LoginUC,
 		container.GetProfileUC,

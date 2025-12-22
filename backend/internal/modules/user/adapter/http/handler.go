@@ -1,22 +1,22 @@
-package handler
+package http
 
 import (
 	"net/http"
 
 	"github.com/english-coach/backend/internal/modules/user/domain"
-	userregister "github.com/english-coach/backend/internal/modules/user/usecase/register"
-	userlogin "github.com/english-coach/backend/internal/modules/user/usecase/login"
 	usergetprofile "github.com/english-coach/backend/internal/modules/user/usecase/get_profile"
+	userlogin "github.com/english-coach/backend/internal/modules/user/usecase/login"
+	userregister "github.com/english-coach/backend/internal/modules/user/usecase/register"
 	userupdateprofile "github.com/english-coach/backend/internal/modules/user/usecase/update_profile"
-	"github.com/english-coach/backend/internal/transport/http/middleware"
 	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 	"github.com/english-coach/backend/internal/shared/response"
+	"github.com/english-coach/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
-// UserHandler handles user-related HTTP requests
-type UserHandler struct {
+// Handler handles user-related HTTP requests
+type Handler struct {
 	registerUC      *userregister.Handler
 	loginUC         *userlogin.Handler
 	getProfileUC    *usergetprofile.Handler
@@ -26,8 +26,8 @@ type UserHandler struct {
 	logger          *zap.Logger
 }
 
-// NewUserHandler creates a new user handler
-func NewUserHandler(
+// NewHandler creates a new user handler
+func NewHandler(
 	registerUC *userregister.Handler,
 	loginUC *userlogin.Handler,
 	getProfileUC *usergetprofile.Handler,
@@ -35,8 +35,8 @@ func NewUserHandler(
 	userRepo domain.UserRepository,
 	profileRepo domain.UserProfileRepository,
 	logger *zap.Logger,
-) *UserHandler {
-	return &UserHandler{
+) *Handler {
+	return &Handler{
 		registerUC:      registerUC,
 		loginUC:         loginUC,
 		getProfileUC:    getProfileUC,
@@ -47,16 +47,8 @@ func NewUserHandler(
 	}
 }
 
-// RegisterRequest represents the request body for user registration
-type RegisterRequest struct {
-	DisplayName *string `json:"display_name,omitempty" binding:"omitempty,max=100"`
-	Email       *string `json:"email,omitempty" binding:"omitempty,email"`
-	Username    *string `json:"username,omitempty" binding:"omitempty,min=3,max=100"`
-	Password    string  `json:"password" binding:"required,min=6"`
-}
-
 // Register handles POST /api/v1/auth/register
-func (h *UserHandler) Register(c *gin.Context) {
+func (h *Handler) Register(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var req RegisterRequest
@@ -71,12 +63,12 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-		result, err := h.registerUC.Execute(ctx, userregister.Input{
-			DisplayName: req.DisplayName,
-			Email:       req.Email,
-			Username:    req.Username,
-			Password:    req.Password,
-		})
+	result, err := h.registerUC.Execute(ctx, userregister.Input{
+		DisplayName: req.DisplayName,
+		Email:       req.Email,
+		Username:    req.Username,
+		Password:    req.Password,
+	})
 
 	if err != nil {
 		middleware.SetError(c, err)
@@ -98,15 +90,8 @@ func (h *UserHandler) Register(c *gin.Context) {
 	response.Success(c, http.StatusCreated, result)
 }
 
-// LoginRequest represents the request body for user login
-type LoginRequest struct {
-	Email    *string `json:"email,omitempty"`
-	Username *string `json:"username,omitempty"`
-	Password string  `json:"password" binding:"required"`
-}
-
 // Login handles POST /api/v1/auth/login
-func (h *UserHandler) Login(c *gin.Context) {
+func (h *Handler) Login(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var req LoginRequest
@@ -136,7 +121,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 }
 
 // GetProfile handles GET /api/v1/users/profile
-func (h *UserHandler) GetProfile(c *gin.Context) {
+func (h *Handler) GetProfile(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Get user ID from context (set by auth middleware)
@@ -161,16 +146,8 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 	response.Success(c, http.StatusOK, profile)
 }
 
-// UpdateProfileRequest represents the request body for updating user profile
-type UpdateProfileRequest struct {
-	DisplayName *string `json:"display_name,omitempty" binding:"omitempty,max=100"`
-	AvatarURL   *string `json:"avatar_url,omitempty" binding:"omitempty,url,max=500"`
-	BirthDay    *string `json:"birth_day,omitempty" binding:"omitempty,datetime=2006-01-02"`
-	Bio         *string `json:"bio,omitempty"`
-}
-
 // UpdateProfile handles PUT /api/v1/users/profile
-func (h *UserHandler) UpdateProfile(c *gin.Context) {
+func (h *Handler) UpdateProfile(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Get user ID from context (set by auth middleware)
@@ -208,7 +185,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 }
 
 // CheckEmailAvailability handles GET /api/v1/auth/check-email?email=...
-func (h *UserHandler) CheckEmailAvailability(c *gin.Context) {
+func (h *Handler) CheckEmailAvailability(c *gin.Context) {
 	ctx := c.Request.Context()
 	email := c.Query("email")
 
@@ -223,14 +200,14 @@ func (h *UserHandler) CheckEmailAvailability(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, http.StatusOK, gin.H{
-		"available": !exists,
-		"exists":    exists,
+	response.Success(c, http.StatusOK, CheckEmailAvailabilityResponse{
+		Available: !exists,
+		Exists:    exists,
 	})
 }
 
 // CheckUsernameAvailability handles GET /api/v1/auth/check-username?username=...
-func (h *UserHandler) CheckUsernameAvailability(c *gin.Context) {
+func (h *Handler) CheckUsernameAvailability(c *gin.Context) {
 	ctx := c.Request.Context()
 	username := c.Query("username")
 
@@ -245,8 +222,8 @@ func (h *UserHandler) CheckUsernameAvailability(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, http.StatusOK, gin.H{
-		"available": !exists,
-		"exists":    exists,
+	response.Success(c, http.StatusOK, CheckUsernameAvailabilityResponse{
+		Available: !exists,
+		Exists:    exists,
 	})
 }
