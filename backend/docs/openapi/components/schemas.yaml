@@ -451,25 +451,70 @@ components:
             $ref: '#/components/schemas/WordRelation'
           nullable: true
 
-    DictionarySearchResponse:
+    PaginationMetadata:
       type: object
       required:
-        - words
+        - page
+        - pageSize
         - total
+        - totalPages
         - limit
         - offset
+        - hasNext
+        - hasPrev
       properties:
-        words:
-          type: array
-          items:
-            $ref: '#/components/schemas/Word'
+        page:
+          type: integer
+          description: Current page number (1-based)
+          example: 1
+        pageSize:
+          type: integer
+          description: Number of items per page
+          example: 20
         total:
           type: integer
           format: int64
+          description: Total number of items
+          example: 100
+        totalPages:
+          type: integer
+          description: Total number of pages
+          example: 5
         limit:
           type: integer
+          description: Limit used for this request (same as pageSize)
+          example: 20
         offset:
           type: integer
+          description: Offset used for this request
+          example: 0
+        hasNext:
+          type: boolean
+          description: Whether there is a next page
+          example: true
+        hasPrev:
+          type: boolean
+          description: Whether there is a previous page
+          example: false
+
+    DictionarySearchResponse:
+      type: object
+      required:
+        - success
+        - data
+        - pagination
+      properties:
+        success:
+          type: boolean
+          description: Indicates if the request was successful
+          example: true
+        data:
+          type: array
+          description: Array of words matching the search query
+          items:
+            $ref: '#/components/schemas/Word'
+        pagination:
+          $ref: '#/components/schemas/PaginationMetadata'
 
     # Game Schemas
     CreateGameSessionRequest:

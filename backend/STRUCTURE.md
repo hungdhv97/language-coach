@@ -76,7 +76,7 @@
 │   │   │   ├── metrics.go                           # Metrics primitives/exporter wiring (Prometheus/OTel)
 │   │   │   └── tracing.go                           # Tracing primitives (OTel tracer/span helpers)
 │   │   └── pagination/
-│   │       └── pagination.go                        # Pagination utilities (limit/offset/cursor parsing and metadata)
+│   │       └── pagination.go                        # Pagination utilities (parse page/pageSize or limit/offset, calculate metadata)
 │   ├── platform/
 │   │   ├── db/
 │   │   │   ├── postgres.go                          # PostgreSQL connection pool initialization (pgx) + health checks

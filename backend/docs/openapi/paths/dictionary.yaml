@@ -11,18 +11,23 @@ paths:
       parameters:
         - $ref: '#/components/parameters/SearchQuery'
         - $ref: '#/components/parameters/LanguageId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Offset'
+      description: |
+        Supports two pagination approaches:
+        - **Page-based** (recommended): Use `page` and `pageSize` parameters
+        - **Offset-based**: Use `limit` and `offset` parameters
+        
+        If both are provided, page/pageSize takes precedence.
       responses:
         '200':
-          description: Successful search results
+          description: Successful search results with pagination metadata
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/DictionarySearchResponse'
+                $ref: '#/components/schemas/DictionarySearchResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
