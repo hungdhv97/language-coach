@@ -10,6 +10,21 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+export interface PaginatedApiResponse<T> {
+  success: boolean;
+  data: T;
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    limit: number;
+    offset: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
 export const dictionaryEndpoints = {
   /**
    * Get all languages
@@ -53,10 +68,14 @@ export const dictionaryEndpoints = {
       limit: limit.toString(),
       offset: offset.toString(),
     });
-    const response = await httpClient.get<ApiResponse<WordSearchResponse>>(
+    const response = await httpClient.get<PaginatedApiResponse<Word[]>>(
       `/dictionary/search?${params.toString()}`
     );
-    return response.data;
+    // Transform response to match WordSearchResponse interface
+    return {
+      words: response.data || [],
+      pagination: response.pagination,
+    };
   },
 
   /**

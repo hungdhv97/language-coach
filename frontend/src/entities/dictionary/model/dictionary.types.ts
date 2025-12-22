@@ -101,10 +101,25 @@ export interface WordDetail {
   relations?: WordRelation[];
 }
 
-export interface WordSearchResponse {
-  words: Word[];
+export interface PaginationMetadata {
+  page: number;
+  pageSize: number;
   total: number;
+  totalPages: number;
   limit: number;
   offset: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  success: boolean;
+  data: T;
+  pagination: PaginationMetadata;
+}
+
+export interface WordSearchResponse {
+  words: Word[];
+  pagination: PaginationMetadata;
 }
 

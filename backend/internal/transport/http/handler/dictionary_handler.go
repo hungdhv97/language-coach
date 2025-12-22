@@ -8,6 +8,7 @@ import (
 	"github.com/english-coach/backend/internal/domain/dictionary/service"
 	"github.com/english-coach/backend/internal/transport/http/middleware"
 	sharederrors "github.com/english-coach/backend/internal/shared/errors"
+	"github.com/english-coach/backend/internal/shared/pagination"
 	"github.com/english-coach/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -125,24 +126,10 @@ func (h *DictionaryHandler) SearchWords(c *gin.Context) {
 	langID := int16(languageID)
 
 	// Parse pagination parameters
-	limit := 20 // default limit
-	if limitStr := c.Query("limit"); limitStr != "" {
-		parsedLimit, err := strconv.Atoi(limitStr)
-		if err != nil || parsedLimit < 1 || parsedLimit > 100 {
-			middleware.SetError(c, sharederrors.ErrInvalidParameter.WithDetails("limit must be between 1 and 100"))
-			return
-		}
-		limit = parsedLimit
-	}
-
-	offset := 0
-	if offsetStr := c.Query("offset"); offsetStr != "" {
-		parsedOffset, err := strconv.Atoi(offsetStr)
-		if err != nil || parsedOffset < 0 {
-			middleware.SetError(c, sharederrors.ErrInvalidParameter.WithDetails("offset must be non-negative"))
-			return
-		}
-		offset = parsedOffset
+	paginationParams, err := pagination.ParseFromQuery(c)
+	if err != nil {
+		middleware.SetError(c, err)
+		return
 	}
 
 	// Get request logger from context (includes request ID)
@@ -158,56 +145,41 @@ func (h *DictionaryHandler) SearchWords(c *gin.Context) {
 	logger.Info("dictionary search started",
 		zap.String("query", query),
 		zap.Int16("language_id", langID),
-		zap.Int("limit", limit),
-		zap.Int("offset", offset),
+		zap.Int("limit", paginationParams.Limit),
+		zap.Int("offset", paginationParams.Offset),
+		zap.Int("page", paginationParams.Page),
+		zap.Int("pageSize", paginationParams.Size),
 	)
 
 	// Search words
-	words, err := h.wordRepo.SearchWords(ctx, query, langID, limit, offset)
+	words, err := h.wordRepo.SearchWords(ctx, query, langID, paginationParams.Limit, paginationParams.Offset)
 	if err != nil {
 		middleware.SetError(c, err)
 		return
 	}
 
 	// Get total count for pagination
-	total, err := h.wordRepo.CountSearchWords(ctx, query, langID)
+	totalCount, err := h.wordRepo.CountSearchWords(ctx, query, langID)
 	if err != nil {
 		h.logger.Error("failed to count search words",
 			zap.Error(err),
 			zap.String("query", query),
 		)
 		// Continue without total count
-		total = len(words)
+		totalCount = len(words)
 	}
 
-	// Handle empty results gracefully
-	if len(words) == 0 {
-		logger.Info("dictionary search completed - no results",
-			zap.String("query", query),
-			zap.Int("total", total),
-		)
-		response.Success(c, http.StatusOK, gin.H{
-			"words":  []interface{}{},
-			"total":  total,
-			"limit":  limit,
-			"offset": offset,
-		})
-		return
-	}
+	total := int64(totalCount)
 
 	// Log successful search
 	logger.Info("dictionary search completed",
 		zap.String("query", query),
 		zap.Int("results_count", len(words)),
-		zap.Int("total", total),
+		zap.Int64("total", total),
 	)
 
-	response.Success(c, http.StatusOK, gin.H{
-		"words":  words,
-		"total":  total,
-		"limit":  limit,
-		"offset": offset,
-	})
+	// Return paginated response
+	response.Paginated(c, http.StatusOK, words, paginationParams, total)
 }
 
 // GetWordDetail handles GET /api/v1/dictionary/words/:wordId

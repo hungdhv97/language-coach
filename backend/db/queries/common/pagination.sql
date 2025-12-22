@@ -1,3 +1,15 @@
--- Common pagination helpers can be added here if needed
--- For now, pagination is handled in the query files themselves
+-- Common pagination helpers
+-- Pagination is typically handled using LIMIT and OFFSET in individual query files
+-- 
+-- Standard pagination pattern:
+--   LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset')
+--
+-- For count queries (used with pagination):
+--   SELECT COUNT(*) FROM ...
+--
+-- Pagination parameters are parsed and validated using:
+--   backend/internal/shared/pagination/pagination.go
+--
+-- Paginated responses are formatted using:
+--   backend/internal/shared/response/response.go (Paginated function)
 
