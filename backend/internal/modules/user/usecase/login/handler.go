@@ -29,21 +29,6 @@ func NewHandler(
 	}
 }
 
-// Input represents the input for user login
-type Input struct {
-	Email    *string `json:"email,omitempty"`
-	Username *string `json:"username,omitempty"`
-	Password string  `json:"password"`
-}
-
-// Output represents the output for user login
-type Output struct {
-	Token    string  `json:"token"`
-	UserID   int64   `json:"user_id"`
-	Email    *string `json:"email,omitempty"`
-	Username *string `json:"username,omitempty"`
-}
-
 // Execute executes the user login
 func (h *Handler) Execute(ctx context.Context, input Input) (*Output, error) {
 	// Find user by email or username

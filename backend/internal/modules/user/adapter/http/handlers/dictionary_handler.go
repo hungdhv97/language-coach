@@ -235,7 +235,7 @@ func (h *DictionaryHandler) GetWordDetail(c *gin.Context) {
 		zap.Int64("word_id", wordID),
 	)
 
-	wordDetail, err := h.getWordDetailUC.Execute(ctx, wordID)
+	wordDetail, err := h.getWordDetailUC.Execute(ctx, dictusecase.Input{WordID: wordID})
 	if err != nil {
 		middleware.SetError(c, err)
 		return

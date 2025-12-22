@@ -71,14 +71,14 @@ func (h *GameHandler) CreateSession(c *gin.Context) {
 	}
 
 	// Bind request
-	var req gamecreatesession.CreateGameSessionRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var input gamecreatesession.Input
+	if err := c.ShouldBindJSON(&input); err != nil {
 		middleware.SetError(c, sharederrors.ErrInvalidRequest.WithDetails(err.Error()))
 		return
 	}
 
 	// Validate request
-	if err := req.Validate(); err != nil {
+	if err := input.Validate(); err != nil {
 		middleware.SetError(c, sharederrors.ErrValidationError.WithDetails(err.Error()))
 		return
 	}
@@ -95,15 +95,15 @@ func (h *GameHandler) CreateSession(c *gin.Context) {
 	// Log game session creation start
 	logger.Info("game session creation started",
 		zap.Int64("user_id", userIDInt64),
-		zap.String("mode", req.Mode),
-		zap.Int16("source_language_id", req.SourceLanguageID),
-		zap.Int16("target_language_id", req.TargetLanguageID),
-		zap.Int64("level_id", req.LevelID),
-		zap.Any("topic_ids", req.TopicIDs),
+		zap.String("mode", input.Mode),
+		zap.Int16("source_language_id", input.SourceLanguageID),
+		zap.Int16("target_language_id", input.TargetLanguageID),
+		zap.Int64("level_id", input.LevelID),
+		zap.Any("topic_ids", input.TopicIDs),
 	)
 
 	// Execute use case
-	session, err := h.createSessionUC.Execute(ctx, &req, userIDInt64)
+	session, err := h.createSessionUC.Execute(ctx, input, userIDInt64)
 	if err != nil {
 		middleware.SetError(c, err)
 		return
@@ -244,14 +244,14 @@ func (h *GameHandler) SubmitAnswer(c *gin.Context) {
 	}
 
 	// Bind request
-	var req gamesubmitanswer.SubmitAnswerRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var input gamesubmitanswer.Input
+	if err := c.ShouldBindJSON(&input); err != nil {
 		middleware.SetError(c, sharederrors.ErrInvalidRequest.WithDetails(err.Error()))
 		return
 	}
 
 	// Execute use case
-	answer, err := h.submitAnswerUC.Execute(ctx, &req, sessionID, userIDInt64)
+	answer, err := h.submitAnswerUC.Execute(ctx, input, sessionID, userIDInt64)
 	if err != nil {
 		middleware.SetError(c, err)
 		return

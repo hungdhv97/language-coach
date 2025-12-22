@@ -35,26 +35,26 @@ func NewHandler(
 }
 
 // Execute creates a new game session
-func (h *Handler) Execute(ctx context.Context, req *CreateGameSessionRequest, userID int64) (*domain.GameSession, error) {
+func (h *Handler) Execute(ctx context.Context, input Input, userID int64) (*Output, error) {
 	// Validate request
-	if err := req.Validate(); err != nil {
+	if err := input.Validate(); err != nil {
 		return nil, errors.ErrValidationError.WithDetails(err.Error())
 	}
 
 	// Create game session model
 	// Note: TopicID is kept for backward compatibility with DB schema, but we use TopicIDs array for filtering
 	var topicID *int64
-	if len(req.TopicIDs) > 0 {
+	if len(input.TopicIDs) > 0 {
 		// Store first topic ID for DB compatibility (schema still has single topic_id)
-		topicID = &req.TopicIDs[0]
+		topicID = &input.TopicIDs[0]
 	}
-	levelID := &req.LevelID
+	levelID := &input.LevelID
 
 	session := &domain.GameSession{
 		UserID:           userID,
-		Mode:             req.Mode,
-		SourceLanguageID: req.SourceLanguageID,
-		TargetLanguageID: req.TargetLanguageID,
+		Mode:             input.Mode,
+		SourceLanguageID: input.SourceLanguageID,
+		TargetLanguageID: input.TargetLanguageID,
 		TopicID:          topicID,
 		LevelID:          levelID,
 		TotalQuestions:   0, // Will be set when questions are generated
@@ -67,7 +67,7 @@ func (h *Handler) Execute(ctx context.Context, req *CreateGameSessionRequest, us
 		h.logger.Error("failed to create game session",
 			zap.Error(err),
 			zap.Int64("user_id", userID),
-			zap.String("mode", req.Mode),
+			zap.String("mode", input.Mode),
 		)
 		return nil, errors.WrapError(err, "failed to create game session")
 	}
@@ -76,22 +76,22 @@ func (h *Handler) Execute(ctx context.Context, req *CreateGameSessionRequest, us
 	questions, options, err := h.questionGenerator.GenerateQuestions(
 		ctx,
 		session.ID,
-		req.SourceLanguageID,
-		req.TargetLanguageID,
-		req.Mode,
-		req.TopicIDs,
-		req.LevelID,
+		input.SourceLanguageID,
+		input.TargetLanguageID,
+		input.Mode,
+		input.TopicIDs,
+		input.LevelID,
 		constants.MaxGameQuestionCount,
 	)
 	if err != nil {
 		h.logger.Error("failed to generate questions",
 			zap.Error(err),
 			zap.Int64("session_id", session.ID),
-			zap.String("mode", req.Mode),
-			zap.Int16("source_language_id", req.SourceLanguageID),
-			zap.Int16("target_language_id", req.TargetLanguageID),
-			zap.Any("topic_ids", req.TopicIDs),
-			zap.Any("level_id", req.LevelID),
+			zap.String("mode", input.Mode),
+			zap.Int16("source_language_id", input.SourceLanguageID),
+			zap.Int16("target_language_id", input.TargetLanguageID),
+			zap.Any("topic_ids", input.TopicIDs),
+			zap.Any("level_id", input.LevelID),
 		)
 		// Check for insufficient words error (FR-026)
 		// Error message format: "Không đủ từ: cần X, có Y"
@@ -129,12 +129,24 @@ func (h *Handler) Execute(ctx context.Context, req *CreateGameSessionRequest, us
 	h.logger.Info("game session created with questions",
 		zap.Int64("session_id", session.ID),
 		zap.Int64("user_id", userID),
-		zap.String("mode", req.Mode),
-		zap.Int16("source_language_id", req.SourceLanguageID),
-		zap.Int16("target_language_id", req.TargetLanguageID),
+		zap.String("mode", input.Mode),
+		zap.Int16("source_language_id", input.SourceLanguageID),
+		zap.Int16("target_language_id", input.TargetLanguageID),
 		zap.Int("question_count", len(questions)),
 	)
 
-	return session, nil
+	return &Output{
+		ID:               session.ID,
+		UserID:           session.UserID,
+		Mode:             session.Mode,
+		SourceLanguageID: session.SourceLanguageID,
+		TargetLanguageID: session.TargetLanguageID,
+		TopicID:          session.TopicID,
+		LevelID:          session.LevelID,
+		TotalQuestions:   session.TotalQuestions,
+		CorrectQuestions: session.CorrectQuestions,
+		StartedAt:        session.StartedAt,
+		EndedAt:          session.EndedAt,
+	}, nil
 }
 

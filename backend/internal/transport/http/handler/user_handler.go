@@ -152,7 +152,7 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 		return
 	}
 
-	profile, err := h.getProfileUC.Execute(ctx, userIDInt64)
+	profile, err := h.getProfileUC.Execute(ctx, usergetprofile.Input{UserID: userIDInt64})
 	if err != nil {
 		middleware.SetError(c, err)
 		return

@@ -42,9 +42,9 @@ func NewHandler(
 }
 
 // Execute retrieves detailed information about a word including senses, translations, examples, and pronunciations
-func (h *Handler) Execute(ctx context.Context, wordID int64) (*WordDetail, error) {
+func (h *Handler) Execute(ctx context.Context, input Input) (*Output, error) {
 	// Get word
-	word, err := h.wordRepo.FindByID(ctx, wordID)
+	word, err := h.wordRepo.FindByID(ctx, input.WordID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (h *Handler) Execute(ctx context.Context, wordID int64) (*WordDetail, error
 	}
 
 	// Get senses
-	senses, err := h.senseRepo.FindByWordID(ctx, wordID)
+	senses, err := h.senseRepo.FindByWordID(ctx, input.WordID)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (h *Handler) Execute(ctx context.Context, wordID int64) (*WordDetail, error
 	}
 
 	// Get pronunciations
-	pronunciations, err := h.getPronunciations(ctx, wordID)
+	pronunciations, err := h.getPronunciations(ctx, input.WordID)
 	if err != nil {
 		h.logger.Warn("failed to fetch pronunciations", zap.Error(err))
 		pronunciations = []*domain.Pronunciation{}
@@ -186,7 +186,7 @@ func (h *Handler) Execute(ctx context.Context, wordID int64) (*WordDetail, error
 	}
 
 	// Get topics for word
-	topics, err := h.getWordTopics(ctx, wordID)
+	topics, err := h.getWordTopics(ctx, input.WordID)
 	if err != nil {
 		h.logger.Warn("failed to fetch word topics", zap.Error(err))
 	} else {
@@ -194,7 +194,7 @@ func (h *Handler) Execute(ctx context.Context, wordID int64) (*WordDetail, error
 	}
 
 	// Get relations for word
-	relations, err := h.getWordRelations(ctx, wordID)
+	relations, err := h.getWordRelations(ctx, input.WordID)
 	if err != nil {
 		h.logger.Warn("failed to fetch word relations", zap.Error(err))
 		relations = []*domain.WordRelation{}
@@ -203,7 +203,7 @@ func (h *Handler) Execute(ctx context.Context, wordID int64) (*WordDetail, error
 		relations = []*domain.WordRelation{}
 	}
 
-	return &WordDetail{
+	return &Output{
 		Word:           word,
 		Senses:         senseDetails,
 		Pronunciations: pronunciations,
@@ -505,4 +505,3 @@ func (h *Handler) getWordRelations(ctx context.Context, wordID int64) ([]*domain
 
 	return relations, nil
 }
-

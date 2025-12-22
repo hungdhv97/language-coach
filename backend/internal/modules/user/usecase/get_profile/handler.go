@@ -25,20 +25,11 @@ func NewHandler(
 	}
 }
 
-// Output represents the output for getting user profile
-type Output struct {
-	UserID      int64   `json:"user_id"`
-	DisplayName *string `json:"display_name,omitempty"`
-	AvatarURL   *string `json:"avatar_url,omitempty"`
-	BirthDay    *string `json:"birth_day,omitempty"`
-	Bio         *string `json:"bio,omitempty"`
-}
-
 // Execute gets user profile
-func (h *Handler) Execute(ctx context.Context, userID int64) (*Output, error) {
-	profile, err := h.profileRepo.GetByUserID(ctx, userID)
+func (h *Handler) Execute(ctx context.Context, input Input) (*Output, error) {
+	profile, err := h.profileRepo.GetByUserID(ctx, input.UserID)
 	if err != nil {
-		h.logger.Error("failed to get user profile", zap.Error(err), zap.Int64("user_id", userID))
+		h.logger.Error("failed to get user profile", zap.Error(err), zap.Int64("user_id", input.UserID))
 		return nil, errors.WrapError(err, "failed to get user profile")
 	}
 

@@ -4,8 +4,8 @@ import (
 	"github.com/english-coach/backend/internal/modules/dictionary/domain"
 )
 
-// WordDetail represents detailed information about a word
-type WordDetail struct {
+// Output represents detailed information about a word
+type Output struct {
 	Word           *domain.Word            `json:"word"`
 	Senses         []SenseDetail           `json:"senses"`
 	Pronunciations []*domain.Pronunciation `json:"pronunciations"`
