@@ -3,7 +3,6 @@ package http
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/english-coach/backend/internal/modules/game/domain"
 	gamecreatesession "github.com/english-coach/backend/internal/modules/game/usecase/create_session"
@@ -136,11 +135,10 @@ func (h *Handler) CreateSession(c *gin.Context) {
 		LevelID:          session.LevelID,
 		TotalQuestions:   session.TotalQuestions,
 		CorrectQuestions: session.CorrectQuestions,
-		StartedAt:        session.StartedAt.Format(time.RFC3339),
+		StartedAt:        session.StartedAt,
 	}
 	if session.EndedAt != nil {
-		ended := session.EndedAt.Format(time.RFC3339)
-		resp.EndedAt = &ended
+		resp.EndedAt = session.EndedAt
 	}
 
 	response.Success(c, http.StatusCreated, resp)
@@ -221,11 +219,10 @@ func (h *Handler) GetSession(c *gin.Context) {
 		LevelID:          session.LevelID,
 		TotalQuestions:   session.TotalQuestions,
 		CorrectQuestions: session.CorrectQuestions,
-		StartedAt:        session.StartedAt.Format(time.RFC3339),
+		StartedAt:        session.StartedAt,
 	}
 	if session.EndedAt != nil {
-		endedAtStr := session.EndedAt.Format(time.RFC3339)
-		sessionResp.EndedAt = &endedAtStr
+		sessionResp.EndedAt = session.EndedAt
 	}
 
 	// Build response
@@ -242,7 +239,7 @@ func (h *Handler) GetSession(c *gin.Context) {
 				CorrectTargetWordID: q.CorrectTargetWordID,
 				SourceLanguageID:    q.SourceLanguageID,
 				TargetLanguageID:    q.TargetLanguageID,
-				CreatedAt:           q.CreatedAt.Format(time.RFC3339),
+				CreatedAt:           q.CreatedAt,
 			},
 			Options: optionsByQuestion[q.ID],
 		})
@@ -321,7 +318,7 @@ func (h *Handler) SubmitAnswer(c *gin.Context) {
 		SelectedOptionID: answer.SelectedOptionID,
 		IsCorrect:        answer.IsCorrect,
 		ResponseTimeMs:   answer.ResponseTimeMs,
-		AnsweredAt:       answer.AnsweredAt.Format(time.RFC3339),
+		AnsweredAt:       answer.AnsweredAt,
 	}
 
 	response.Success(c, http.StatusCreated, resp)

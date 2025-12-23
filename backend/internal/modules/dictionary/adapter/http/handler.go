@@ -178,7 +178,7 @@ func (h *Handler) SearchWords(c *gin.Context) {
 		logger.Int64("total", total),
 	)
 
-	// Map domain words to response DTOs with RFC3339 time format
+	// Map domain words to response DTOs
 	wordResponses := mapWordsToResponse(words)
 
 	// Return paginated response

@@ -6,7 +6,7 @@ import (
 	"github.com/english-coach/backend/internal/modules/dictionary/domain"
 )
 
-// WordResponse represents a word for HTTP response with RFC3339 time format
+// WordResponse represents a word for HTTP response
 type WordResponse struct {
 	ID              int64           `json:"id"`
 	LanguageID      int16           `json:"language_id"`
@@ -18,11 +18,11 @@ type WordResponse struct {
 	FrequencyRank   *int            `json:"frequency_rank,omitempty"`
 	Note            *string         `json:"note,omitempty"`
 	Topics          []*domain.Topic `json:"topics,omitempty"`
-	CreatedAt       string          `json:"created_at"`
-	UpdatedAt       string          `json:"updated_at"`
+	CreatedAt       time.Time       `json:"created_at"`
+	UpdatedAt       time.Time       `json:"updated_at"`
 }
 
-// mapWordToResponse maps domain.Word to WordResponse with RFC3339 time format
+// mapWordToResponse maps domain.Word to WordResponse
 func mapWordToResponse(word *domain.Word) *WordResponse {
 	if word == nil {
 		return nil
@@ -38,8 +38,8 @@ func mapWordToResponse(word *domain.Word) *WordResponse {
 		FrequencyRank:   word.FrequencyRank,
 		Note:            word.Note,
 		Topics:          word.Topics,
-		CreatedAt:       word.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:       word.UpdatedAt.Format(time.RFC3339),
+		CreatedAt:       word.CreatedAt,
+		UpdatedAt:       word.UpdatedAt,
 	}
 }
 
