@@ -8,9 +8,47 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-// Logger wraps zap logger
+// Logger wraps zap logger and implements ILogger interface
 type Logger struct {
 	*zap.Logger
+}
+
+// Ensure Logger implements ILogger interface
+var _ ILogger = (*Logger)(nil)
+
+// Debug logs a message at debug level
+func (l *Logger) Debug(msg string, fields ...zap.Field) {
+	l.Logger.Debug(msg, fields...)
+}
+
+// Info logs a message at info level
+func (l *Logger) Info(msg string, fields ...zap.Field) {
+	l.Logger.Info(msg, fields...)
+}
+
+// Warn logs a message at warn level
+func (l *Logger) Warn(msg string, fields ...zap.Field) {
+	l.Logger.Warn(msg, fields...)
+}
+
+// Error logs a message at error level
+func (l *Logger) Error(msg string, fields ...zap.Field) {
+	l.Logger.Error(msg, fields...)
+}
+
+// Fatal logs a message at fatal level and exits
+func (l *Logger) Fatal(msg string, fields ...zap.Field) {
+	l.Logger.Fatal(msg, fields...)
+}
+
+// With creates a child logger with the given fields
+func (l *Logger) With(fields ...zap.Field) ILogger {
+	return &Logger{Logger: l.Logger.With(fields...)}
+}
+
+// Sync flushes any buffered log entries
+func (l *Logger) Sync() error {
+	return l.Logger.Sync()
 }
 
 // NewLogger creates a new structured logger using zap
