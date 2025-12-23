@@ -9,16 +9,16 @@ import (
 	dictadapter "github.com/english-coach/backend/internal/modules/dictionary/adapter/http"
 	gameadapter "github.com/english-coach/backend/internal/modules/game/adapter/http"
 	useradapter "github.com/english-coach/backend/internal/modules/user/adapter/http"
+	"github.com/english-coach/backend/internal/shared/logger"
 	"github.com/english-coach/backend/internal/transport/http"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 // Application represents the fully wired application
 type Application struct {
 	Container *di.Container
 	Server    *http.Server
-	Logger    *zap.Logger
+	Logger    logger.ILogger
 }
 
 // Wire wires all dependencies and returns a fully configured application
@@ -35,7 +35,7 @@ func Wire(cfg *config.Config) (*Application, error) {
 	app := &Application{
 		Container: container,
 		Server:    container.HTTPServer,
-		Logger:    container.Logger.Logger,
+		Logger:    container.Logger,
 	}
 
 	return app, nil
@@ -44,7 +44,7 @@ func Wire(cfg *config.Config) (*Application, error) {
 // Start starts the application
 func (app *Application) Start() error {
 	app.Logger.Info("Starting HTTP server",
-		zap.Int("port", app.Container.Config.Server.Port),
+		logger.Int("port", app.Container.Config.Server.Port),
 	)
 	return app.Server.Start()
 }
@@ -60,7 +60,7 @@ func (app *Application) Run() {
 	// Start server in goroutine
 	go func() {
 		if err := app.Start(); err != nil {
-			app.Logger.Fatal("Failed to start server", zap.Error(err))
+			app.Logger.Fatal("Failed to start server", logger.Error(err))
 		}
 	}()
 
@@ -76,7 +76,7 @@ func (app *Application) Run() {
 
 	// Cleanup resources
 	if err := app.Container.Close(); err != nil {
-		app.Logger.Error("Error closing container", zap.Error(err))
+		app.Logger.Error("Error closing container", logger.Error(err))
 	}
 }
 
@@ -101,4 +101,3 @@ func registerRoutes(container *di.Container) {
 		gameadapter.RegisterRoutes(apiV1, container.GameHandler, container.AuthMiddleware)
 	}
 }
-

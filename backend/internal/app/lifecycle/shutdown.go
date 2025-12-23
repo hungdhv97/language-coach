@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/english-coach/backend/internal/shared/logger"
 )
 
 // ShutdownConfig holds shutdown configuration
@@ -18,7 +18,7 @@ type ShutdownConfig struct {
 // GracefulShutdown handles graceful shutdown of the application
 func GracefulShutdown(
 	ctx context.Context,
-	logger *zap.Logger,
+	appLogger logger.ILogger,
 	shutdownFunc func(context.Context) error,
 	cfg ShutdownConfig,
 ) {
@@ -27,16 +27,15 @@ func GracefulShutdown(
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	logger.Info("Shutting down server...")
+	appLogger.Info("Shutting down server...")
 
 	// Graceful shutdown
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 	defer cancel()
 
 	if err := shutdownFunc(shutdownCtx); err != nil {
-		logger.Error("Server forced to shutdown", zap.Error(err))
+		appLogger.Error("Server forced to shutdown", logger.Error(err))
 	} else {
-		logger.Info("Server exited gracefully")
+		appLogger.Info("Server exited gracefully")
 	}
 }
-

@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/english-coach/backend/internal/shared/logger"
 	"github.com/gin-contrib/requestid"
-	"go.uber.org/zap"
+	"github.com/gin-gonic/gin"
 )
 
 // HTTPServerConfig holds HTTP server configuration
@@ -29,7 +29,7 @@ type HTTPServer struct {
 // NewHTTPServer creates a new HTTP server using Gin
 func NewHTTPServer(
 	cfg HTTPServerConfig,
-	logger *zap.Logger,
+	appLogger logger.ILogger,
 	corsMiddleware, errorMiddleware, loggerMiddleware gin.HandlerFunc,
 ) *HTTPServer {
 	// Set Gin mode based on environment
@@ -55,10 +55,10 @@ func NewHTTPServer(
 
 	// Add recovery middleware
 	router.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
-		if logger != nil {
-			logger.Error("panic recovered",
-				zap.Any("error", recovered),
-				zap.String("path", c.Request.URL.Path),
+		if appLogger != nil {
+			appLogger.Error("panic recovered",
+				logger.Any("error", recovered),
+				logger.String("path", c.Request.URL.Path),
 			)
 		}
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -101,4 +101,3 @@ func (s *HTTPServer) Start() error {
 func (s *HTTPServer) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
-

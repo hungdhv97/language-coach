@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/english-coach/backend/internal/modules/dictionary/domain"
+	"github.com/english-coach/backend/internal/shared/logger"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"go.uber.org/zap"
 )
 
 // Handler provides dictionary lookup functionality
@@ -17,7 +17,7 @@ type Handler struct {
 	levelRepo        domain.LevelRepository
 	partOfSpeechRepo domain.PartOfSpeechRepository
 	pool             *pgxpool.Pool
-	logger           *zap.Logger
+	logger           logger.ILogger
 }
 
 // NewHandler creates a new dictionary handler
@@ -28,7 +28,7 @@ func NewHandler(
 	levelRepo domain.LevelRepository,
 	partOfSpeechRepo domain.PartOfSpeechRepository,
 	pool *pgxpool.Pool,
-	logger *zap.Logger,
+	logger logger.ILogger,
 ) *Handler {
 	return &Handler{
 		wordRepo:         wordRepo,
@@ -69,7 +69,7 @@ func (h *Handler) Execute(ctx context.Context, input Input) (*Output, error) {
 	// Get sense translations
 	translations, err := h.getSenseTranslations(ctx, senseIDs)
 	if err != nil {
-		h.logger.Warn("failed to fetch sense translations", zap.Error(err))
+		h.logger.Warn("failed to fetch sense translations", logger.Error(err))
 		translations = make(map[int64][]*domain.Word)
 	}
 	if translations == nil {
@@ -79,7 +79,7 @@ func (h *Handler) Execute(ctx context.Context, input Input) (*Output, error) {
 	// Get examples for senses
 	examples, err := h.getExamples(ctx, senseIDs)
 	if err != nil {
-		h.logger.Warn("failed to fetch examples", zap.Error(err))
+		h.logger.Warn("failed to fetch examples", logger.Error(err))
 		examples = make(map[int64][]*domain.Example)
 	}
 	if examples == nil {
@@ -89,7 +89,7 @@ func (h *Handler) Execute(ctx context.Context, input Input) (*Output, error) {
 	// Get pronunciations
 	pronunciations, err := h.getPronunciations(ctx, input.WordID)
 	if err != nil {
-		h.logger.Warn("failed to fetch pronunciations", zap.Error(err))
+		h.logger.Warn("failed to fetch pronunciations", logger.Error(err))
 		pronunciations = []*domain.Pronunciation{}
 	}
 	if pronunciations == nil {
@@ -118,7 +118,7 @@ func (h *Handler) Execute(ctx context.Context, input Input) (*Output, error) {
 	if len(posIDs) > 0 {
 		posData, err := h.partOfSpeechRepo.FindByIDs(ctx, posIDs)
 		if err != nil {
-			h.logger.Warn("failed to fetch part of speech names", zap.Error(err))
+			h.logger.Warn("failed to fetch part of speech names", logger.Error(err))
 		} else {
 			for id, pos := range posData {
 				name := pos.Name
@@ -132,7 +132,7 @@ func (h *Handler) Execute(ctx context.Context, input Input) (*Output, error) {
 	for _, levelID := range levelIDs {
 		level, err := h.levelRepo.FindByID(ctx, levelID)
 		if err != nil {
-			h.logger.Warn("failed to fetch level name", zap.Int64("level_id", levelID), zap.Error(err))
+			h.logger.Warn("failed to fetch level name", logger.Int64("level_id", levelID), logger.Error(err))
 		} else {
 			levelMap[levelID] = &level.Name
 		}
@@ -143,7 +143,7 @@ func (h *Handler) Execute(ctx context.Context, input Input) (*Output, error) {
 	for _, langID := range langIDs {
 		lang, err := h.languageRepo.FindByID(ctx, langID)
 		if err != nil {
-			h.logger.Warn("failed to fetch language name", zap.Int16("language_id", langID), zap.Error(err))
+			h.logger.Warn("failed to fetch language name", logger.Int("language_id", int(langID)), logger.Error(err))
 		} else {
 			name := lang.Name
 			langMap[langID] = &name
@@ -188,7 +188,7 @@ func (h *Handler) Execute(ctx context.Context, input Input) (*Output, error) {
 	// Get topics for word
 	topics, err := h.getWordTopics(ctx, input.WordID)
 	if err != nil {
-		h.logger.Warn("failed to fetch word topics", zap.Error(err))
+		h.logger.Warn("failed to fetch word topics", logger.Error(err))
 	} else {
 		word.Topics = topics
 	}
@@ -196,7 +196,7 @@ func (h *Handler) Execute(ctx context.Context, input Input) (*Output, error) {
 	// Get relations for word
 	relations, err := h.getWordRelations(ctx, input.WordID)
 	if err != nil {
-		h.logger.Warn("failed to fetch word relations", zap.Error(err))
+		h.logger.Warn("failed to fetch word relations", logger.Error(err))
 		relations = []*domain.WordRelation{}
 	}
 	if relations == nil {
@@ -330,14 +330,14 @@ func (h *Handler) getExamples(ctx context.Context, senseIDs []int64) (map[int64]
 		`
 		transRows, err := h.pool.Query(ctx, transQuery, exampleIDs)
 		if err != nil {
-			h.logger.Warn("failed to fetch example translations", zap.Error(err))
+			h.logger.Warn("failed to fetch example translations", logger.Error(err))
 		} else {
 			defer transRows.Close()
 			for transRows.Next() {
 				var exampleID int64
 				var langCode, content string
 				if err := transRows.Scan(&exampleID, &langCode, &content); err != nil {
-					h.logger.Warn("failed to scan example translation", zap.Error(err))
+					h.logger.Warn("failed to scan example translation", logger.Error(err))
 					continue
 				}
 				if example, ok := exampleMap[exampleID]; ok {
@@ -486,7 +486,7 @@ func (h *Handler) getWordRelations(ctx context.Context, wordID int64) ([]*domain
 		// Get topics for target word
 		targetTopics, err := h.getWordTopics(ctx, targetWord.ID)
 		if err != nil {
-			h.logger.Warn("failed to fetch topics for related word", zap.Int64("word_id", targetWord.ID), zap.Error(err))
+			h.logger.Warn("failed to fetch topics for related word", logger.Int64("word_id", targetWord.ID), logger.Error(err))
 		} else {
 			targetWord.Topics = targetTopics
 		}

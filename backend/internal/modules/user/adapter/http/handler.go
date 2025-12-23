@@ -9,10 +9,10 @@ import (
 	userregister "github.com/english-coach/backend/internal/modules/user/usecase/register"
 	userupdateprofile "github.com/english-coach/backend/internal/modules/user/usecase/update_profile"
 	sharederrors "github.com/english-coach/backend/internal/shared/errors"
+	"github.com/english-coach/backend/internal/shared/logger"
 	"github.com/english-coach/backend/internal/shared/response"
 	"github.com/english-coach/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 // Handler handles user-related HTTP requests
@@ -23,7 +23,7 @@ type Handler struct {
 	updateProfileUC *userupdateprofile.Handler
 	userRepo        domain.UserRepository
 	profileRepo     domain.UserProfileRepository
-	logger          *zap.Logger
+	logger          logger.ILogger
 }
 
 // NewHandler creates a new user handler
@@ -34,7 +34,7 @@ func NewHandler(
 	updateProfileUC *userupdateprofile.Handler,
 	userRepo domain.UserRepository,
 	profileRepo domain.UserProfileRepository,
-	logger *zap.Logger,
+	logger logger.ILogger,
 ) *Handler {
 	return &Handler{
 		registerUC:      registerUC,
@@ -80,8 +80,8 @@ func (h *Handler) Register(c *gin.Context) {
 		_, err := h.profileRepo.Create(ctx, result.UserID, req.DisplayName, nil, nil, nil)
 		if err != nil {
 			h.logger.Warn("failed to create user profile",
-				zap.Error(err),
-				zap.Int64("user_id", result.UserID),
+				logger.Error(err),
+				logger.Int64("user_id", result.UserID),
 			)
 			// Don't fail registration if profile creation fails
 		}

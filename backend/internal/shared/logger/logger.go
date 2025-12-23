@@ -2,89 +2,81 @@ package logger
 
 import (
 	"time"
-
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // ILogger defines the logger interface for structured logging
+// Fields are represented as map[string]interface{} to be independent of any logging library
 type ILogger interface {
 	// Debug logs a message at debug level
-	Debug(msg string, fields ...zap.Field)
+	Debug(msg string, fields ...map[string]interface{})
 	// Info logs a message at info level
-	Info(msg string, fields ...zap.Field)
+	Info(msg string, fields ...map[string]interface{})
 	// Warn logs a message at warn level
-	Warn(msg string, fields ...zap.Field)
+	Warn(msg string, fields ...map[string]interface{})
 	// Error logs a message at error level
-	Error(msg string, fields ...zap.Field)
+	Error(msg string, fields ...map[string]interface{})
 	// Fatal logs a message at fatal level and exits
-	Fatal(msg string, fields ...zap.Field)
+	Fatal(msg string, fields ...map[string]interface{})
 	// With creates a child logger with the given fields
-	With(fields ...zap.Field) ILogger
+	With(fields ...map[string]interface{}) ILogger
 	// Sync flushes any buffered log entries
 	Sync() error
 }
 
 // Field helpers for common logging scenarios
+// These return map[string]interface{} to be independent of any logging library
 
-// String creates a zap.String field
-func String(key, value string) zap.Field {
-	return zap.String(key, value)
+// String creates a string field
+func String(key, value string) map[string]interface{} {
+	return map[string]interface{}{key: value}
 }
 
-// Int creates a zap.Int field
-func Int(key string, value int) zap.Field {
-	return zap.Int(key, value)
+// Int creates an int field
+func Int(key string, value int) map[string]interface{} {
+	return map[string]interface{}{key: value}
 }
 
-// Int64 creates a zap.Int64 field
-func Int64(key string, value int64) zap.Field {
-	return zap.Int64(key, value)
+// Int64 creates an int64 field
+func Int64(key string, value int64) map[string]interface{} {
+	return map[string]interface{}{key: value}
 }
 
-// Float64 creates a zap.Float64 field
-func Float64(key string, value float64) zap.Field {
-	return zap.Float64(key, value)
+// Float64 creates a float64 field
+func Float64(key string, value float64) map[string]interface{} {
+	return map[string]interface{}{key: value}
 }
 
-// Bool creates a zap.Bool field
-func Bool(key string, value bool) zap.Field {
-	return zap.Bool(key, value)
+// Bool creates a bool field
+func Bool(key string, value bool) map[string]interface{} {
+	return map[string]interface{}{key: value}
 }
 
-// Error creates a zap.Error field
-func Error(err error) zap.Field {
-	return zap.Error(err)
+// Error creates an error field
+func Error(err error) map[string]interface{} {
+	if err == nil {
+		return map[string]interface{}{"error": nil}
+	}
+	return map[string]interface{}{"error": err.Error()}
 }
 
-// Any creates a zap.Any field
-func Any(key string, value interface{}) zap.Field {
-	return zap.Any(key, value)
+// Any creates a field with any value
+func Any(key string, value interface{}) map[string]interface{} {
+	return map[string]interface{}{key: value}
 }
 
-// Duration creates a zap.Duration field
-func Duration(key string, value time.Duration) zap.Field {
-	return zap.Duration(key, value)
+// Duration creates a duration field
+func Duration(key string, value time.Duration) map[string]interface{} {
+	return map[string]interface{}{key: value}
 }
 
-// Strings creates a zap.Strings field
-func Strings(key string, values []string) zap.Field {
-	return zap.Strings(key, values)
+// Strings creates a string slice field
+func Strings(key string, values []string) map[string]interface{} {
+	return map[string]interface{}{key: values}
 }
 
-// Ints creates a zap.Ints field
-func Ints(key string, values []int) zap.Field {
-	return zap.Ints(key, values)
-}
-
-// Object creates a zap.Object field
-func Object(key string, obj zapcore.ObjectMarshaler) zap.Field {
-	return zap.Object(key, obj)
-}
-
-// Namespace creates a zap.Namespace field
-func Namespace(key string) zap.Field {
-	return zap.Namespace(key)
+// Ints creates an int slice field
+func Ints(key string, values []int) map[string]interface{} {
+	return map[string]interface{}{key: values}
 }
 
 // Contextual field helpers for common use cases
@@ -135,6 +127,6 @@ func WithError(l ILogger, err error) ILogger {
 }
 
 // WithFields creates a logger with multiple fields
-func WithFields(l ILogger, fields ...zap.Field) ILogger {
+func WithFields(l ILogger, fields ...map[string]interface{}) ILogger {
 	return l.With(fields...)
 }

@@ -8,15 +8,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/english-coach/backend/internal/shared/logger"
 	"github.com/english-coach/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
 // OpenAPIHandler handles OpenAPI specification serving
 type OpenAPIHandler struct {
-	logger     *zap.Logger
+	logger     logger.ILogger
 	specPath   string
 	specLoaded bool
 	specJSON   []byte
@@ -24,9 +24,9 @@ type OpenAPIHandler struct {
 }
 
 // NewOpenAPIHandler creates a new OpenAPI handler
-func NewOpenAPIHandler(logger *zap.Logger, specPath string) *OpenAPIHandler {
+func NewOpenAPIHandler(appLogger logger.ILogger, specPath string) *OpenAPIHandler {
 	return &OpenAPIHandler{
-		logger:   logger,
+		logger:   appLogger,
 		specPath: specPath,
 	}
 }
@@ -297,8 +297,8 @@ func (h *OpenAPIHandler) GetSwaggerUI(c *gin.Context) {
 	specJSON, err := h.getOpenAPISpecJSON()
 	if err != nil {
 		h.logger.Error("failed to load OpenAPI spec",
-			zap.Error(err),
-			zap.String("path", h.specPath),
+			logger.Error(err),
+			logger.String("path", h.specPath),
 		)
 		response.ErrorResponse(c, http.StatusInternalServerError,
 			"INTERNAL_ERROR",

@@ -5,13 +5,13 @@ import (
 	"strings"
 
 	sharederrors "github.com/english-coach/backend/internal/shared/errors"
+	"github.com/english-coach/backend/internal/shared/logger"
 	"github.com/english-coach/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 // ErrorHandler is a centralized error handling middleware for Gin
-func ErrorHandler(logger *zap.Logger) gin.HandlerFunc {
+func ErrorHandler(appLogger logger.ILogger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 
@@ -23,11 +23,11 @@ func ErrorHandler(logger *zap.Logger) gin.HandlerFunc {
 			domainErr, isDomainErr := sharederrors.IsDomainError(err)
 			if isDomainErr {
 				// Log domain error (message is already in Vietnamese for user)
-				logger.Info("domain error",
-					zap.String("method", c.Request.Method),
-					zap.String("path", c.Request.URL.Path),
-					zap.String("error_code", domainErr.Code),
-					zap.String("error_message", domainErr.Message),
+				appLogger.Info("domain error",
+					logger.String("method", c.Request.Method),
+					logger.String("path", c.Request.URL.Path),
+					logger.String("error_code", domainErr.Code),
+					logger.String("error_message", domainErr.Message),
 				)
 
 				// Use domain error details if available
@@ -47,11 +47,11 @@ func ErrorHandler(logger *zap.Logger) gin.HandlerFunc {
 			// For non-domain errors (fmt.Errorf, etc.), log in English lowercase
 			// and return generic internal error
 			errorMsg := strings.ToLower(err.Error())
-			logger.Error("request error",
-				zap.String("method", c.Request.Method),
-				zap.String("path", c.Request.URL.Path),
-				zap.String("error", errorMsg),
-				zap.Error(err),
+			appLogger.Error("request error",
+				logger.String("method", c.Request.Method),
+				logger.String("path", c.Request.URL.Path),
+				logger.String("error", errorMsg),
+				logger.Error(err),
 			)
 
 			// Determine status code

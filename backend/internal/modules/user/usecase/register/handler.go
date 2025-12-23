@@ -6,19 +6,19 @@ import (
 	"github.com/english-coach/backend/internal/modules/user/domain"
 	"github.com/english-coach/backend/internal/shared/auth"
 	"github.com/english-coach/backend/internal/shared/errors"
-	"go.uber.org/zap"
+	"github.com/english-coach/backend/internal/shared/logger"
 )
 
 // Handler handles user registration
 type Handler struct {
 	userRepo domain.UserRepository
-	logger   *zap.Logger
+	logger   logger.ILogger
 }
 
 // NewHandler creates a new register user handler
 func NewHandler(
 	userRepo domain.UserRepository,
-	logger *zap.Logger,
+	logger logger.ILogger,
 ) *Handler {
 	return &Handler{
 		userRepo: userRepo,
@@ -42,8 +42,8 @@ func (h *Handler) Execute(ctx context.Context, input Input) (*Output, error) {
 		exists, err := h.userRepo.CheckEmailExists(ctx, *input.Email)
 		if err != nil {
 			h.logger.Error("failed to check if email exists",
-				zap.Error(err),
-				zap.String("email", *input.Email),
+				logger.Error(err),
+				logger.String("email", *input.Email),
 			)
 			return nil, errors.WrapError(err, "failed to check if email exists")
 		}
@@ -57,8 +57,8 @@ func (h *Handler) Execute(ctx context.Context, input Input) (*Output, error) {
 		exists, err := h.userRepo.CheckUsernameExists(ctx, *input.Username)
 		if err != nil {
 			h.logger.Error("failed to check if username exists",
-				zap.Error(err),
-				zap.Stringp("username", input.Username),
+				logger.Error(err),
+				logger.String("username", *input.Username),
 			)
 			return nil, errors.WrapError(err, "failed to check if username exists")
 		}
@@ -70,14 +70,14 @@ func (h *Handler) Execute(ctx context.Context, input Input) (*Output, error) {
 	// Hash password
 	passwordHash, err := auth.HashPassword(input.Password)
 	if err != nil {
-		h.logger.Error("failed to hash password", zap.Error(err))
+		h.logger.Error("failed to hash password", logger.Error(err))
 		return nil, errors.WrapError(err, "failed to hash password")
 	}
 
 	// Create user
 	user, err := h.userRepo.Create(ctx, input.Email, input.Username, passwordHash)
 	if err != nil {
-		h.logger.Error("failed to create user", zap.Error(err))
+		h.logger.Error("failed to create user", logger.Error(err))
 		return nil, errors.WrapError(err, "failed to create user")
 	}
 

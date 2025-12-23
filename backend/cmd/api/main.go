@@ -5,7 +5,7 @@ import (
 
 	config "github.com/english-coach/backend/configs"
 	"github.com/english-coach/backend/internal/app/bootstrap"
-	"go.uber.org/zap"
+	"github.com/english-coach/backend/internal/shared/logger"
 )
 
 func main() {
@@ -24,8 +24,8 @@ func main() {
 
 	// Log application startup
 	app.Logger.Info("Starting English Coach Backend API",
-		zap.String("env", cfg.App.Env),
-		zap.String("name", cfg.App.Name),
+		logger.String("env", cfg.App.Env),
+		logger.String("name", cfg.App.Name),
 	)
 
 	// Run application (handles graceful shutdown)

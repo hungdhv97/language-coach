@@ -26,7 +26,6 @@ import (
 	"github.com/english-coach/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"go.uber.org/zap"
 )
 
 // Container holds all application dependencies
@@ -103,11 +102,11 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 		return nil, err
 	}
 	container.DB = pool
-	appLogger.Logger.Info("Database connection established")
+	appLogger.Info("Database connection established")
 
 	// Log CORS configuration
-	appLogger.Logger.Info("CORS configuration loaded",
-		zap.Strings("allowed_origins", cfg.CORS.AllowedOrigins),
+	appLogger.Info("CORS configuration loaded",
+		logger.Strings("allowed_origins", cfg.CORS.AllowedOrigins),
 	)
 
 	// Initialize JWT manager
@@ -121,7 +120,7 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 	// Initialize services
 	container.QuestionGeneratorService = gamesvc.NewQuestionGeneratorService(
 		container.DictionaryRepo.WordRepository(),
-		appLogger.Logger,
+		appLogger,
 	)
 
 	// Initialize use cases
@@ -132,42 +131,42 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 		container.DictionaryRepo.LevelRepository(),
 		container.DictionaryRepo.PartOfSpeechRepository(),
 		pool,
-		appLogger.Logger,
+		appLogger,
 	)
 
 	container.CreateGameSessionUC = gamecreatesession.NewHandler(
 		container.GameRepo.GameSessionRepo(),
 		container.GameRepo.GameQuestionRepo(),
 		container.QuestionGeneratorService,
-		appLogger.Logger,
+		appLogger,
 	)
 
 	container.SubmitAnswerUC = gamesubmitanswer.NewHandler(
 		container.GameRepo.GameAnswerRepo(),
 		container.GameRepo.GameQuestionRepo(),
 		container.GameRepo.GameSessionRepo(),
-		appLogger.Logger,
+		appLogger,
 	)
 
 	container.RegisterUC = userregister.NewHandler(
 		container.UserRepo.UserRepository(),
-		appLogger.Logger,
+		appLogger,
 	)
 
 	container.LoginUC = userlogin.NewHandler(
 		container.UserRepo.UserRepository(),
 		container.JWTManager,
-		appLogger.Logger,
+		appLogger,
 	)
 
 	container.GetProfileUC = usergetprofile.NewHandler(
 		container.UserRepo.UserProfileRepository(),
-		appLogger.Logger,
+		appLogger,
 	)
 
 	container.UpdateProfileUC = userupdateprofile.NewHandler(
 		container.UserRepo.UserProfileRepository(),
-		appLogger.Logger,
+		appLogger,
 	)
 
 	// Initialize handlers
@@ -177,7 +176,7 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 		container.DictionaryRepo.LevelRepository(),
 		container.DictionaryRepo.WordRepository(),
 		container.GetWordDetailUC,
-		appLogger.Logger,
+		appLogger,
 	)
 
 	container.GameHandler = gameadapter.NewHandler(
@@ -185,7 +184,7 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 		container.SubmitAnswerUC,
 		container.GameRepo.GameQuestionRepo(),
 		container.GameRepo.GameSessionRepo(),
-		appLogger.Logger,
+		appLogger,
 	)
 
 	container.UserHandler = useradapter.NewHandler(
@@ -195,18 +194,18 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 		container.UpdateProfileUC,
 		container.UserRepo.UserRepository(),
 		container.UserRepo.UserProfileRepository(),
-		appLogger.Logger,
+		appLogger,
 	)
 
 	container.OpenAPIHandler = handler.NewOpenAPIHandler(
-		appLogger.Logger,
+		appLogger,
 		"docs/openapi/openapi.yaml",
 	)
 
 	// Initialize middleware
 	container.CORSMiddleware = middleware.CORS(cfg.CORS.AllowedOrigins)
-	container.ErrorMiddleware = middleware.ErrorHandler(appLogger.Logger)
-	container.LoggerMiddleware = middleware.LoggerMiddleware(appLogger.Logger)
+	container.ErrorMiddleware = middleware.ErrorHandler(appLogger)
+	container.LoggerMiddleware = middleware.LoggerMiddleware(appLogger)
 	container.AuthMiddleware = middleware.AuthMiddleware(container.JWTManager)
 
 	// Initialize HTTP server
@@ -218,7 +217,7 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 			IdleTimeout:     cfg.Server.IdleTimeout,
 			ShutdownTimeout: cfg.Server.ShutdownTimeout,
 		},
-		appLogger.Logger,
+		appLogger,
 		container.CORSMiddleware,
 		container.ErrorMiddleware,
 		container.LoggerMiddleware,

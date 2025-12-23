@@ -6,21 +6,21 @@ import (
 	"github.com/english-coach/backend/internal/modules/user/domain"
 	"github.com/english-coach/backend/internal/shared/auth"
 	"github.com/english-coach/backend/internal/shared/errors"
-	"go.uber.org/zap"
+	"github.com/english-coach/backend/internal/shared/logger"
 )
 
 // Handler handles user login
 type Handler struct {
 	userRepo   domain.UserRepository
 	jwtManager *auth.JWTManager
-	logger     *zap.Logger
+	logger     logger.ILogger
 }
 
 // NewHandler creates a new login handler
 func NewHandler(
 	userRepo domain.UserRepository,
 	jwtManager *auth.JWTManager,
-	logger *zap.Logger,
+	logger logger.ILogger,
 ) *Handler {
 	return &Handler{
 		userRepo:   userRepo,
@@ -46,7 +46,7 @@ func (h *Handler) Execute(ctx context.Context, input Input) (*Output, error) {
 	if err != nil {
 		// Check if it's a not found error (can be checked via errors package if needed)
 		return nil, domain.ErrInvalidCredentials
-		h.logger.Error("failed to find user", zap.Error(err))
+		h.logger.Error("failed to find user", logger.Error(err))
 		return nil, errors.WrapError(err, "failed to find user")
 	}
 
@@ -74,7 +74,7 @@ func (h *Handler) Execute(ctx context.Context, input Input) (*Output, error) {
 
 	token, err := h.jwtManager.GenerateToken(user.ID, username)
 	if err != nil {
-		h.logger.Error("failed to generate token", zap.Error(err))
+		h.logger.Error("failed to generate token", logger.Error(err))
 		return nil, errors.WrapError(err, "failed to generate token")
 	}
 

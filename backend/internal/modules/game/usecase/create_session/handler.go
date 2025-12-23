@@ -8,7 +8,7 @@ import (
 	"github.com/english-coach/backend/internal/modules/game/domain"
 	"github.com/english-coach/backend/internal/shared/constants"
 	"github.com/english-coach/backend/internal/shared/errors"
-	"go.uber.org/zap"
+	"github.com/english-coach/backend/internal/shared/logger"
 )
 
 // Handler handles game session creation
@@ -16,7 +16,7 @@ type Handler struct {
 	sessionRepo       domain.GameSessionRepository
 	questionRepo      domain.GameQuestionRepository
 	questionGenerator domain.QuestionGenerator
-	logger            *zap.Logger
+	logger            logger.ILogger
 }
 
 // NewHandler creates a new use case
@@ -24,7 +24,7 @@ func NewHandler(
 	sessionRepo domain.GameSessionRepository,
 	questionRepo domain.GameQuestionRepository,
 	questionGenerator domain.QuestionGenerator,
-	logger *zap.Logger,
+	logger logger.ILogger,
 ) *Handler {
 	return &Handler{
 		sessionRepo:       sessionRepo,
@@ -65,9 +65,9 @@ func (h *Handler) Execute(ctx context.Context, input Input, userID int64) (*Outp
 	// Save session to database first (needed for question generation)
 	if err := h.sessionRepo.Create(ctx, session); err != nil {
 		h.logger.Error("failed to create game session",
-			zap.Error(err),
-			zap.Int64("user_id", userID),
-			zap.String("mode", input.Mode),
+			logger.Error(err),
+			logger.Int64("user_id", userID),
+			logger.String("mode", input.Mode),
 		)
 		return nil, errors.WrapError(err, "failed to create game session")
 	}
@@ -85,13 +85,13 @@ func (h *Handler) Execute(ctx context.Context, input Input, userID int64) (*Outp
 	)
 	if err != nil {
 		h.logger.Error("failed to generate questions",
-			zap.Error(err),
-			zap.Int64("session_id", session.ID),
-			zap.String("mode", input.Mode),
-			zap.Int16("source_language_id", input.SourceLanguageID),
-			zap.Int16("target_language_id", input.TargetLanguageID),
-			zap.Any("topic_ids", input.TopicIDs),
-			zap.Any("level_id", input.LevelID),
+			logger.Error(err),
+			logger.Int64("session_id", session.ID),
+			logger.String("mode", input.Mode),
+			logger.Int("source_language_id", int(input.SourceLanguageID)),
+			logger.Int("target_language_id", int(input.TargetLanguageID)),
+			logger.Any("topic_ids", input.TopicIDs),
+			logger.Any("level_id", input.LevelID),
 		)
 		// Check for insufficient words error (FR-026)
 		// Error message format: "Không đủ từ: cần X, có Y"
@@ -109,8 +109,8 @@ func (h *Handler) Execute(ctx context.Context, input Input, userID int64) (*Outp
 	// Save questions and options
 	if err := h.questionRepo.CreateBatch(ctx, questions, options); err != nil {
 		h.logger.Error("failed to save questions",
-			zap.Error(err),
-			zap.Int64("session_id", session.ID),
+			logger.Error(err),
+			logger.Int64("session_id", session.ID),
 		)
 		return nil, errors.WrapError(err, "failed to save questions")
 	}
@@ -119,20 +119,20 @@ func (h *Handler) Execute(ctx context.Context, input Input, userID int64) (*Outp
 	session.TotalQuestions = int16(len(questions))
 	if err := h.sessionRepo.Update(ctx, session); err != nil {
 		h.logger.Error("failed to update session with question count",
-			zap.Error(err),
-			zap.Int64("session_id", session.ID),
+			logger.Error(err),
+			logger.Int64("session_id", session.ID),
 		)
 		// Non-fatal error, continue
 	}
 
 	// Log session creation
 	h.logger.Info("game session created with questions",
-		zap.Int64("session_id", session.ID),
-		zap.Int64("user_id", userID),
-		zap.String("mode", input.Mode),
-		zap.Int16("source_language_id", input.SourceLanguageID),
-		zap.Int16("target_language_id", input.TargetLanguageID),
-		zap.Int("question_count", len(questions)),
+		logger.Int64("session_id", session.ID),
+		logger.Int64("user_id", userID),
+		logger.String("mode", input.Mode),
+		logger.Int("source_language_id", int(input.SourceLanguageID)),
+		logger.Int("target_language_id", int(input.TargetLanguageID)),
+		logger.Int("question_count", len(questions)),
 	)
 
 	return &Output{
@@ -149,4 +149,3 @@ func (h *Handler) Execute(ctx context.Context, input Input, userID int64) (*Outp
 		EndedAt:          session.EndedAt,
 	}, nil
 }
-

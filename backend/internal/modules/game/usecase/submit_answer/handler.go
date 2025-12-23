@@ -6,7 +6,7 @@ import (
 
 	"github.com/english-coach/backend/internal/modules/game/domain"
 	"github.com/english-coach/backend/internal/shared/errors"
-	"go.uber.org/zap"
+	"github.com/english-coach/backend/internal/shared/logger"
 )
 
 // Handler handles answer submission
@@ -14,7 +14,7 @@ type Handler struct {
 	answerRepo   domain.GameAnswerRepository
 	questionRepo domain.GameQuestionRepository
 	sessionRepo  domain.GameSessionRepository
-	logger       *zap.Logger
+	logger       logger.ILogger
 }
 
 // NewHandler creates a new use case
@@ -22,7 +22,7 @@ func NewHandler(
 	answerRepo domain.GameAnswerRepository,
 	questionRepo domain.GameQuestionRepository,
 	sessionRepo domain.GameSessionRepository,
-	logger *zap.Logger,
+	logger logger.ILogger,
 ) *Handler {
 	return &Handler{
 		answerRepo:   answerRepo,
@@ -38,8 +38,8 @@ func (h *Handler) Execute(ctx context.Context, input Input, sessionID, userID in
 	question, options, err := h.questionRepo.FindByID(ctx, input.QuestionID)
 	if err != nil {
 		h.logger.Error("failed to find question",
-			zap.Error(err),
-			zap.Int64("question_id", input.QuestionID),
+			logger.Error(err),
+			logger.Int64("question_id", input.QuestionID),
 		)
 		return nil, errors.WrapError(err, "failed to find question")
 	}
@@ -88,8 +88,8 @@ func (h *Handler) Execute(ctx context.Context, input Input, sessionID, userID in
 
 	if err := h.answerRepo.Create(ctx, answer); err != nil {
 		h.logger.Error("failed to create answer",
-			zap.Error(err),
-			zap.Int64("question_id", input.QuestionID),
+			logger.Error(err),
+			logger.Int64("question_id", input.QuestionID),
 		)
 		return nil, errors.WrapError(err, "failed to create answer")
 	}
@@ -101,22 +101,25 @@ func (h *Handler) Execute(ctx context.Context, input Input, sessionID, userID in
 			session.CorrectQuestions++
 			if err := h.sessionRepo.Update(ctx, session); err != nil {
 				h.logger.Warn("failed to update session correct count",
-					zap.Error(err),
-					zap.Int64("session_id", sessionID),
+					logger.Error(err),
+					logger.Int64("session_id", sessionID),
 				)
 			}
 		}
 	}
 
 	// Log answer submission
-	h.logger.Info("answer submitted",
-		zap.Int64("answer_id", answer.ID),
-		zap.Int64("question_id", input.QuestionID),
-		zap.Int64("session_id", sessionID),
-		zap.Int64("user_id", userID),
-		zap.Bool("is_correct", isCorrect),
-		zap.Intp("response_time_ms", input.ResponseTimeMs),
-	)
+	fields := []map[string]interface{}{
+		logger.Int64("answer_id", answer.ID),
+		logger.Int64("question_id", input.QuestionID),
+		logger.Int64("session_id", sessionID),
+		logger.Int64("user_id", userID),
+		logger.Bool("is_correct", isCorrect),
+	}
+	if input.ResponseTimeMs != nil {
+		fields = append(fields, logger.Int("response_time_ms", *input.ResponseTimeMs))
+	}
+	h.logger.Info("answer submitted", fields...)
 
 	return &Output{
 		ID:               answer.ID,
@@ -129,4 +132,3 @@ func (h *Handler) Execute(ctx context.Context, input Input, sessionID, userID in
 		AnsweredAt:       answer.AnsweredAt,
 	}, nil
 }
-

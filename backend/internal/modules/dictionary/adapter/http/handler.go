@@ -6,12 +6,12 @@ import (
 
 	"github.com/english-coach/backend/internal/modules/dictionary/domain"
 	dictusecase "github.com/english-coach/backend/internal/modules/dictionary/usecase/get_word_detail"
-	"github.com/english-coach/backend/internal/transport/http/middleware"
 	sharederrors "github.com/english-coach/backend/internal/shared/errors"
+	"github.com/english-coach/backend/internal/shared/logger"
 	"github.com/english-coach/backend/internal/shared/pagination"
 	"github.com/english-coach/backend/internal/shared/response"
+	"github.com/english-coach/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 // Handler handles dictionary-related HTTP requests
@@ -21,7 +21,7 @@ type Handler struct {
 	levelRepo       domain.LevelRepository
 	wordRepo        domain.WordRepository
 	getWordDetailUC *dictusecase.Handler
-	logger          *zap.Logger
+	logger          logger.ILogger
 }
 
 // NewHandler creates a new dictionary handler
@@ -31,7 +31,7 @@ func NewHandler(
 	levelRepo domain.LevelRepository,
 	wordRepo domain.WordRepository,
 	getWordDetailUC *dictusecase.Handler,
-	logger *zap.Logger,
+	logger logger.ILogger,
 ) *Handler {
 	return &Handler{
 		languageRepo:    languageRepo,
@@ -134,21 +134,21 @@ func (h *Handler) SearchWords(c *gin.Context) {
 
 	// Get request logger from context (includes request ID)
 	requestLogger, _ := c.Get("logger")
-	var logger *zap.Logger
-	if reqLogger, ok := requestLogger.(*zap.Logger); ok {
-		logger = reqLogger
+	var appLogger logger.ILogger
+	if reqLogger, ok := requestLogger.(logger.ILogger); ok {
+		appLogger = reqLogger
 	} else {
-		logger = h.logger
+		appLogger = h.logger
 	}
 
 	// Log dictionary search start
-	logger.Info("dictionary search started",
-		zap.String("query", query),
-		zap.Int16("language_id", langID),
-		zap.Int("limit", paginationParams.Limit),
-		zap.Int("offset", paginationParams.Offset),
-		zap.Int("page", paginationParams.Page),
-		zap.Int("pageSize", paginationParams.Size),
+	appLogger.Info("dictionary search started",
+		logger.String("query", query),
+		logger.Int("language_id", int(langID)),
+		logger.Int("limit", paginationParams.Limit),
+		logger.Int("offset", paginationParams.Offset),
+		logger.Int("page", paginationParams.Page),
+		logger.Int("pageSize", paginationParams.Size),
 	)
 
 	// Search words
@@ -162,8 +162,8 @@ func (h *Handler) SearchWords(c *gin.Context) {
 	totalCount, err := h.wordRepo.CountSearchWords(ctx, query, langID)
 	if err != nil {
 		h.logger.Error("failed to count search words",
-			zap.Error(err),
-			zap.String("query", query),
+			logger.Error(err),
+			logger.String("query", query),
 		)
 		// Continue without total count
 		totalCount = len(words)
@@ -172,10 +172,10 @@ func (h *Handler) SearchWords(c *gin.Context) {
 	total := int64(totalCount)
 
 	// Log successful search
-	logger.Info("dictionary search completed",
-		zap.String("query", query),
-		zap.Int("results_count", len(words)),
-		zap.Int64("total", total),
+	appLogger.Info("dictionary search completed",
+		logger.String("query", query),
+		logger.Int("results_count", len(words)),
+		logger.Int64("total", total),
 	)
 
 	// Return paginated response
@@ -195,16 +195,16 @@ func (h *Handler) GetWordDetail(c *gin.Context) {
 
 	// Get request logger from context (includes request ID)
 	requestLogger, _ := c.Get("logger")
-	var logger *zap.Logger
-	if reqLogger, ok := requestLogger.(*zap.Logger); ok {
-		logger = reqLogger
+	var appLogger logger.ILogger
+	if reqLogger, ok := requestLogger.(logger.ILogger); ok {
+		appLogger = reqLogger
 	} else {
-		logger = h.logger
+		appLogger = h.logger
 	}
 
 	// Log word detail lookup start
-	logger.Info("word detail lookup started",
-		zap.Int64("word_id", wordID),
+	appLogger.Info("word detail lookup started",
+		logger.Int64("word_id", wordID),
 	)
 
 	wordDetail, err := h.getWordDetailUC.Execute(ctx, dictusecase.Input{WordID: wordID})
@@ -219,12 +219,11 @@ func (h *Handler) GetWordDetail(c *gin.Context) {
 	}
 
 	// Log successful word detail lookup
-	logger.Info("word detail lookup completed",
-		zap.Int64("word_id", wordID),
-		zap.Int("senses_count", len(wordDetail.Senses)),
-		zap.Int("pronunciations_count", len(wordDetail.Pronunciations)),
+	appLogger.Info("word detail lookup completed",
+		logger.Int64("word_id", wordID),
+		logger.Int("senses_count", len(wordDetail.Senses)),
+		logger.Int("pronunciations_count", len(wordDetail.Pronunciations)),
 	)
 
 	response.Success(c, http.StatusOK, wordDetail)
 }
-

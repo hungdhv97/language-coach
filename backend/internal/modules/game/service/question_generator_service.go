@@ -9,19 +9,19 @@ import (
 	dictdomain "github.com/english-coach/backend/internal/modules/dictionary/domain"
 	"github.com/english-coach/backend/internal/modules/game/domain"
 	"github.com/english-coach/backend/internal/shared/errors"
-	"go.uber.org/zap"
+	"github.com/english-coach/backend/internal/shared/logger"
 )
 
 // QuestionGeneratorService implements question generation logic
 type QuestionGeneratorService struct {
 	wordRepo dictdomain.WordRepository
-	logger   *zap.Logger
+	logger   logger.ILogger
 }
 
 // NewQuestionGeneratorService creates a new question generator service
 func NewQuestionGeneratorService(
 	wordRepo dictdomain.WordRepository,
-	logger *zap.Logger,
+	logger logger.ILogger,
 ) *QuestionGeneratorService {
 	return &QuestionGeneratorService{
 		wordRepo: wordRepo,
@@ -58,35 +58,35 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 	)
 	if err != nil {
 		s.logger.Error("failed to fetch source words by level and topics",
-			zap.Error(err),
-			zap.String("mode", mode),
-			zap.Int64("level_id", levelID),
-			zap.Any("topic_ids", topicIDs),
-			zap.Int16("source_language_id", sourceLanguageID),
-			zap.Int16("target_language_id", targetLanguageID),
-			zap.Int("requested_limit", maxWordsToFetch),
+			logger.Error(err),
+			logger.String("mode", mode),
+			logger.Int64("level_id", levelID),
+			logger.Any("topic_ids", topicIDs),
+			logger.Int("source_language_id", int(sourceLanguageID)),
+			logger.Int("target_language_id", int(targetLanguageID)),
+			logger.Int("requested_limit", maxWordsToFetch),
 		)
 		return nil, nil, errors.WrapError(err, "failed to fetch source words")
 	}
 	s.logger.Info("fetched words by level and topics",
-		zap.Int64("level_id", levelID),
-		zap.Any("topic_ids", topicIDs),
-		zap.Int16("source_language_id", sourceLanguageID),
-		zap.Int16("target_language_id", targetLanguageID),
-		zap.Int("word_count", len(sourceWords)),
-		zap.Int("requested_limit", maxWordsToFetch),
+		logger.Int64("level_id", levelID),
+		logger.Any("topic_ids", topicIDs),
+		logger.Int("source_language_id", int(sourceLanguageID)),
+		logger.Int("target_language_id", int(targetLanguageID)),
+		logger.Int("word_count", len(sourceWords)),
+		logger.Int("requested_limit", maxWordsToFetch),
 	)
 
 	// Check if we have at least 1 word (minimum required)
 	if len(sourceWords) < 1 {
 		s.logger.Warn("no words available for question generation",
-			zap.String("mode", mode),
-			zap.Int("requested", questionCount),
-			zap.Int("available", len(sourceWords)),
-			zap.Any("topic_ids", topicIDs),
-			zap.Int64("level_id", levelID),
-			zap.Int16("source_language_id", sourceLanguageID),
-			zap.Int16("target_language_id", targetLanguageID),
+			logger.String("mode", mode),
+			logger.Int("requested", questionCount),
+			logger.Int("available", len(sourceWords)),
+			logger.Any("topic_ids", topicIDs),
+			logger.Int64("level_id", levelID),
+			logger.Int("source_language_id", int(sourceLanguageID)),
+			logger.Int("target_language_id", int(targetLanguageID)),
 		)
 		return nil, nil, domain.ErrInsufficientWords.WithDetails(fmt.Sprintf("required: 1, available: %d", len(sourceWords)))
 	}
@@ -102,9 +102,9 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 	if len(sourceWords) < questionCount {
 		wordsToSelect = len(sourceWords)
 		s.logger.Info("using fewer words than requested",
-			zap.Int("requested", questionCount),
-			zap.Int("available", len(sourceWords)),
-			zap.Int("using", wordsToSelect),
+			logger.Int("requested", questionCount),
+			logger.Int("available", len(sourceWords)),
+			logger.Int("using", wordsToSelect),
 		)
 	}
 	selectedWords := sourceWords[:wordsToSelect]
@@ -126,8 +126,8 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 		)
 		if err != nil || len(translations) == 0 {
 			s.logger.Warn("no translations found for word",
-				zap.Int64("word_id", sourceWord.ID),
-				zap.Int16("target_language_id", targetLanguageID),
+				logger.Int64("word_id", sourceWord.ID),
+				logger.Int("target_language_id", int(targetLanguageID)),
 			)
 			continue
 		}
@@ -235,18 +235,17 @@ func (s *QuestionGeneratorService) GenerateQuestions(
 
 	duration := time.Since(startTime)
 	s.logger.Info("questions generated",
-		zap.Int64("session_id", sessionID),
-		zap.Int("question_count", len(questions)),
-		zap.Duration("duration", duration),
+		logger.Int64("session_id", sessionID),
+		logger.Int("question_count", len(questions)),
+		logger.Duration("duration", duration),
 	)
 
 	// Ensure generation completes within 1 second (SC-003)
 	if duration > time.Second {
 		s.logger.Warn("question generation took longer than 1 second",
-			zap.Duration("duration", duration),
+			logger.Duration("duration", duration),
 		)
 	}
 
 	return questions, options, nil
 }
-

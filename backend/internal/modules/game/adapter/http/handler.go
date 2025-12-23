@@ -8,10 +8,10 @@ import (
 	gamecreatesession "github.com/english-coach/backend/internal/modules/game/usecase/create_session"
 	gamesubmitanswer "github.com/english-coach/backend/internal/modules/game/usecase/submit_answer"
 	sharederrors "github.com/english-coach/backend/internal/shared/errors"
+	"github.com/english-coach/backend/internal/shared/logger"
 	"github.com/english-coach/backend/internal/shared/response"
 	"github.com/english-coach/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 // Handler handles game-related HTTP requests
@@ -20,7 +20,7 @@ type Handler struct {
 	submitAnswerUC  *gamesubmitanswer.Handler
 	questionRepo    domain.GameQuestionRepository
 	sessionRepo     domain.GameSessionRepository
-	logger          *zap.Logger
+	logger          logger.ILogger
 }
 
 // NewHandler creates a new game handler
@@ -29,7 +29,7 @@ func NewHandler(
 	submitAnswerUC *gamesubmitanswer.Handler,
 	questionRepo domain.GameQuestionRepository,
 	sessionRepo domain.GameSessionRepository,
-	logger *zap.Logger,
+	logger logger.ILogger,
 ) *Handler {
 	return &Handler{
 		createSessionUC: createSessionUC,
@@ -94,21 +94,21 @@ func (h *Handler) CreateSession(c *gin.Context) {
 
 	// Get request logger from context (includes request ID)
 	requestLogger, _ := c.Get("logger")
-	var logger *zap.Logger
-	if reqLogger, ok := requestLogger.(*zap.Logger); ok {
-		logger = reqLogger
+	var appLogger logger.ILogger
+	if reqLogger, ok := requestLogger.(logger.ILogger); ok {
+		appLogger = reqLogger
 	} else {
-		logger = h.logger
+		appLogger = h.logger
 	}
 
 	// Log game session creation start
-	logger.Info("game session creation started",
-		zap.Int64("user_id", userIDInt64),
-		zap.String("mode", input.Mode),
-		zap.Int16("source_language_id", input.SourceLanguageID),
-		zap.Int16("target_language_id", input.TargetLanguageID),
-		zap.Int64("level_id", input.LevelID),
-		zap.Any("topic_ids", input.TopicIDs),
+	appLogger.Info("game session creation started",
+		logger.Int64("user_id", userIDInt64),
+		logger.String("mode", input.Mode),
+		logger.Int("source_language_id", int(input.SourceLanguageID)),
+		logger.Int("target_language_id", int(input.TargetLanguageID)),
+		logger.Int64("level_id", input.LevelID),
+		logger.Any("topic_ids", input.TopicIDs),
 	)
 
 	// Execute use case
@@ -119,10 +119,10 @@ func (h *Handler) CreateSession(c *gin.Context) {
 	}
 
 	// Log successful session creation
-	logger.Info("game session created successfully",
-		zap.Int64("session_id", session.ID),
-		zap.Int64("user_id", userIDInt64),
-		zap.Int16("total_questions", session.TotalQuestions),
+	appLogger.Info("game session created successfully",
+		logger.Int64("session_id", session.ID),
+		logger.Int64("user_id", userIDInt64),
+		logger.Int("total_questions", int(session.TotalQuestions)),
 	)
 
 	response.Success(c, http.StatusCreated, session)

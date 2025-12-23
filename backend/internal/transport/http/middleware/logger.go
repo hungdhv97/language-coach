@@ -3,13 +3,13 @@ package middleware
 import (
 	"time"
 
+	"github.com/english-coach/backend/internal/shared/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
-// LoggerMiddleware creates a Gin middleware for request logging with zap
-func LoggerMiddleware(logger *zap.Logger) gin.HandlerFunc {
+// LoggerMiddleware creates a Gin middleware for request logging
+func LoggerMiddleware(appLogger logger.ILogger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 
@@ -22,11 +22,11 @@ func LoggerMiddleware(logger *zap.Logger) gin.HandlerFunc {
 		c.Header("X-Request-ID", requestID)
 
 		// Add request ID to logger context
-		requestLogger := logger.With(
-			zap.String("request_id", requestID),
-			zap.String("method", c.Request.Method),
-			zap.String("path", c.Request.URL.Path),
-			zap.String("remote_addr", c.ClientIP()),
+		requestLogger := appLogger.With(
+			logger.String("request_id", requestID),
+			logger.String("method", c.Request.Method),
+			logger.String("path", c.Request.URL.Path),
+			logger.String("remote_addr", c.ClientIP()),
 		)
 
 		// Store logger in context
@@ -43,9 +43,9 @@ func LoggerMiddleware(logger *zap.Logger) gin.HandlerFunc {
 
 		// Log request completion
 		requestLogger.Info("request completed",
-			zap.Int("status_code", c.Writer.Status()),
-			zap.Duration("duration", duration),
-			zap.Int64("duration_ms", duration.Milliseconds()),
+			logger.Int("status_code", c.Writer.Status()),
+			logger.Duration("duration", duration),
+			logger.Int64("duration_ms", duration.Milliseconds()),
 		)
 	}
 }

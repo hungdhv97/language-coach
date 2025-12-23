@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/english-coach/backend/internal/shared/logger"
 	"github.com/gin-contrib/requestid"
-	"go.uber.org/zap"
+	"github.com/gin-gonic/gin"
 )
 
 // Server represents the HTTP server
@@ -27,13 +27,13 @@ type Config struct {
 }
 
 // NewServer creates a new HTTP server using Gin with Sonic JSON binding
-func NewServer(cfg Config, logger *zap.Logger, corsMiddleware, errorMiddleware, loggerMiddleware gin.HandlerFunc) *Server {
+func NewServer(cfg Config, appLogger logger.ILogger, corsMiddleware, errorMiddleware, loggerMiddleware gin.HandlerFunc) *Server {
 	// Set Gin mode based on environment
 	gin.SetMode(gin.ReleaseMode)
 
 	// Use Sonic for JSON binding (faster JSON parsing)
 	gin.EnableJsonDecoderUseNumber()
-	
+
 	router := gin.New()
 
 	// Add request ID middleware
@@ -51,10 +51,10 @@ func NewServer(cfg Config, logger *zap.Logger, corsMiddleware, errorMiddleware, 
 
 	// Add recovery middleware
 	router.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
-		if logger != nil {
-			logger.Error("panic recovered",
-				zap.Any("error", recovered),
-				zap.String("path", c.Request.URL.Path),
+		if appLogger != nil {
+			appLogger.Error("panic recovered",
+				logger.Any("error", recovered),
+				logger.String("path", c.Request.URL.Path),
 			)
 		}
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
