@@ -109,10 +109,3 @@ func WrapUnexpectedError(err error, context string) *AppError {
 	return ErrInternalError.
 		WithCause(fmt.Errorf("%s: %w", context, err))
 }
-
-// WrapError wraps an error with a context message and returns it as an AppError
-// This is a convenience function for wrapping errors in usecases
-// It returns an AppError with CodeInternalError
-func WrapError(err error, context string) *AppError {
-	return WrapUnexpectedError(err, context)
-}

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/english-coach/backend/internal/modules/game/domain"
-	"github.com/english-coach/backend/internal/shared/errors"
+	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 	"github.com/english-coach/backend/internal/shared/logger"
 )
 
@@ -41,17 +41,17 @@ func (h *Handler) Execute(ctx context.Context, input SubmitAnswerInput, sessionI
 			logger.Error(err),
 			logger.Int64("question_id", input.QuestionID),
 		)
-		return nil, errors.WrapError(err, "failed to find question")
+		return nil, sharederrors.MapDomainErrorToAppError(err)
 	}
 
 	// Check if question is nil
 	if question == nil {
-		return nil, domain.ErrQuestionNotFound
+		return nil, sharederrors.MapDomainErrorToAppError(domain.ErrQuestionNotFound)
 	}
 
 	// Verify question belongs to session
 	if question.SessionID != sessionID {
-		return nil, domain.ErrQuestionNotInSession
+		return nil, sharederrors.MapDomainErrorToAppError(domain.ErrQuestionNotInSession)
 	}
 
 	// Find the selected option
@@ -66,7 +66,7 @@ func (h *Handler) Execute(ctx context.Context, input SubmitAnswerInput, sessionI
 	}
 
 	if selectedOption == nil {
-		return nil, domain.ErrOptionNotFound
+		return nil, sharederrors.MapDomainErrorToAppError(domain.ErrOptionNotFound)
 	}
 
 	// Check if answer already exists
@@ -77,10 +77,10 @@ func (h *Handler) Execute(ctx context.Context, input SubmitAnswerInput, sessionI
 			logger.Int64("question_id", input.QuestionID),
 			logger.Int64("session_id", sessionID),
 		)
-		return nil, errors.WrapError(err, "failed to check existing answer")
+		return nil, sharederrors.MapDomainErrorToAppError(err)
 	}
 	if existingAnswer != nil {
-		return nil, domain.ErrAnswerAlreadySubmitted
+		return nil, sharederrors.MapDomainErrorToAppError(domain.ErrAnswerAlreadySubmitted)
 	}
 
 	// Create answer
@@ -99,7 +99,7 @@ func (h *Handler) Execute(ctx context.Context, input SubmitAnswerInput, sessionI
 			logger.Error(err),
 			logger.Int64("question_id", input.QuestionID),
 		)
-		return nil, errors.WrapError(err, "failed to create answer")
+		return nil, sharederrors.MapDomainErrorToAppError(err)
 	}
 
 	// Update session correct count if answer is correct
@@ -110,7 +110,7 @@ func (h *Handler) Execute(ctx context.Context, input SubmitAnswerInput, sessionI
 				logger.Error(err),
 				logger.Int64("session_id", sessionID),
 			)
-			return nil, errors.WrapError(err, "failed to find session for update")
+			return nil, sharederrors.MapDomainErrorToAppError(err)
 		}
 		session.CorrectQuestions++
 		if err := h.sessionRepo.Update(ctx, session); err != nil {
@@ -118,7 +118,7 @@ func (h *Handler) Execute(ctx context.Context, input SubmitAnswerInput, sessionI
 				logger.Error(err),
 				logger.Int64("session_id", sessionID),
 			)
-			return nil, errors.WrapError(err, "failed to update session correct count")
+			return nil, sharederrors.MapDomainErrorToAppError(err)
 		}
 	}
 

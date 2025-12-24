@@ -2,15 +2,13 @@ package create_session
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
-	"strings"
 	"time"
 
 	dictdomain "github.com/english-coach/backend/internal/modules/dictionary/domain"
 	"github.com/english-coach/backend/internal/modules/game/domain"
 	"github.com/english-coach/backend/internal/shared/constants"
-	"github.com/english-coach/backend/internal/shared/errors"
+	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 	"github.com/english-coach/backend/internal/shared/logger"
 )
 
@@ -41,7 +39,7 @@ func NewHandler(
 func (h *Handler) Execute(ctx context.Context, input CreateSessionInput, userID int64) (*CreateSessionOutput, error) {
 	// Validate request
 	if err := input.Validate(); err != nil {
-		return nil, errors.ErrValidationError.WithDetails(err.Error())
+		return nil, sharederrors.ErrValidationError.WithDetails(err.Error())
 	}
 
 	// Create game session model
@@ -72,7 +70,7 @@ func (h *Handler) Execute(ctx context.Context, input CreateSessionInput, userID 
 			logger.Int64("user_id", userID),
 			logger.String("mode", input.Mode),
 		)
-		return nil, errors.WrapError(err, "failed to create game session")
+		return nil, sharederrors.MapDomainErrorToAppError(err)
 	}
 
 	// Generate questions upfront - request up to MaxGameQuestionCount (20)
@@ -96,26 +94,12 @@ func (h *Handler) Execute(ctx context.Context, input CreateSessionInput, userID 
 			logger.Any("topic_ids", input.TopicIDs),
 			logger.Any("level_id", input.LevelID),
 		)
-		// Map errors to domain errors at Execute level
-		errMsg := err.Error()
-		if strings.Contains(errMsg, "insufficient words") || strings.Contains(errMsg, "insufficient questions") || strings.Contains(errMsg, "Không đủ từ") {
-			return nil, domain.ErrInsufficientWords
-		}
-		if strings.Contains(errMsg, "invalid mode") {
-			return nil, domain.ErrInvalidMode
-		}
-		if strings.Contains(errMsg, "question not found") {
-			return nil, domain.ErrQuestionNotFound
-		}
-		if strings.Contains(errMsg, "insufficient options") {
-			return nil, domain.ErrOptionNotFound
-		}
-		return nil, errors.WrapError(err, "failed to generate questions")
+		return nil, sharederrors.MapDomainErrorToAppError(err)
 	}
 
 	// Check if we have at least the minimum required questions (1)
 	if len(questions) < constants.MinGameQuestionCount {
-		return nil, domain.ErrInsufficientWords
+		return nil, sharederrors.MapDomainErrorToAppError(domain.ErrInsufficientWords)
 	}
 
 	// Save questions and options
@@ -124,7 +108,7 @@ func (h *Handler) Execute(ctx context.Context, input CreateSessionInput, userID 
 			logger.Error(err),
 			logger.Int64("session_id", session.ID),
 		)
-		return nil, errors.WrapError(err, "failed to save questions")
+		return nil, sharederrors.MapDomainErrorToAppError(err)
 	}
 
 	// Update session with question count
@@ -134,7 +118,7 @@ func (h *Handler) Execute(ctx context.Context, input CreateSessionInput, userID 
 			logger.Error(err),
 			logger.Int64("session_id", session.ID),
 		)
-		return nil, errors.WrapError(err, "failed to update session with question count")
+		return nil, sharederrors.MapDomainErrorToAppError(err)
 	}
 
 	// Log session creation
@@ -177,7 +161,7 @@ func (h *Handler) generateQuestions(
 
 	// Validate mode
 	if err := h.validateMode(mode); err != nil {
-		return nil, nil, errors.WrapError(err, "invalid mode")
+		return nil, nil, err
 	}
 
 	// Fetch source words
@@ -195,7 +179,7 @@ func (h *Handler) generateQuestions(
 		return nil, nil, err
 	}
 	if len(questions) == 0 {
-		return nil, nil, errors.WrapError(fmt.Errorf("no valid questions could be generated"), "insufficient questions")
+		return nil, nil, domain.ErrInsufficientWords
 	}
 
 	// Generate options for each question
@@ -213,11 +197,7 @@ func (h *Handler) generateQuestions(
 // validateMode validates the game mode
 func (h *Handler) validateMode(mode string) error {
 	if mode != "level" {
-		// Return a wrapped error instead of a domain error; Execute will map it to a domain error
-		return errors.WrapError(
-			fmt.Errorf("invalid mode"),
-			fmt.Sprintf("mode: %s, required: 'level'", mode),
-		)
+		return domain.ErrInvalidMode
 	}
 	return nil
 }
@@ -249,7 +229,7 @@ func (h *Handler) fetchSourceWords(
 			logger.Int("target_language_id", int(targetLanguageID)),
 			logger.Int("requested_limit", maxWordsToFetch),
 		)
-		return nil, errors.WrapError(err, "failed to fetch source words")
+		return nil, err
 	}
 
 	h.logger.Info("fetched words by level and topics",
@@ -272,10 +252,7 @@ func (h *Handler) fetchSourceWords(
 			logger.Int("source_language_id", int(sourceLanguageID)),
 			logger.Int("target_language_id", int(targetLanguageID)),
 		)
-		return nil, errors.WrapError(
-			fmt.Errorf("insufficient words"),
-			fmt.Sprintf("required 1, available %d", len(sourceWords)),
-		)
+		return nil, domain.ErrInsufficientWords
 	}
 
 	return sourceWords, nil
@@ -324,7 +301,7 @@ func (h *Handler) buildQuestions(
 				logger.Int64("word_id", sourceWord.ID),
 				logger.Int("target_language_id", int(targetLanguageID)),
 			)
-			return nil, nil, errors.WrapError(err, "failed to find translations for word")
+			return nil, nil, err
 		}
 		if len(translations) == 0 {
 			h.logger.Warn("no translations found for word",
@@ -375,14 +352,11 @@ func (h *Handler) generateOptions(
 		targetWordList = append(targetWordList, word)
 	}
 
-	for i, question := range questions {
+	for _, question := range questions {
 		// Get correct word
 		correctWord, exists := allTargetWords[question.CorrectTargetWordID]
 		if !exists {
-			return nil, errors.WrapError(
-				fmt.Errorf("question not found"),
-				fmt.Sprintf("question_index: %d", i+1),
-			)
+			return nil, domain.ErrQuestionNotFound
 		}
 
 		// Get wrong answer candidates
@@ -392,10 +366,7 @@ func (h *Handler) generateOptions(
 		if len(wrongCandidates) < 3 {
 			wrongCandidates = h.padWrongCandidates(wrongCandidates)
 			if len(wrongCandidates) < 3 {
-				return nil, errors.WrapError(
-					fmt.Errorf("insufficient options"),
-					fmt.Sprintf("question_index: %d", i+1),
-				)
+				return nil, domain.ErrOptionNotFound
 			}
 		}
 
