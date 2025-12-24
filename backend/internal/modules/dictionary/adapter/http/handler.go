@@ -251,7 +251,7 @@ func (h *Handler) GetWordDetail(c *gin.Context) {
 
 	// Map Relations to WordRelationResponse
 	var relationDTOs []*WordRelationResponse
-	if wordDetail.Relations != nil && len(wordDetail.Relations) > 0 {
+	if len(wordDetail.Relations) > 0 {
 		relationDTOs = make([]*WordRelationResponse, len(wordDetail.Relations))
 		for i, r := range wordDetail.Relations {
 			relationDTOs[i] = &WordRelationResponse{
