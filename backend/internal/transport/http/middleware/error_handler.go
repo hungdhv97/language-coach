@@ -30,16 +30,12 @@ func ErrorHandler(appLogger logger.ILogger) gin.HandlerFunc {
 					logger.String("error_message", domainErr.Message),
 				)
 
-				// Use domain error details if available
-				details := domainErr.Details
-				if details == nil {
-					details = nil
-				}
-
-				c.JSON(domainErr.StatusCode, response.NewError(
-					domainErr.Code,
-					domainErr.Message,
-					details,
+				// Map domain error to HTTP response using http_mapper
+				statusCode, httpErr := sharederrors.MapToHTTPResponse(domainErr)
+				c.JSON(statusCode, response.NewError(
+					httpErr.Code,
+					httpErr.Message,
+					httpErr.Details,
 				))
 				return
 			}

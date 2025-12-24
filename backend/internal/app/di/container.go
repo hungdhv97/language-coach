@@ -9,7 +9,6 @@ import (
 	dictusecase "github.com/english-coach/backend/internal/modules/dictionary/usecase/get_word_detail"
 	gameadapter "github.com/english-coach/backend/internal/modules/game/adapter/http"
 	gamerepo "github.com/english-coach/backend/internal/modules/game/infra/persistence/postgres"
-	gamesvc "github.com/english-coach/backend/internal/modules/game/service"
 	gamecreatesession "github.com/english-coach/backend/internal/modules/game/usecase/create_session"
 	gamesubmitanswer "github.com/english-coach/backend/internal/modules/game/usecase/submit_answer"
 	useradapter "github.com/english-coach/backend/internal/modules/user/adapter/http"
@@ -41,9 +40,6 @@ type Container struct {
 	DictionaryRepo *dictrepo.DictionaryRepository
 	GameRepo       *gamerepo.GameRepository
 	UserRepo       *userrepo.UserRepository
-
-	// Services
-	QuestionGeneratorService *gamesvc.QuestionGeneratorService
 
 	// Use Cases
 	GetWordDetailUC     *dictusecase.Handler
@@ -113,12 +109,6 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 	container.GameRepo = gamerepo.NewGameRepository(pool)
 	container.UserRepo = userrepo.NewUserRepository(pool)
 
-	// Initialize services
-	container.QuestionGeneratorService = gamesvc.NewQuestionGeneratorService(
-		container.DictionaryRepo.WordRepository(),
-		appLogger,
-	)
-
 	// Initialize use cases
 	container.GetWordDetailUC = dictusecase.NewHandler(
 		container.DictionaryRepo.WordRepository(),
@@ -133,7 +123,7 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 	container.CreateGameSessionUC = gamecreatesession.NewHandler(
 		container.GameRepo.GameSessionRepo(),
 		container.GameRepo.GameQuestionRepo(),
-		container.QuestionGeneratorService,
+		container.DictionaryRepo.WordRepository(),
 		appLogger,
 	)
 
