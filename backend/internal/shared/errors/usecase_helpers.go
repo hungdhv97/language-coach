@@ -1,8 +1,6 @@
 package errors
 
 import (
-	"fmt"
-
 	dictionarydomain "github.com/english-coach/backend/internal/modules/dictionary/domain"
 	gamedomain "github.com/english-coach/backend/internal/modules/game/domain"
 	userdomain "github.com/english-coach/backend/internal/modules/user/domain"
@@ -98,14 +96,4 @@ func mapDictionaryDomainErrorToAppError(err error) *AppError {
 	default:
 		return nil
 	}
-}
-
-// WrapUnexpectedError wraps an unexpected error (not a domain error) as an AppError
-// This is used when an unexpected error occurs in usecase
-func WrapUnexpectedError(err error, context string) *AppError {
-	if err == nil {
-		return nil
-	}
-	return ErrInternalError.
-		WithCause(fmt.Errorf("%s: %w", context, err))
 }
