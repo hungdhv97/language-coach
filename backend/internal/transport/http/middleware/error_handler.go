@@ -10,6 +10,7 @@ import (
 )
 
 // ErrorHandler is a centralized error handling middleware for Gin
+// This is the ONLY place where errors are logged and converted to HTTP responses
 func ErrorHandler(appLogger logger.ILogger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
@@ -18,55 +19,53 @@ func ErrorHandler(appLogger logger.ILogger) gin.HandlerFunc {
 		if len(c.Errors) > 0 {
 			err := c.Errors.Last().Err
 
-			// Try to extract domain error
-			domainErr, isDomainErr := sharederrors.IsDomainError(err)
-			if isDomainErr {
-				// Log domain error (message is already in Vietnamese for user)
-				appLogger.Info("domain error",
+			// Try to extract AppError (from usecase layer)
+			appErr, isAppErr := sharederrors.IsAppError(err)
+			if isAppErr {
+				// Log AppError with full context (for internal debugging)
+				appLogger.Error("application error",
 					logger.String("method", c.Request.Method),
 					logger.String("path", c.Request.URL.Path),
-					logger.String("error_code", domainErr.Code),
-					logger.String("error_message", domainErr.Message),
+					logger.String("error_code", appErr.Code),
+					logger.String("error_message", appErr.Message),
+					logger.Any("metadata", appErr.Metadata),
+					logger.Error(appErr.Cause), // Include cause for debugging
 				)
 
-				// Map domain error to HTTP response using http_mapper
-				statusCode, httpErr := sharederrors.MapToHTTPResponse(domainErr)
-				c.JSON(statusCode, response.NewError(
+				// Map AppError to HTTP response
+				statusCode, httpErr := sharederrors.MapToHTTPResponse(appErr)
+				response.ErrorResponse(
+					c,
+					statusCode,
 					httpErr.Code,
 					httpErr.Message,
-					httpErr.Details,
-				))
+					httpErr.Metadata,
+				)
 				return
 			}
 
-			// For non-domain errors (fmt.Errorf, etc.), log in English lowercase
-			// and return generic internal error
-			appLogger.Error("request error",
+			// For unexpected errors (not AppError), log and return generic internal error
+			// This should rarely happen if error flow is correct
+			appLogger.Error("unexpected error type",
 				logger.String("method", c.Request.Method),
 				logger.String("path", c.Request.URL.Path),
 				logger.Error(err),
 			)
 
-			// Determine status code
-			statusCode := http.StatusInternalServerError
-			code := sharederrors.CodeInternalError
-			message := sharederrors.ErrInternalError.Message
-
-			// Check if status code was already set
-			if c.Writer.Status() != http.StatusOK {
-				statusCode = c.Writer.Status()
-			}
-
-			c.JSON(statusCode, response.NewError(
-				code,
-				message,
+			// Return generic internal error (don't leak error details)
+			response.ErrorResponse(
+				c,
+				http.StatusInternalServerError,
+				sharederrors.CodeInternalError,
+				"Đã xảy ra lỗi hệ thống",
 				nil,
-			))
+			)
 		}
 	}
 }
 
-// Helper function to set error in Gin context
+// SetError sets an error in the Gin context
+// This is used by adapters to pass errors to the error handler middleware
 func SetError(c *gin.Context, err error) {
 	c.Error(err)
 }

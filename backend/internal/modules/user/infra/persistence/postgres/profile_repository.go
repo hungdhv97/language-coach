@@ -8,7 +8,7 @@ import (
 
 	"github.com/english-coach/backend/internal/modules/user/domain"
 	db "github.com/english-coach/backend/internal/platform/db/sqlc/gen/user"
-	"github.com/english-coach/backend/internal/shared/errors"
+	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 )
 
 // userProfileRepository implements domain.UserProfileRepository
@@ -49,7 +49,7 @@ func (r *userProfileRepository) Create(ctx context.Context, userID int64, displa
 		Bio:         bioPg,
 	})
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapUserRepositoryError(err, "Create")
 	}
 
 	return mapDBProfileToModel(&row), nil
@@ -59,7 +59,7 @@ func (r *userProfileRepository) Create(ctx context.Context, userID int64, displa
 func (r *userProfileRepository) GetByUserID(ctx context.Context, userID int64) (*domain.UserProfile, error) {
 	row, err := r.queries.GetUserProfile(ctx, userID)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapUserRepositoryError(err, "GetByUserID")
 	}
 
 	return mapDBProfileToModel(&row), nil
@@ -98,7 +98,7 @@ func (r *userProfileRepository) Update(ctx context.Context, userID int64, displa
 		Bio:         bioPg,
 	})
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapUserRepositoryError(err, "Update")
 	}
 
 	return mapDBProfileToModel(&row), nil

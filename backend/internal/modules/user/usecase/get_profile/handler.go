@@ -4,24 +4,20 @@ import (
 	"context"
 
 	"github.com/english-coach/backend/internal/modules/user/domain"
-	"github.com/english-coach/backend/internal/shared/errors"
-	"github.com/english-coach/backend/internal/shared/logger"
+	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 )
 
 // Handler handles getting user profile
 type Handler struct {
 	profileRepo domain.UserProfileRepository
-	logger      logger.ILogger
 }
 
 // NewHandler creates a new get user profile handler
 func NewHandler(
 	profileRepo domain.UserProfileRepository,
-	logger logger.ILogger,
 ) *Handler {
 	return &Handler{
 		profileRepo: profileRepo,
-		logger:      logger,
 	}
 }
 
@@ -29,12 +25,12 @@ func NewHandler(
 func (h *Handler) Execute(ctx context.Context, input GetProfileInput) (*GetProfileOutput, error) {
 	profile, err := h.profileRepo.GetByUserID(ctx, input.UserID)
 	if err != nil {
-		h.logger.Error("failed to get user profile", logger.Error(err), logger.Int64("user_id", input.UserID))
-		return nil, errors.WrapError(err, "failed to get user profile")
+		// Map domain error to AppError
+		return nil, sharederrors.MapDomainErrorToAppError(err)
 	}
 
 	if profile == nil {
-		return nil, domain.ErrProfileNotFound
+		return nil, sharederrors.MapDomainErrorToAppError(domain.ErrProfileNotFound)
 	}
 
 	var birthDayStr *string

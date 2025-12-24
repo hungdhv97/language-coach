@@ -5,43 +5,63 @@ import (
 )
 
 // HTTPErrorResponse represents a standardized HTTP error response structure
-// This is used by MapToHTTPResponse to return error details without importing the response package
-// (to avoid import cycles)
 type HTTPErrorResponse struct {
-	Code    string      `json:"code"`
-	Message string      `json:"message"`
-	Details interface{} `json:"details,omitempty"`
+	Code     string                 `json:"code"`
+	Message  string                 `json:"message"`
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
 }
 
-// MapToHTTPResponse maps a DomainError to HTTP status code and standardized error response
-// This function ensures consistent error response format across the application
-//
-// Returns:
-//   - HTTP status code (int)
-//   - HTTPErrorResponse struct with code, message, and details
-//
-// The caller should use these values to construct the HTTP response (e.g., via gin.JSON)
-// The HTTP status code is taken directly from DomainError.StatusCode which is set when
-// the error is created using NewDomainError()
-func MapToHTTPResponse(err *DomainError) (int, *HTTPErrorResponse) {
+// MapToHTTPResponse maps an AppError to HTTP status code and standardized error response
+// This function is called by the error handler middleware
+func MapToHTTPResponse(err *AppError) (int, *HTTPErrorResponse) {
 	if err == nil {
 		return http.StatusInternalServerError, &HTTPErrorResponse{
-			Code:    CodeInternalError,
-			Message: "Đã xảy ra lỗi hệ thống",
-			Details: nil,
+			Code:    ErrInternalError.Code,
+			Message: ErrInternalError.Message,
 		}
 	}
 
-	// Use the status code from DomainError (set when error is created)
-	statusCode := err.StatusCode
-	if statusCode == 0 {
-		// Fallback to 500 if status code is not set
-		statusCode = http.StatusInternalServerError
-	}
+	// Map error code to HTTP status code
+	statusCode := mapCodeToHTTPStatus(err.Code)
 
 	return statusCode, &HTTPErrorResponse{
-		Code:    err.Code,
-		Message: err.Message,
-		Details: err.Details,
+		Code:     err.Code,
+		Message:  err.Message,
+		Metadata: err.Metadata,
+	}
+}
+
+// mapCodeToHTTPStatus maps error codes to HTTP status codes
+// This is the only place where HTTP status codes are determined
+func mapCodeToHTTPStatus(code string) int {
+	switch code {
+	// 400 Bad Request
+	case CodeInvalidRequest, CodeInvalidParameter, CodeValidationError,
+		CodeEmailRequired, CodeInvalidPassword, CodeInvalidMode,
+		CodeInsufficientWords, CodeSessionEnded, CodeQuestionNotInSession,
+		CodeAnswerAlreadySubmitted:
+		return http.StatusBadRequest
+
+	// 401 Unauthorized
+	case CodeUnauthorized, CodeInvalidCredentials:
+		return http.StatusUnauthorized
+
+	// 403 Forbidden
+	case CodeForbidden, CodeUserInactive, CodeSessionNotOwned:
+		return http.StatusForbidden
+
+	// 404 Not Found
+	case CodeNotFound, CodeUserNotFound, CodeProfileNotFound,
+		CodeSessionNotFound, CodeQuestionNotFound, CodeOptionNotFound,
+		CodeWordNotFound:
+		return http.StatusNotFound
+
+	// 409 Conflict
+	case CodeConflict, CodeEmailExists, CodeUsernameExists:
+		return http.StatusConflict
+
+	// 500 Internal Server Error (default)
+	default:
+		return http.StatusInternalServerError
 	}
 }

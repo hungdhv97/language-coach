@@ -136,23 +136,19 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 
 	container.RegisterUC = userregister.NewHandler(
 		container.UserRepo.UserRepository(),
-		appLogger,
 	)
 
 	container.LoginUC = userlogin.NewHandler(
 		container.UserRepo.UserRepository(),
 		container.JWTManager,
-		appLogger,
 	)
 
 	container.GetProfileUC = usergetprofile.NewHandler(
 		container.UserRepo.UserProfileRepository(),
-		appLogger,
 	)
 
 	container.UpdateProfileUC = userupdateprofile.NewHandler(
 		container.UserRepo.UserProfileRepository(),
-		appLogger,
 	)
 
 	// Initialize handlers
@@ -180,7 +176,6 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 		container.UpdateProfileUC,
 		container.UserRepo.UserRepository(),
 		container.UserRepo.UserProfileRepository(),
-		appLogger,
 	)
 
 	container.OpenAPIHandler = handler.NewOpenAPIHandler(

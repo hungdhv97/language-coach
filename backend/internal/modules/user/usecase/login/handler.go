@@ -2,30 +2,27 @@ package login
 
 import (
 	"context"
+	"errors"
 
 	"github.com/english-coach/backend/internal/modules/user/domain"
 	"github.com/english-coach/backend/internal/shared/auth"
-	"github.com/english-coach/backend/internal/shared/errors"
-	"github.com/english-coach/backend/internal/shared/logger"
+	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 )
 
 // Handler handles user login
 type Handler struct {
 	userRepo   domain.UserRepository
 	jwtManager *auth.JWTManager
-	logger     logger.ILogger
 }
 
 // NewHandler creates a new login handler
 func NewHandler(
 	userRepo domain.UserRepository,
 	jwtManager *auth.JWTManager,
-	logger logger.ILogger,
 ) *Handler {
 	return &Handler{
 		userRepo:   userRepo,
 		jwtManager: jwtManager,
-		logger:     logger,
 	}
 }
 
@@ -40,30 +37,30 @@ func (h *Handler) Execute(ctx context.Context, input LoginInput) (*LoginOutput, 
 	} else if input.Username != nil && *input.Username != "" {
 		user, err = h.userRepo.FindByUsername(ctx, *input.Username)
 	} else {
-		return nil, domain.ErrInvalidCredentials
+		return nil, sharederrors.MapDomainErrorToAppError(domain.ErrInvalidCredentials)
 	}
 
 	if err != nil {
-		h.logger.Error("failed to find user", logger.Error(err))
-		// Check if it's a not found error (can be checked via errors package if needed)
-		if errors.IsNotFound(err) {
-			return nil, domain.ErrInvalidCredentials
+		// User not found -> invalid credentials (security: don't reveal if user exists)
+		if errors.Is(err, domain.ErrUserNotFound) {
+			return nil, sharederrors.MapDomainErrorToAppError(domain.ErrInvalidCredentials)
 		}
-		return nil, errors.WrapError(err, "failed to find user")
+		// Map domain error to AppError
+		return nil, sharederrors.MapDomainErrorToAppError(err)
 	}
 
 	if user == nil {
-		return nil, domain.ErrInvalidCredentials
+		return nil, sharederrors.MapDomainErrorToAppError(domain.ErrInvalidCredentials)
 	}
 
 	// Check if user is active
 	if !user.IsActive {
-		return nil, domain.ErrUserInactive
+		return nil, sharederrors.MapDomainErrorToAppError(domain.ErrUserInactive)
 	}
 
 	// Verify password
 	if !auth.CheckPasswordHash(input.Password, user.PasswordHash) {
-		return nil, domain.ErrInvalidCredentials
+		return nil, sharederrors.MapDomainErrorToAppError(domain.ErrInvalidCredentials)
 	}
 
 	// Generate JWT token
@@ -76,8 +73,8 @@ func (h *Handler) Execute(ctx context.Context, input LoginInput) (*LoginOutput, 
 
 	token, err := h.jwtManager.GenerateToken(user.ID, username)
 	if err != nil {
-		h.logger.Error("failed to generate token", logger.Error(err))
-		return nil, errors.WrapError(err, "failed to generate token")
+		// Unexpected error from auth layer
+		return nil, sharederrors.WrapUnexpectedError(err, "failed to generate token")
 	}
 
 	return &LoginOutput{

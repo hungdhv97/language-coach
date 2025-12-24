@@ -9,7 +9,6 @@ import (
 	userregister "github.com/english-coach/backend/internal/modules/user/usecase/register"
 	userupdateprofile "github.com/english-coach/backend/internal/modules/user/usecase/update_profile"
 	sharederrors "github.com/english-coach/backend/internal/shared/errors"
-	"github.com/english-coach/backend/internal/shared/logger"
 	"github.com/english-coach/backend/internal/shared/response"
 	"github.com/english-coach/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
@@ -21,9 +20,8 @@ type Handler struct {
 	loginUC         *userlogin.Handler
 	getProfileUC    *usergetprofile.Handler
 	updateProfileUC *userupdateprofile.Handler
-	userRepo        domain.UserRepository
-	profileRepo     domain.UserProfileRepository
-	logger          logger.ILogger
+	userRepo    domain.UserRepository
+	profileRepo domain.UserProfileRepository
 }
 
 // NewHandler creates a new user handler
@@ -34,7 +32,6 @@ func NewHandler(
 	updateProfileUC *userupdateprofile.Handler,
 	userRepo domain.UserRepository,
 	profileRepo domain.UserProfileRepository,
-	logger logger.ILogger,
 ) *Handler {
 	return &Handler{
 		registerUC:      registerUC,
@@ -43,7 +40,6 @@ func NewHandler(
 		updateProfileUC: updateProfileUC,
 		userRepo:        userRepo,
 		profileRepo:     profileRepo,
-		logger:          logger,
 	}
 }
 
@@ -53,13 +49,11 @@ func (h *Handler) Register(c *gin.Context) {
 
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		middleware.SetError(c, sharederrors.ErrInvalidRequest.WithDetails(err.Error()))
-		return
-	}
-
-	// Validate that at least email or username is provided
-	if (req.Email == nil || *req.Email == "") && (req.Username == nil || *req.Username == "") {
-		middleware.SetError(c, domain.ErrEmailRequired)
+		// Parse error - return as invalid request
+		middleware.SetError(c, sharederrors.NewAppError(
+			sharederrors.CodeInvalidRequest,
+			"Dữ liệu yêu cầu không hợp lệ",
+		).WithMetadata("parse_error", err.Error()))
 		return
 	}
 
@@ -76,15 +70,10 @@ func (h *Handler) Register(c *gin.Context) {
 	}
 
 	// Create profile with display_name if provided
+	// Note: Profile creation failure doesn't fail registration
+	// This is a business decision - registration succeeds even if profile creation fails
 	if req.DisplayName != nil && *req.DisplayName != "" {
-		_, err := h.profileRepo.Create(ctx, result.UserID, req.DisplayName, nil, nil, nil)
-		if err != nil {
-			h.logger.Warn("failed to create user profile",
-				logger.Error(err),
-				logger.Int64("user_id", result.UserID),
-			)
-			// Don't fail registration if profile creation fails
-		}
+		_, _ = h.profileRepo.Create(ctx, result.UserID, req.DisplayName, nil, nil, nil)
 	}
 
 	resp := RegisterResponse{
@@ -102,13 +91,11 @@ func (h *Handler) Login(c *gin.Context) {
 
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		middleware.SetError(c, sharederrors.ErrInvalidRequest.WithDetails(err.Error()))
-		return
-	}
-
-	// Validate that at least email or username is provided
-	if (req.Email == nil || *req.Email == "") && (req.Username == nil || *req.Username == "") {
-		middleware.SetError(c, domain.ErrEmailRequired)
+		// Parse error - return as invalid request
+		middleware.SetError(c, sharederrors.NewAppError(
+			sharederrors.CodeInvalidRequest,
+			"Dữ liệu yêu cầu không hợp lệ",
+		).WithMetadata("parse_error", err.Error()))
 		return
 	}
 
@@ -140,13 +127,19 @@ func (h *Handler) GetProfile(c *gin.Context) {
 	// Get user ID from context (set by auth middleware)
 	userID, exists := c.Get("user_id")
 	if !exists {
-		middleware.SetError(c, sharederrors.ErrUnauthorized)
+		middleware.SetError(c, sharederrors.NewAppError(
+			sharederrors.CodeUnauthorized,
+			"Người dùng chưa được xác thực",
+		))
 		return
 	}
 
 	userIDInt64, ok := userID.(int64)
 	if !ok {
-		middleware.SetError(c, sharederrors.ErrInternalError)
+		middleware.SetError(c, sharederrors.NewAppError(
+			sharederrors.CodeInternalError,
+			"Đã xảy ra lỗi hệ thống",
+		))
 		return
 	}
 
@@ -174,19 +167,29 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 	// Get user ID from context (set by auth middleware)
 	userID, exists := c.Get("user_id")
 	if !exists {
-		middleware.SetError(c, sharederrors.ErrUnauthorized)
+		middleware.SetError(c, sharederrors.NewAppError(
+			sharederrors.CodeUnauthorized,
+			"Người dùng chưa được xác thực",
+		))
 		return
 	}
 
 	userIDInt64, ok := userID.(int64)
 	if !ok {
-		middleware.SetError(c, sharederrors.ErrInternalError)
+		middleware.SetError(c, sharederrors.NewAppError(
+			sharederrors.CodeInternalError,
+			"Đã xảy ra lỗi hệ thống",
+		))
 		return
 	}
 
 	var req UpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		middleware.SetError(c, sharederrors.ErrInvalidRequest.WithDetails(err.Error()))
+		// Parse error - return as invalid request
+		middleware.SetError(c, sharederrors.NewAppError(
+			sharederrors.CodeInvalidRequest,
+			"Dữ liệu yêu cầu không hợp lệ",
+		).WithMetadata("parse_error", err.Error()))
 		return
 	}
 
@@ -219,7 +222,10 @@ func (h *Handler) CheckEmailAvailability(c *gin.Context) {
 	email := c.Query("email")
 
 	if email == "" {
-		middleware.SetError(c, sharederrors.ErrInvalidParameter.WithDetails("email parameter is required"))
+		middleware.SetError(c, sharederrors.NewAppError(
+			sharederrors.CodeInvalidParameter,
+			"Tham số không hợp lệ",
+		).WithMetadata("field", "email"))
 		return
 	}
 
@@ -241,7 +247,10 @@ func (h *Handler) CheckUsernameAvailability(c *gin.Context) {
 	username := c.Query("username")
 
 	if username == "" {
-		middleware.SetError(c, sharederrors.ErrInvalidParameter.WithDetails("username parameter is required"))
+		middleware.SetError(c, sharederrors.NewAppError(
+			sharederrors.CodeInvalidParameter,
+			"Tham số không hợp lệ",
+		).WithMetadata("field", "username"))
 		return
 	}
 

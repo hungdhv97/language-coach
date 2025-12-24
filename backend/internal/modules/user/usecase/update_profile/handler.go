@@ -4,24 +4,20 @@ import (
 	"context"
 
 	"github.com/english-coach/backend/internal/modules/user/domain"
-	"github.com/english-coach/backend/internal/shared/errors"
-	"github.com/english-coach/backend/internal/shared/logger"
+	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 )
 
 // Handler handles updating user profile
 type Handler struct {
 	profileRepo domain.UserProfileRepository
-	logger      logger.ILogger
 }
 
 // NewHandler creates a new update user profile handler
 func NewHandler(
 	profileRepo domain.UserProfileRepository,
-	logger logger.ILogger,
 ) *Handler {
 	return &Handler{
 		profileRepo: profileRepo,
-		logger:      logger,
 	}
 }
 
@@ -29,8 +25,8 @@ func NewHandler(
 func (h *Handler) Execute(ctx context.Context, userID int64, input UpdateProfileInput) (*UpdateProfileOutput, error) {
 	profile, err := h.profileRepo.Update(ctx, userID, input.DisplayName, input.AvatarURL, input.BirthDay, input.Bio)
 	if err != nil {
-		h.logger.Error("failed to update user profile", logger.Error(err), logger.Int64("user_id", userID))
-		return nil, errors.WrapError(err, "failed to update user profile")
+		// Map domain error to AppError
+		return nil, sharederrors.MapDomainErrorToAppError(err)
 	}
 
 	var birthDayStr *string

@@ -8,7 +8,7 @@ import (
 
 	"github.com/english-coach/backend/internal/modules/user/domain"
 	db "github.com/english-coach/backend/internal/platform/db/sqlc/gen/user"
-	"github.com/english-coach/backend/internal/shared/errors"
+	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 )
 
 // UserRepository implements user repository interfaces using sqlc
@@ -63,7 +63,7 @@ func (r *userRepository) Create(ctx context.Context, email *string, username *st
 		IsActive:     pgtype.Bool{Bool: true, Valid: true},
 	})
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapUserRepositoryError(err, "Create")
 	}
 
 	return mapDBUserToModel(&row), nil
@@ -73,7 +73,7 @@ func (r *userRepository) Create(ctx context.Context, email *string, username *st
 func (r *userRepository) FindByID(ctx context.Context, id int64) (*domain.User, error) {
 	row, err := r.queries.FindUserByID(ctx, id)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapUserRepositoryError(err, "FindByID")
 	}
 
 	return mapDBUserToModel(&row), nil
@@ -83,7 +83,7 @@ func (r *userRepository) FindByID(ctx context.Context, id int64) (*domain.User, 
 func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
 	row, err := r.queries.FindUserByEmail(ctx, pgtype.Text{String: email, Valid: true})
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapUserRepositoryError(err, "FindByEmail")
 	}
 
 	return mapDBUserToModel(&row), nil
@@ -93,7 +93,7 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain
 func (r *userRepository) FindByUsername(ctx context.Context, username string) (*domain.User, error) {
 	row, err := r.queries.FindUserByUsername(ctx, pgtype.Text{String: username, Valid: true})
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapUserRepositoryError(err, "FindByUsername")
 	}
 
 	return mapDBUserToModel(&row), nil
@@ -105,7 +105,7 @@ func (r *userRepository) UpdatePassword(ctx context.Context, id int64, passwordH
 		ID:           id,
 		PasswordHash: pgtype.Text{String: passwordHash, Valid: true},
 	})
-	return errors.MapPgError(err)
+	return sharederrors.MapUserRepositoryError(err, "UpdatePassword")
 }
 
 // UpdateActiveStatus updates a user's active status
@@ -114,14 +114,14 @@ func (r *userRepository) UpdateActiveStatus(ctx context.Context, id int64, isAct
 		ID:       id,
 		IsActive: pgtype.Bool{Bool: isActive, Valid: true},
 	})
-	return errors.MapPgError(err)
+	return sharederrors.MapUserRepositoryError(err, "UpdateActiveStatus")
 }
 
 // CheckEmailExists checks if an email already exists
 func (r *userRepository) CheckEmailExists(ctx context.Context, email string) (bool, error) {
 	result, err := r.queries.CheckEmailExists(ctx, pgtype.Text{String: email, Valid: true})
 	if err != nil {
-		return false, errors.MapPgError(err)
+		return false, sharederrors.MapUserRepositoryError(err, "CheckEmailExists")
 	}
 	return result, nil
 }
@@ -130,7 +130,7 @@ func (r *userRepository) CheckEmailExists(ctx context.Context, email string) (bo
 func (r *userRepository) CheckUsernameExists(ctx context.Context, username string) (bool, error) {
 	result, err := r.queries.CheckUsernameExists(ctx, pgtype.Text{String: username, Valid: true})
 	if err != nil {
-		return false, errors.MapPgError(err)
+		return false, sharederrors.MapUserRepositoryError(err, "CheckUsernameExists")
 	}
 	return result, nil
 }

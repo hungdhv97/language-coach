@@ -8,7 +8,7 @@ import (
 
 	"github.com/english-coach/backend/internal/modules/game/domain"
 	db "github.com/english-coach/backend/internal/platform/db/sqlc/gen/game"
-	"github.com/english-coach/backend/internal/shared/errors"
+	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 )
 
 // gameSessionRepo implements GameSessionRepository using sqlc
@@ -42,7 +42,7 @@ func (r *gameSessionRepo) Create(ctx context.Context, session *domain.GameSessio
 		StartedAt:        startedAt,
 	})
 	if err != nil {
-		return errors.MapPgError(err)
+		return sharederrors.MapGameRepositoryError(err, "Create")
 	}
 
 	session.ID = result.ID
@@ -54,7 +54,7 @@ func (r *gameSessionRepo) Create(ctx context.Context, session *domain.GameSessio
 func (r *gameSessionRepo) FindByID(ctx context.Context, id int64) (*domain.GameSession, error) {
 	row, err := r.queries.FindGameSessionByID(ctx, id)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapGameRepositoryError(err, "FindSessionByID")
 	}
 
 	var topicID, levelID *int64
@@ -102,7 +102,7 @@ func (r *gameSessionRepo) Update(ctx context.Context, session *domain.GameSessio
 		CorrectQuestions: correctQuestions,
 		EndedAt:          endedAt,
 	})
-	return errors.MapPgError(err)
+	return sharederrors.MapGameRepositoryError(err, "Update")
 }
 
 // EndSession marks a session as ended
@@ -123,5 +123,5 @@ func (r *gameSessionRepo) EndSession(ctx context.Context, sessionID int64, ended
 		ID:      sessionID,
 		EndedAt: endedAtPg,
 	})
-	return errors.MapPgError(err)
+	return sharederrors.MapGameRepositoryError(err, "EndSession")
 }

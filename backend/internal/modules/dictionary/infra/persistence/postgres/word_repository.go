@@ -7,7 +7,7 @@ import (
 
 	"github.com/english-coach/backend/internal/modules/dictionary/domain"
 	db "github.com/english-coach/backend/internal/platform/db/sqlc/gen/dictionary"
-	"github.com/english-coach/backend/internal/shared/errors"
+	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 )
 
 // wordRepository implements WordRepository using sqlc
@@ -19,7 +19,7 @@ type wordRepository struct {
 func (r *wordRepository) FindByID(ctx context.Context, id int64) (*domain.Word, error) {
 	row, err := r.queries.FindWordByID(ctx, id)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindWordByID")
 	}
 
 	return r.mapWordRow(row), nil
@@ -33,7 +33,7 @@ func (r *wordRepository) FindByIDs(ctx context.Context, ids []int64) ([]*domain.
 
 	rows, err := r.queries.FindWordsByIDs(ctx, ids)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByIDs")
 	}
 
 	words := make([]*domain.Word, 0, len(rows))
@@ -53,7 +53,7 @@ func (r *wordRepository) FindWordsByTopicAndLanguages(ctx context.Context, topic
 		Limit:            int32(limit),
 	})
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindWordsByTopicAndLanguages")
 	}
 
 	words := make([]*domain.Word, 0, len(rows))
@@ -74,7 +74,7 @@ func (r *wordRepository) FindWordsByLevelAndLanguages(ctx context.Context, level
 		Limit:            int32(limit),
 	})
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindWordsByLevelAndLanguages")
 	}
 
 	words := make([]*domain.Word, 0, len(rows))
@@ -130,7 +130,7 @@ func (r *wordRepository) FindWordsByLevelAndTopicsAndLanguages(ctx context.Conte
 
 	rows, err := r.DictionaryRepository.pool.Query(ctx, query, wordIDs, topicIDs)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindWordsByLevelAndTopicsAndLanguages")
 	}
 	defer rows.Close()
 
@@ -168,7 +168,7 @@ func (r *wordRepository) FindTranslationsForWord(ctx context.Context, sourceWord
 		Limit:            int32(limit),
 	})
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindTranslationsForWord")
 	}
 
 	words := make([]*domain.Word, 0, len(rows))
@@ -192,7 +192,7 @@ func (r *wordRepository) SearchWords(ctx context.Context, query string, language
 	})
 
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "SearchWords")
 	}
 
 	words := make([]*domain.Word, 0, len(wordRows))
@@ -213,7 +213,7 @@ func (r *wordRepository) CountSearchWords(ctx context.Context, query string, lan
 	})
 
 	if err != nil {
-		return 0, errors.MapPgError(err)
+		return 0, sharederrors.MapDictionaryRepositoryError(err, "CountSearchWords")
 	}
 
 	return int(count), nil
