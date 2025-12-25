@@ -12,11 +12,11 @@ type languageRepository struct {
 	*DictionaryRepository
 }
 
-// FindAll returns all languages
-func (r *languageRepository) FindAll(ctx context.Context) ([]*domain.Language, error) {
+// FindAllLanguages returns all languages
+func (r *languageRepository) FindAllLanguages(ctx context.Context) ([]*domain.Language, error) {
 	rows, err := r.queries.FindAllLanguages(ctx)
 	if err != nil {
-		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindAll")
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindAllLanguages")
 	}
 
 	languages := make([]*domain.Language, 0, len(rows))
@@ -31,11 +31,11 @@ func (r *languageRepository) FindAll(ctx context.Context) ([]*domain.Language, e
 	return languages, nil
 }
 
-// FindByID returns a language by ID
-func (r *languageRepository) FindByID(ctx context.Context, id int16) (*domain.Language, error) {
+// FindLanguageByID returns a language by ID
+func (r *languageRepository) FindLanguageByID(ctx context.Context, id int16) (*domain.Language, error) {
 	row, err := r.queries.FindLanguageByID(ctx, id)
 	if err != nil {
-		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByID")
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindLanguageByID")
 	}
 
 	return &domain.Language{
@@ -45,11 +45,11 @@ func (r *languageRepository) FindByID(ctx context.Context, id int16) (*domain.La
 	}, nil
 }
 
-// FindByCode returns a language by code
-func (r *languageRepository) FindByCode(ctx context.Context, code string) (*domain.Language, error) {
+// FindLanguageByCode returns a language by code
+func (r *languageRepository) FindLanguageByCode(ctx context.Context, code string) (*domain.Language, error) {
 	row, err := r.queries.FindLanguageByCode(ctx, code)
 	if err != nil {
-		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByCode")
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindLanguageByCode")
 	}
 
 	return &domain.Language{

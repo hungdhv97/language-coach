@@ -12,11 +12,11 @@ type senseRepository struct {
 	*DictionaryRepository
 }
 
-// FindByWordID returns all senses for a word, ordered by sense_order
-func (r *senseRepository) FindByWordID(ctx context.Context, wordID int64) ([]*domain.Sense, error) {
+// FindSensesByWordID returns all senses for a word, ordered by sense_order
+func (r *senseRepository) FindSensesByWordID(ctx context.Context, wordID int64) ([]*domain.Sense, error) {
 	rows, err := r.queries.FindSensesByWordID(ctx, wordID)
 	if err != nil {
-		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByWordID")
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindSensesByWordID")
 	}
 
 	senses := make([]*domain.Sense, 0, len(rows))
@@ -51,15 +51,15 @@ func (r *senseRepository) FindByWordID(ctx context.Context, wordID int64) ([]*do
 	return senses, nil
 }
 
-// FindByWordIDs returns senses for multiple words
-func (r *senseRepository) FindByWordIDs(ctx context.Context, wordIDs []int64) (map[int64][]*domain.Sense, error) {
+// FindSensesByWordIDs returns senses for multiple words
+func (r *senseRepository) FindSensesByWordIDs(ctx context.Context, wordIDs []int64) (map[int64][]*domain.Sense, error) {
 	if len(wordIDs) == 0 {
 		return make(map[int64][]*domain.Sense), nil
 	}
 
 	rows, err := r.queries.FindSensesByWordIDs(ctx, wordIDs)
 	if err != nil {
-		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByWordIDs")
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindSensesByWordIDs")
 	}
 
 	result := make(map[int64][]*domain.Sense)

@@ -23,7 +23,7 @@ func NewHandler(
 
 // Execute gets user profile
 func (h *Handler) Execute(ctx context.Context, input GetProfileInput) (*GetProfileOutput, error) {
-	profile, err := h.profileRepo.GetByUserID(ctx, input.UserID)
+	profile, err := h.profileRepo.FindUserProfileByUserID(ctx, input.UserID)
 	if err != nil {
 		// Map domain error to AppError
 		return nil, sharederrors.MapDomainErrorToAppError(err)

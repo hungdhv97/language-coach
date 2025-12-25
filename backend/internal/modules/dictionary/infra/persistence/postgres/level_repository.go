@@ -14,11 +14,11 @@ type levelRepository struct {
 	*DictionaryRepository
 }
 
-// FindAll returns all levels
-func (r *levelRepository) FindAll(ctx context.Context) ([]*domain.Level, error) {
+// FindAllLevels returns all levels
+func (r *levelRepository) FindAllLevels(ctx context.Context) ([]*domain.Level, error) {
 	rows, err := r.queries.FindAllLevels(ctx)
 	if err != nil {
-		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindAll")
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindAllLevels")
 	}
 
 	levels := make([]*domain.Level, 0, len(rows))
@@ -52,11 +52,11 @@ func (r *levelRepository) FindAll(ctx context.Context) ([]*domain.Level, error) 
 	return levels, nil
 }
 
-// FindByID returns a level by ID
-func (r *levelRepository) FindByID(ctx context.Context, id int64) (*domain.Level, error) {
+// FindLevelByID returns a level by ID
+func (r *levelRepository) FindLevelByID(ctx context.Context, id int64) (*domain.Level, error) {
 	row, err := r.queries.FindLevelByID(ctx, id)
 	if err != nil {
-		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByID")
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindLevelByID")
 	}
 
 	var description *string
@@ -85,11 +85,11 @@ func (r *levelRepository) FindByID(ctx context.Context, id int64) (*domain.Level
 	}, nil
 }
 
-// FindByCode returns a level by code
-func (r *levelRepository) FindByCode(ctx context.Context, code string) (*domain.Level, error) {
+// FindLevelByCode returns a level by code
+func (r *levelRepository) FindLevelByCode(ctx context.Context, code string) (*domain.Level, error) {
 	row, err := r.queries.FindLevelByCode(ctx, code)
 	if err != nil {
-		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByCode")
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindLevelByCode")
 	}
 
 	var description *string
@@ -118,12 +118,12 @@ func (r *levelRepository) FindByCode(ctx context.Context, code string) (*domain.
 	}, nil
 }
 
-// FindByLanguageID returns all levels for a specific language
-func (r *levelRepository) FindByLanguageID(ctx context.Context, languageID int16) ([]*domain.Level, error) {
+// FindLevelsByLanguageID returns all levels for a specific language
+func (r *levelRepository) FindLevelsByLanguageID(ctx context.Context, languageID int16) ([]*domain.Level, error) {
 	langIDPg := pgtype.Int2{Int16: languageID, Valid: true}
 	rows, err := r.queries.FindLevelsByLanguageID(ctx, langIDPg)
 	if err != nil {
-		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByLanguageID")
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindLevelsByLanguageID")
 	}
 
 	levels := make([]*domain.Level, 0, len(rows))

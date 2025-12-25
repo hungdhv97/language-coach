@@ -21,22 +21,22 @@ func NewGameRepository(pool *pgxpool.Pool) *GameRepository {
 	}
 }
 
-// GameSessionRepo returns a GameSessionRepository implementation
-func (r *GameRepository) GameSessionRepo() domain.GameSessionRepository {
+// GameSessionRepository returns a GameSessionRepository implementation
+func (r *GameRepository) GameSessionRepository() domain.GameSessionRepository {
 	return &gameSessionRepo{
 		GameRepository: r,
 	}
 }
 
-// GameQuestionRepo returns a GameQuestionRepository implementation
-func (r *GameRepository) GameQuestionRepo() domain.GameQuestionRepository {
+// GameQuestionRepository returns a GameQuestionRepository implementation
+func (r *GameRepository) GameQuestionRepository() domain.GameQuestionRepository {
 	return &gameQuestionRepo{
 		GameRepository: r,
 	}
 }
 
-// GameAnswerRepo returns a GameAnswerRepository implementation
-func (r *GameRepository) GameAnswerRepo() domain.GameAnswerRepository {
+// GameAnswerRepository returns a GameAnswerRepository implementation
+func (r *GameRepository) GameAnswerRepository() domain.GameAnswerRepository {
 	return &gameAnswerRepo{
 		GameRepository: r,
 	}

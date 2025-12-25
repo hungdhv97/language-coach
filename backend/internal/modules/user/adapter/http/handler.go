@@ -229,7 +229,7 @@ func (h *Handler) CheckEmailAvailability(c *gin.Context) {
 		return
 	}
 
-	exists, err := h.userRepo.CheckEmailExists(ctx, email)
+	exists, err := h.userRepo.ExistsEmail(ctx, email)
 	if err != nil {
 		middleware.SetError(c, err)
 		return
@@ -254,7 +254,7 @@ func (h *Handler) CheckUsernameAvailability(c *gin.Context) {
 		return
 	}
 
-	exists, err := h.userRepo.CheckUsernameExists(ctx, username)
+	exists, err := h.userRepo.ExistsUsername(ctx, username)
 	if err != nil {
 		middleware.SetError(c, err)
 		return

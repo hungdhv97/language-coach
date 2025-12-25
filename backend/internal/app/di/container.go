@@ -121,16 +121,16 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 	)
 
 	container.CreateGameSessionUC = gamecreatesession.NewHandler(
-		container.GameRepo.GameSessionRepo(),
-		container.GameRepo.GameQuestionRepo(),
+		container.GameRepo.GameSessionRepository(),
+		container.GameRepo.GameQuestionRepository(),
 		container.DictionaryRepo.WordRepository(),
 		appLogger,
 	)
 
 	container.SubmitAnswerUC = gamesubmitanswer.NewHandler(
-		container.GameRepo.GameAnswerRepo(),
-		container.GameRepo.GameQuestionRepo(),
-		container.GameRepo.GameSessionRepo(),
+		container.GameRepo.GameAnswerRepository(),
+		container.GameRepo.GameQuestionRepository(),
+		container.GameRepo.GameSessionRepository(),
 		appLogger,
 	)
 
@@ -164,8 +164,8 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 	container.GameHandler = gameadapter.NewHandler(
 		container.CreateGameSessionUC,
 		container.SubmitAnswerUC,
-		container.GameRepo.GameQuestionRepo(),
-		container.GameRepo.GameSessionRepo(),
+		container.GameRepo.GameQuestionRepository(),
+		container.GameRepo.GameSessionRepository(),
 		container.DictionaryRepo.WordRepository(),
 		appLogger,
 	)

@@ -35,7 +35,7 @@ func (h *Handler) Execute(ctx context.Context, input RegisterInput) (*RegisterOu
 
 	// Check if email already exists
 	if input.Email != nil && *input.Email != "" {
-		exists, err := h.userRepo.CheckEmailExists(ctx, *input.Email)
+		exists, err := h.userRepo.ExistsEmail(ctx, *input.Email)
 		if err != nil {
 			// Map domain error to AppError
 			return nil, sharederrors.MapDomainErrorToAppError(err)
@@ -47,7 +47,7 @@ func (h *Handler) Execute(ctx context.Context, input RegisterInput) (*RegisterOu
 
 	// Check if username already exists
 	if input.Username != nil && *input.Username != "" {
-		exists, err := h.userRepo.CheckUsernameExists(ctx, *input.Username)
+		exists, err := h.userRepo.ExistsUsername(ctx, *input.Username)
 		if err != nil {
 			// Map domain error to AppError
 			return nil, sharederrors.MapDomainErrorToAppError(err)

@@ -47,7 +47,7 @@ func NewHandler(
 func (h *Handler) GetLanguages(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	languages, err := h.languageRepo.FindAll(ctx)
+	languages, err := h.languageRepo.FindAllLanguages(ctx)
 	if err != nil {
 		middleware.SetError(c, err)
 		return
@@ -60,7 +60,7 @@ func (h *Handler) GetLanguages(c *gin.Context) {
 func (h *Handler) GetTopics(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	topics, err := h.topicRepo.FindAll(ctx)
+	topics, err := h.topicRepo.FindAllTopics(ctx)
 	if err != nil {
 		middleware.SetError(c, err)
 		return
@@ -81,7 +81,7 @@ func (h *Handler) GetLevels(c *gin.Context) {
 			return
 		}
 
-		levels, err := h.levelRepo.FindByLanguageID(ctx, int16(languageID))
+		levels, err := h.levelRepo.FindLevelsByLanguageID(ctx, int16(languageID))
 		if err != nil {
 			middleware.SetError(c, err)
 			return
@@ -92,7 +92,7 @@ func (h *Handler) GetLevels(c *gin.Context) {
 	}
 
 	// If no languageId provided, return all levels
-	levels, err := h.levelRepo.FindAll(ctx)
+	levels, err := h.levelRepo.FindAllLevels(ctx)
 	if err != nil {
 		middleware.SetError(c, err)
 		return

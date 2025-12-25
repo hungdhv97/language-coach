@@ -6,42 +6,42 @@ import (
 
 // LanguageRepository defines operations for language data access
 type LanguageRepository interface {
-	// FindAll returns all languages
-	FindAll(ctx context.Context) ([]*Language, error)
-	// FindByID returns a language by ID
-	FindByID(ctx context.Context, id int16) (*Language, error)
-	// FindByCode returns a language by code
-	FindByCode(ctx context.Context, code string) (*Language, error)
+	// FindAllLanguages returns all languages
+	FindAllLanguages(ctx context.Context) ([]*Language, error)
+	// FindLanguageByID returns a language by ID
+	FindLanguageByID(ctx context.Context, id int16) (*Language, error)
+	// FindLanguageByCode returns a language by code
+	FindLanguageByCode(ctx context.Context, code string) (*Language, error)
 }
 
 // TopicRepository defines operations for topic data access
 type TopicRepository interface {
-	// FindAll returns all topics
-	FindAll(ctx context.Context) ([]*Topic, error)
-	// FindByID returns a topic by ID
-	FindByID(ctx context.Context, id int64) (*Topic, error)
-	// FindByCode returns a topic by code
-	FindByCode(ctx context.Context, code string) (*Topic, error)
+	// FindAllTopics returns all topics
+	FindAllTopics(ctx context.Context) ([]*Topic, error)
+	// FindTopicByID returns a topic by ID
+	FindTopicByID(ctx context.Context, id int64) (*Topic, error)
+	// FindTopicByCode returns a topic by code
+	FindTopicByCode(ctx context.Context, code string) (*Topic, error)
 }
 
 // LevelRepository defines operations for level data access
 type LevelRepository interface {
-	// FindAll returns all levels
-	FindAll(ctx context.Context) ([]*Level, error)
-	// FindByID returns a level by ID
-	FindByID(ctx context.Context, id int64) (*Level, error)
-	// FindByCode returns a level by code
-	FindByCode(ctx context.Context, code string) (*Level, error)
-	// FindByLanguageID returns all levels for a specific language
-	FindByLanguageID(ctx context.Context, languageID int16) ([]*Level, error)
+	// FindAllLevels returns all levels
+	FindAllLevels(ctx context.Context) ([]*Level, error)
+	// FindLevelByID returns a level by ID
+	FindLevelByID(ctx context.Context, id int64) (*Level, error)
+	// FindLevelByCode returns a level by code
+	FindLevelByCode(ctx context.Context, code string) (*Level, error)
+	// FindLevelsByLanguageID returns all levels for a specific language
+	FindLevelsByLanguageID(ctx context.Context, languageID int16) ([]*Level, error)
 }
 
 // WordRepository defines operations for word data access
 type WordRepository interface {
-	// FindByID returns a word by ID
-	FindByID(ctx context.Context, id int64) (*Word, error)
-	// FindByIDs returns multiple words by their IDs
-	FindByIDs(ctx context.Context, ids []int64) ([]*Word, error)
+	// FindWordByID returns a word by ID
+	FindWordByID(ctx context.Context, id int64) (*Word, error)
+	// FindWordsByIDs returns multiple words by their IDs
+	FindWordsByIDs(ctx context.Context, ids []int64) ([]*Word, error)
 	// FindWordsByTopicAndLanguages finds words filtered by topic and language pair
 	FindWordsByTopicAndLanguages(ctx context.Context, topicID int64, sourceLanguageID, targetLanguageID int16, limit int) ([]*Word, error)
 	// FindWordsByLevelAndLanguages finds words filtered by level and language pair
@@ -59,21 +59,21 @@ type WordRepository interface {
 
 // SenseRepository defines operations for sense data access
 type SenseRepository interface {
-	// FindByWordID returns all senses for a word, ordered by sense_order
-	FindByWordID(ctx context.Context, wordID int64) ([]*Sense, error)
-	// FindByWordIDs returns senses for multiple words
-	FindByWordIDs(ctx context.Context, wordIDs []int64) (map[int64][]*Sense, error)
+	// FindSensesByWordID returns all senses for a word, ordered by sense_order
+	FindSensesByWordID(ctx context.Context, wordID int64) ([]*Sense, error)
+	// FindSensesByWordIDs returns senses for multiple words
+	FindSensesByWordIDs(ctx context.Context, wordIDs []int64) (map[int64][]*Sense, error)
 }
 
 // PartOfSpeechRepository defines operations for part of speech data access
 type PartOfSpeechRepository interface {
-	// FindAll returns all parts of speech
-	FindAll(ctx context.Context) ([]*PartOfSpeech, error)
-	// FindByID returns a part of speech by ID
-	FindByID(ctx context.Context, id int16) (*PartOfSpeech, error)
-	// FindByCode returns a part of speech by code
-	FindByCode(ctx context.Context, code string) (*PartOfSpeech, error)
-	// FindByIDs returns parts of speech by their IDs
-	FindByIDs(ctx context.Context, ids []int16) (map[int16]*PartOfSpeech, error)
+	// FindAllPartsOfSpeech returns all parts of speech
+	FindAllPartsOfSpeech(ctx context.Context) ([]*PartOfSpeech, error)
+	// FindPartOfSpeechByID returns a part of speech by ID
+	FindPartOfSpeechByID(ctx context.Context, id int16) (*PartOfSpeech, error)
+	// FindPartOfSpeechByCode returns a part of speech by code
+	FindPartOfSpeechByCode(ctx context.Context, code string) (*PartOfSpeech, error)
+	// FindPartsOfSpeechByIDs returns parts of speech by their IDs
+	FindPartsOfSpeechByIDs(ctx context.Context, ids []int16) (map[int16]*PartOfSpeech, error)
 }
 

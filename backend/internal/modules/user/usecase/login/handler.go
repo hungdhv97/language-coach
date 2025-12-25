@@ -33,9 +33,9 @@ func (h *Handler) Execute(ctx context.Context, input LoginInput) (*LoginOutput, 
 	var err error
 
 	if input.Email != nil && *input.Email != "" {
-		user, err = h.userRepo.FindByEmail(ctx, *input.Email)
+		user, err = h.userRepo.FindUserByEmail(ctx, *input.Email)
 	} else if input.Username != nil && *input.Username != "" {
-		user, err = h.userRepo.FindByUsername(ctx, *input.Username)
+		user, err = h.userRepo.FindUserByUsername(ctx, *input.Username)
 	} else {
 		return nil, sharederrors.MapDomainErrorToAppError(domain.ErrInvalidCredentials)
 	}

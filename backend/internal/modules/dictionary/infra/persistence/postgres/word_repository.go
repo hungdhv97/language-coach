@@ -15,8 +15,8 @@ type wordRepository struct {
 	*DictionaryRepository
 }
 
-// FindByID returns a word by ID
-func (r *wordRepository) FindByID(ctx context.Context, id int64) (*domain.Word, error) {
+// FindWordByID returns a word by ID
+func (r *wordRepository) FindWordByID(ctx context.Context, id int64) (*domain.Word, error) {
 	row, err := r.queries.FindWordByID(ctx, id)
 	if err != nil {
 		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindWordByID")
@@ -25,15 +25,15 @@ func (r *wordRepository) FindByID(ctx context.Context, id int64) (*domain.Word, 
 	return r.mapWordRow(row), nil
 }
 
-// FindByIDs returns multiple words by their IDs
-func (r *wordRepository) FindByIDs(ctx context.Context, ids []int64) ([]*domain.Word, error) {
+// FindWordsByIDs returns multiple words by their IDs
+func (r *wordRepository) FindWordsByIDs(ctx context.Context, ids []int64) ([]*domain.Word, error) {
 	if len(ids) == 0 {
 		return []*domain.Word{}, nil
 	}
 
 	rows, err := r.queries.FindWordsByIDs(ctx, ids)
 	if err != nil {
-		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByIDs")
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindWordsByIDs")
 	}
 
 	words := make([]*domain.Word, 0, len(rows))

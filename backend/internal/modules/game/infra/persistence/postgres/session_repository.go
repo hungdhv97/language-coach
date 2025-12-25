@@ -50,8 +50,8 @@ func (r *gameSessionRepo) Create(ctx context.Context, session *domain.GameSessio
 	return nil
 }
 
-// FindByID returns a game session by ID
-func (r *gameSessionRepo) FindByID(ctx context.Context, id int64) (*domain.GameSession, error) {
+// FindGameSessionByID returns a game session by ID
+func (r *gameSessionRepo) FindGameSessionByID(ctx context.Context, id int64) (*domain.GameSession, error) {
 	row, err := r.queries.FindGameSessionByID(ctx, id)
 	if err != nil {
 		return nil, sharederrors.MapGameRepositoryError(err, "FindSessionByID")

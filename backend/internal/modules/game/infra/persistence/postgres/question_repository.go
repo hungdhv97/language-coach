@@ -96,11 +96,11 @@ func (r *gameQuestionRepo) CreateBatch(ctx context.Context, questions []*domain.
 	return nil
 }
 
-// FindQuestionsBySessionID returns all questions for a session
-func (r *gameQuestionRepo) FindQuestionsBySessionID(ctx context.Context, sessionID int64) ([]*domain.GameQuestion, []*domain.GameQuestionOption, error) {
+// FindGameQuestionsBySessionID returns all questions for a session with their options
+func (r *gameQuestionRepo) FindGameQuestionsBySessionID(ctx context.Context, sessionID int64) (*domain.GameQuestionsResult, error) {
 	questionRows, err := r.queries.FindGameQuestionsBySessionID(ctx, sessionID)
 	if err != nil {
-		return nil, nil, sharederrors.MapGameRepositoryError(err, "FindQuestionsBySessionID")
+		return nil, sharederrors.MapGameRepositoryError(err, "FindGameQuestionsBySessionID")
 	}
 
 	questions := make([]*domain.GameQuestion, 0, len(questionRows))
@@ -129,12 +129,15 @@ func (r *gameQuestionRepo) FindQuestionsBySessionID(ctx context.Context, session
 	}
 
 	if len(questionIDs) == 0 {
-		return questions, []*domain.GameQuestionOption{}, nil
+		return &domain.GameQuestionsResult{
+			Questions: []*domain.GameQuestion{},
+			Options:   []*domain.GameQuestionOption{},
+		}, nil
 	}
 
 	optionRows, err := r.queries.FindGameQuestionOptionsByQuestionIDs(ctx, questionIDs)
 	if err != nil {
-		return nil, nil, sharederrors.MapGameRepositoryError(err, "FindQuestionsBySessionID")
+		return nil, sharederrors.MapGameRepositoryError(err, "FindGameQuestionsBySessionID")
 	}
 
 	options := make([]*domain.GameQuestionOption, 0, len(optionRows))
@@ -148,14 +151,17 @@ func (r *gameQuestionRepo) FindQuestionsBySessionID(ctx context.Context, session
 		})
 	}
 
-	return questions, options, nil
+	return &domain.GameQuestionsResult{
+		Questions: questions,
+		Options:   options,
+	}, nil
 }
 
-// FindQuestionByID returns a question by ID with its options
-func (r *gameQuestionRepo) FindQuestionByID(ctx context.Context, questionID int64) (*domain.GameQuestion, []*domain.GameQuestionOption, error) {
+// FindGameQuestionByID returns a question by ID with its options
+func (r *gameQuestionRepo) FindGameQuestionByID(ctx context.Context, questionID int64) (*domain.GameQuestionWithOptions, error) {
 	questionRow, err := r.queries.FindGameQuestionByID(ctx, questionID)
 	if err != nil {
-		return nil, nil, sharederrors.MapGameRepositoryError(err, "FindQuestionByID")
+		return nil, sharederrors.MapGameRepositoryError(err, "FindGameQuestionByID")
 	}
 
 	var sourceSenseID *int64
@@ -179,7 +185,7 @@ func (r *gameQuestionRepo) FindQuestionByID(ctx context.Context, questionID int6
 
 	optionRows, err := r.queries.FindGameQuestionOptionsByQuestionID(ctx, questionID)
 	if err != nil {
-		return nil, nil, sharederrors.MapGameRepositoryError(err, "FindQuestionByID")
+		return nil, sharederrors.MapGameRepositoryError(err, "FindGameQuestionByID")
 	}
 
 	options := make([]*domain.GameQuestionOption, 0, len(optionRows))
@@ -193,5 +199,8 @@ func (r *gameQuestionRepo) FindQuestionByID(ctx context.Context, questionID int6
 		})
 	}
 
-	return question, options, nil
+	return &domain.GameQuestionWithOptions{
+		Question: question,
+		Options:  options,
+	}, nil
 }

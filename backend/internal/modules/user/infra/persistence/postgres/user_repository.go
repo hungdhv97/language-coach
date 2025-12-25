@@ -69,31 +69,31 @@ func (r *userRepository) Create(ctx context.Context, email *string, username *st
 	return mapDBUserToModel(&row), nil
 }
 
-// FindByID returns a user by ID
-func (r *userRepository) FindByID(ctx context.Context, id int64) (*domain.User, error) {
+// FindUserByID returns a user by ID
+func (r *userRepository) FindUserByID(ctx context.Context, id int64) (*domain.User, error) {
 	row, err := r.queries.FindUserByID(ctx, id)
 	if err != nil {
-		return nil, sharederrors.MapUserRepositoryError(err, "FindByID")
+		return nil, sharederrors.MapUserRepositoryError(err, "FindUserByID")
 	}
 
 	return mapDBUserToModel(&row), nil
 }
 
-// FindByEmail returns a user by email
-func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
+// FindUserByEmail returns a user by email
+func (r *userRepository) FindUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	row, err := r.queries.FindUserByEmail(ctx, pgtype.Text{String: email, Valid: true})
 	if err != nil {
-		return nil, sharederrors.MapUserRepositoryError(err, "FindByEmail")
+		return nil, sharederrors.MapUserRepositoryError(err, "FindUserByEmail")
 	}
 
 	return mapDBUserToModel(&row), nil
 }
 
-// FindByUsername returns a user by username
-func (r *userRepository) FindByUsername(ctx context.Context, username string) (*domain.User, error) {
+// FindUserByUsername returns a user by username
+func (r *userRepository) FindUserByUsername(ctx context.Context, username string) (*domain.User, error) {
 	row, err := r.queries.FindUserByUsername(ctx, pgtype.Text{String: username, Valid: true})
 	if err != nil {
-		return nil, sharederrors.MapUserRepositoryError(err, "FindByUsername")
+		return nil, sharederrors.MapUserRepositoryError(err, "FindUserByUsername")
 	}
 
 	return mapDBUserToModel(&row), nil
@@ -117,20 +117,20 @@ func (r *userRepository) UpdateActiveStatus(ctx context.Context, id int64, isAct
 	return sharederrors.MapUserRepositoryError(err, "UpdateActiveStatus")
 }
 
-// CheckEmailExists checks if an email already exists
-func (r *userRepository) CheckEmailExists(ctx context.Context, email string) (bool, error) {
+// ExistsEmail checks if an email already exists
+func (r *userRepository) ExistsEmail(ctx context.Context, email string) (bool, error) {
 	result, err := r.queries.CheckEmailExists(ctx, pgtype.Text{String: email, Valid: true})
 	if err != nil {
-		return false, sharederrors.MapUserRepositoryError(err, "CheckEmailExists")
+		return false, sharederrors.MapUserRepositoryError(err, "ExistsEmail")
 	}
 	return result, nil
 }
 
-// CheckUsernameExists checks if a username already exists
-func (r *userRepository) CheckUsernameExists(ctx context.Context, username string) (bool, error) {
+// ExistsUsername checks if a username already exists
+func (r *userRepository) ExistsUsername(ctx context.Context, username string) (bool, error) {
 	result, err := r.queries.CheckUsernameExists(ctx, pgtype.Text{String: username, Valid: true})
 	if err != nil {
-		return false, sharederrors.MapUserRepositoryError(err, "CheckUsernameExists")
+		return false, sharederrors.MapUserRepositoryError(err, "ExistsUsername")
 	}
 	return result, nil
 }

@@ -44,7 +44,7 @@ func NewHandler(
 // Execute retrieves detailed information about a word including senses, translations, examples, and pronunciations
 func (h *Handler) Execute(ctx context.Context, input GetWordDetailInput) (*GetWordDetailOutput, error) {
 	// Get word
-	word, err := h.wordRepo.FindByID(ctx, input.WordID)
+	word, err := h.wordRepo.FindWordByID(ctx, input.WordID)
 	if err != nil {
 		// Check if error is "not found" (pgx.ErrNoRows)
 		if sharederrors.IsNotFound(err) {
@@ -59,7 +59,7 @@ func (h *Handler) Execute(ctx context.Context, input GetWordDetailInput) (*GetWo
 	}
 
 	// Get senses
-	senses, err := h.senseRepo.FindByWordID(ctx, input.WordID)
+	senses, err := h.senseRepo.FindSensesByWordID(ctx, input.WordID)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (h *Handler) Execute(ctx context.Context, input GetWordDetailInput) (*GetWo
 	// Fetch part of speech names
 	posMap := make(map[int16]*string)
 	if len(posIDs) > 0 {
-		posData, err := h.partOfSpeechRepo.FindByIDs(ctx, posIDs)
+		posData, err := h.partOfSpeechRepo.FindPartsOfSpeechByIDs(ctx, posIDs)
 		if err != nil {
 			h.logger.Warn("failed to fetch part of speech names", logger.Error(err))
 		} else {
@@ -134,7 +134,7 @@ func (h *Handler) Execute(ctx context.Context, input GetWordDetailInput) (*GetWo
 	// Fetch level names
 	levelMap := make(map[int64]*string)
 	for _, levelID := range levelIDs {
-		level, err := h.levelRepo.FindByID(ctx, levelID)
+		level, err := h.levelRepo.FindLevelByID(ctx, levelID)
 		if err != nil {
 			h.logger.Warn("failed to fetch level name", logger.Int64("level_id", levelID), logger.Error(err))
 		} else {
@@ -145,7 +145,7 @@ func (h *Handler) Execute(ctx context.Context, input GetWordDetailInput) (*GetWo
 	// Fetch language names
 	langMap := make(map[int16]*string)
 	for _, langID := range langIDs {
-		lang, err := h.languageRepo.FindByID(ctx, langID)
+		lang, err := h.languageRepo.FindLanguageByID(ctx, langID)
 		if err != nil {
 			h.logger.Warn("failed to fetch language name", logger.Int("language_id", int(langID)), logger.Error(err))
 		} else {

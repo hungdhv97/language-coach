@@ -187,7 +187,7 @@ func (h *Handler) GetSession(c *gin.Context) {
 	}
 
 	// Get session
-	session, err := h.sessionRepo.FindByID(ctx, sessionID)
+	session, err := h.sessionRepo.FindGameSessionByID(ctx, sessionID)
 	if err != nil {
 		middleware.SetError(c, err)
 		return
@@ -200,11 +200,14 @@ func (h *Handler) GetSession(c *gin.Context) {
 	}
 
 	// Get questions and options
-	questions, options, err := h.questionRepo.FindQuestionsBySessionID(ctx, sessionID)
+	questionsResult, err := h.questionRepo.FindGameQuestionsBySessionID(ctx, sessionID)
 	if err != nil {
 		middleware.SetError(c, err)
 		return
 	}
+
+	questions := questionsResult.Questions
+	options := questionsResult.Options
 
 	// Collect all word IDs (source words and target words in options)
 	wordIDs := make(map[int64]bool)
@@ -224,7 +227,7 @@ func (h *Handler) GetSession(c *gin.Context) {
 	// Fetch words if we have any
 	var words []*dictdomain.Word
 	if len(wordIDList) > 0 {
-		words, err = h.wordRepo.FindByIDs(ctx, wordIDList)
+		words, err = h.wordRepo.FindWordsByIDs(ctx, wordIDList)
 		if err != nil {
 			middleware.SetError(c, err)
 			return

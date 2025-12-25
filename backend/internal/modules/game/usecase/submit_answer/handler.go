@@ -35,7 +35,7 @@ func NewHandler(
 // Execute submits an answer to a question
 func (h *Handler) Execute(ctx context.Context, input SubmitAnswerInput, sessionID, userID int64) (*SubmitAnswerOutput, error) {
 	// Get question and options to verify the answer
-	question, options, err := h.questionRepo.FindQuestionByID(ctx, input.QuestionID)
+	questionWithOptions, err := h.questionRepo.FindGameQuestionByID(ctx, input.QuestionID)
 	if err != nil {
 		h.logger.Error("failed to find question",
 			logger.Error(err),
@@ -45,9 +45,12 @@ func (h *Handler) Execute(ctx context.Context, input SubmitAnswerInput, sessionI
 	}
 
 	// Check if question is nil
-	if question == nil {
+	if questionWithOptions == nil || questionWithOptions.Question == nil {
 		return nil, sharederrors.MapDomainErrorToAppError(domain.ErrQuestionNotFound)
 	}
+
+	question := questionWithOptions.Question
+	options := questionWithOptions.Options
 
 	// Verify question belongs to session
 	if question.SessionID != sessionID {
@@ -55,7 +58,7 @@ func (h *Handler) Execute(ctx context.Context, input SubmitAnswerInput, sessionI
 	}
 
 	// Check if session exists and has not ended
-	session, err := h.sessionRepo.FindByID(ctx, sessionID)
+	session, err := h.sessionRepo.FindGameSessionByID(ctx, sessionID)
 	if err != nil {
 		h.logger.Error("failed to find session",
 			logger.Error(err),
@@ -91,7 +94,7 @@ func (h *Handler) Execute(ctx context.Context, input SubmitAnswerInput, sessionI
 	}
 
 	// Check if answer already exists
-	existingAnswer, err := h.answerRepo.FindAnswerByQuestionID(ctx, input.QuestionID, sessionID, userID)
+	existingAnswer, err := h.answerRepo.FindGameAnswerByQuestionID(ctx, input.QuestionID, sessionID, userID)
 	if err != nil {
 		// If not found, it's a normal case (answer doesn't exist yet, allow submission)
 		if sharederrors.IsNotFound(err) {

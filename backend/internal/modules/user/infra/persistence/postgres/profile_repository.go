@@ -55,11 +55,11 @@ func (r *userProfileRepository) Create(ctx context.Context, userID int64, displa
 	return mapDBProfileToModel(&row), nil
 }
 
-// GetByUserID returns a user profile by user ID
-func (r *userProfileRepository) GetByUserID(ctx context.Context, userID int64) (*domain.UserProfile, error) {
+// FindUserProfileByUserID returns a user profile by user ID
+func (r *userProfileRepository) FindUserProfileByUserID(ctx context.Context, userID int64) (*domain.UserProfile, error) {
 	row, err := r.queries.GetUserProfile(ctx, userID)
 	if err != nil {
-		return nil, sharederrors.MapUserRepositoryError(err, "GetByUserID")
+		return nil, sharederrors.MapUserRepositoryError(err, "FindUserProfileByUserID")
 	}
 
 	return mapDBProfileToModel(&row), nil

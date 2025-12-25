@@ -25,3 +25,15 @@ type GameQuestionOption struct {
 	IsCorrect     bool   `json:"is_correct"`
 }
 
+// GameQuestionsResult wraps multiple questions with their options
+type GameQuestionsResult struct {
+	Questions []*GameQuestion
+	Options   []*GameQuestionOption
+}
+
+// GameQuestionWithOptions wraps a single question with its options
+type GameQuestionWithOptions struct {
+	Question *GameQuestion
+	Options  []*GameQuestionOption
+}
+

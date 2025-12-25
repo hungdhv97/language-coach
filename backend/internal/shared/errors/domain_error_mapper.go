@@ -19,10 +19,14 @@ func MapUserRepositoryError(err error, operation string) error {
 	// Check for "not found" errors
 	if IsNotFound(err) {
 		switch operation {
-		case "FindByID", "FindByEmail", "FindByUsername":
+		case "FindUserByID", "FindUserByEmail", "FindUserByUsername":
 			return userdomain.ErrUserNotFound
-		case "GetByUserID", "GetProfile":
+		case "FindUserProfileByUserID", "GetProfile":
 			return userdomain.ErrProfileNotFound
+		case "ExistsEmail", "ExistsUsername":
+			// Existence checks return false if not found, not an error
+			// But if there's a DB error, return as-is
+			return err
 		default:
 			return userdomain.ErrUserNotFound
 		}
@@ -56,25 +60,25 @@ func MapGameRepositoryError(err error, operation string) error {
 	if IsNotFound(err) {
 		switch operation {
 		// Game Session operations
-		case "FindSessionByID", "FindByID":
+		case "FindGameSessionByID":
 			return gamedomain.ErrSessionNotFound
 		// Game Question operations
-		case "FindQuestionByID":
+		case "FindGameQuestionByID":
 			return gamedomain.ErrQuestionNotFound
-		case "FindQuestionsBySessionID":
-			// FindQuestionsBySessionID returns empty slice if not found, not an error
+		case "FindGameQuestionsBySessionID":
+			// FindGameQuestionsBySessionID returns empty slice if not found, not an error
 			// But if there's a DB error, return as-is
 			return err
 		// Game Question Option operations
 		case "FindOptionByID":
 			return gamedomain.ErrOptionNotFound
 		// Game Answer operations
-		case "FindAnswerByQuestionID":
+		case "FindGameAnswerByQuestionID":
 			// Answer not found is not necessarily an error - might be first time answering
 			// Return as-is, let usecase decide
 			return err
-		case "FindAnswersBySessionID":
-			// FindAnswersBySessionID returns empty slice if not found, not an error
+		case "FindGameAnswersBySessionID":
+			// FindGameAnswersBySessionID returns empty slice if not found, not an error
 			// But if there's a DB error, return as-is
 			return err
 		// Create/Update operations
@@ -115,22 +119,27 @@ func MapDictionaryRepositoryError(err error, operation string) error {
 		// Operations that return collections (empty slice/map if not found, not an error)
 		// These should not return "not found" errors, but if they do, it's a DB error
 		switch operation {
-		case "FindByIDs", "FindWordsByTopicAndLanguages", "FindWordsByLevelAndLanguages",
+		case "FindWordsByIDs", "FindWordsByTopicAndLanguages", "FindWordsByLevelAndLanguages",
 			"FindWordsByLevelAndTopicsAndLanguages", "FindTranslationsForWord",
-			"SearchWords", "CountSearchWords", "FindAll", "FindByLanguageID",
-			"FindByWordID", "FindByWordIDs":
+			"SearchWords", "CountSearchWords", "FindAllLanguages", "FindAllTopics", "FindAllLevels", "FindAllPartsOfSpeech",
+			"FindLevelsByLanguageID", "FindSensesByWordID", "FindSensesByWordIDs":
 			// These operations return empty results if not found, not an error
 			// But if there's a DB error, return as-is
 			return err
 		}
 
-		// Generic operations (FindByID, FindByCode) used by multiple entities
-		// Since we can't distinguish which entity, return error as-is
-		// Usecase layer should check IsNotFound and map to appropriate domain error
-		// based on context (e.g., if calling topicRepo.FindByID, map to ErrTopicNotFound)
+		// Entity-specific operations
 		switch operation {
-		case "FindByID", "FindByCode":
-			// Return as-is, let usecase layer handle based on context
+		case "FindLanguageByID", "FindLanguageByCode":
+			return dictionarydomain.ErrLanguageNotFound
+		case "FindTopicByID", "FindTopicByCode":
+			return dictionarydomain.ErrTopicNotFound
+		case "FindLevelByID", "FindLevelByCode":
+			return dictionarydomain.ErrLevelNotFound
+		case "FindPartOfSpeechByID", "FindPartOfSpeechByCode":
+			return dictionarydomain.ErrPartOfSpeechNotFound
+		case "FindPartsOfSpeechByIDs":
+			// Returns map, empty map if not found, not an error
 			return err
 		default:
 			return err // Return as-is, let usecase handle
