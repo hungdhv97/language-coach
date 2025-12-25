@@ -44,5 +44,10 @@ const (
 
 // Dictionary domain error codes
 const (
-	CodeWordNotFound = "WORD_NOT_FOUND"
+	CodeWordNotFound         = "WORD_NOT_FOUND"
+	CodeTopicNotFound        = "TOPIC_NOT_FOUND"
+	CodeLevelNotFound        = "LEVEL_NOT_FOUND"
+	CodeLanguageNotFound     = "LANGUAGE_NOT_FOUND"
+	CodePartOfSpeechNotFound = "PART_OF_SPEECH_NOT_FOUND"
+	CodeSenseNotFound        = "SENSE_NOT_FOUND"
 )

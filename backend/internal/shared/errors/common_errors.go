@@ -38,5 +38,10 @@ var (
 	ErrTranslationNotFound    = NewAppError(CodeTranslationNotFound, "Không tìm thấy bản dịch cho từ này")
 
 	// Dictionary domain errors
-	ErrWordNotFound = NewAppError(CodeWordNotFound, "Không tìm thấy từ")
+	ErrWordNotFound         = NewAppError(CodeWordNotFound, "Không tìm thấy từ")
+	ErrTopicNotFound        = NewAppError(CodeTopicNotFound, "Không tìm thấy chủ đề")
+	ErrLevelNotFound        = NewAppError(CodeLevelNotFound, "Không tìm thấy cấp độ")
+	ErrLanguageNotFound     = NewAppError(CodeLanguageNotFound, "Không tìm thấy ngôn ngữ")
+	ErrPartOfSpeechNotFound = NewAppError(CodePartOfSpeechNotFound, "Không tìm thấy từ loại")
+	ErrSenseNotFound        = NewAppError(CodeSenseNotFound, "Không tìm thấy nghĩa")
 )

@@ -55,15 +55,43 @@ func MapGameRepositoryError(err error, operation string) error {
 	// Check for "not found" errors
 	if IsNotFound(err) {
 		switch operation {
+		// Game Session operations
 		case "FindSessionByID", "FindByID":
 			return gamedomain.ErrSessionNotFound
+		// Game Question operations
 		case "FindQuestionByID":
 			return gamedomain.ErrQuestionNotFound
+		case "FindQuestionsBySessionID":
+			// FindQuestionsBySessionID returns empty slice if not found, not an error
+			// But if there's a DB error, return as-is
+			return err
+		// Game Question Option operations
 		case "FindOptionByID":
 			return gamedomain.ErrOptionNotFound
+		// Game Answer operations
+		case "FindAnswerByQuestionID":
+			// Answer not found is not necessarily an error - might be first time answering
+			// Return as-is, let usecase decide
+			return err
+		case "FindAnswersBySessionID":
+			// FindAnswersBySessionID returns empty slice if not found, not an error
+			// But if there's a DB error, return as-is
+			return err
+		// Create/Update operations
+		case "Create", "CreateBatch", "Update", "EndSession":
+			// These operations should not return "not found" errors
+			// If they do, it's likely a constraint violation or other issue
+			return err
 		default:
 			return err // Return as-is, let usecase handle
 		}
+	}
+
+	// Check for unique violation errors (if any unique constraints exist)
+	if IsUniqueViolation(err) {
+		// Game domain doesn't have unique constraints that need special handling
+		// Return as-is, let usecase handle
+		return err
 	}
 
 	// For other errors, return as-is
@@ -78,12 +106,42 @@ func MapDictionaryRepositoryError(err error, operation string) error {
 
 	// Check for "not found" errors
 	if IsNotFound(err) {
+		// Word operations - specific operation name
 		switch operation {
-		case "FindWordByID", "FindByID":
+		case "FindWordByID":
 			return dictionarydomain.ErrWordNotFound
+		}
+
+		// Operations that return collections (empty slice/map if not found, not an error)
+		// These should not return "not found" errors, but if they do, it's a DB error
+		switch operation {
+		case "FindByIDs", "FindWordsByTopicAndLanguages", "FindWordsByLevelAndLanguages",
+			"FindWordsByLevelAndTopicsAndLanguages", "FindTranslationsForWord",
+			"SearchWords", "CountSearchWords", "FindAll", "FindByLanguageID",
+			"FindByWordID", "FindByWordIDs":
+			// These operations return empty results if not found, not an error
+			// But if there's a DB error, return as-is
+			return err
+		}
+
+		// Generic operations (FindByID, FindByCode) used by multiple entities
+		// Since we can't distinguish which entity, return error as-is
+		// Usecase layer should check IsNotFound and map to appropriate domain error
+		// based on context (e.g., if calling topicRepo.FindByID, map to ErrTopicNotFound)
+		switch operation {
+		case "FindByID", "FindByCode":
+			// Return as-is, let usecase layer handle based on context
+			return err
 		default:
 			return err // Return as-is, let usecase handle
 		}
+	}
+
+	// Check for unique violation errors (if any unique constraints exist)
+	if IsUniqueViolation(err) {
+		// Dictionary domain doesn't have unique constraints that need special handling
+		// Return as-is, let usecase handle
+		return err
 	}
 
 	// For other errors, return as-is

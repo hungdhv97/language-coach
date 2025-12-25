@@ -95,6 +95,16 @@ func mapDictionaryDomainErrorToAppError(err error) *AppError {
 	switch err {
 	case dictionarydomain.ErrWordNotFound:
 		return ErrWordNotFound
+	case dictionarydomain.ErrTopicNotFound:
+		return ErrTopicNotFound
+	case dictionarydomain.ErrLevelNotFound:
+		return ErrLevelNotFound
+	case dictionarydomain.ErrLanguageNotFound:
+		return ErrLanguageNotFound
+	case dictionarydomain.ErrPartOfSpeechNotFound:
+		return ErrPartOfSpeechNotFound
+	case dictionarydomain.ErrSenseNotFound:
+		return ErrSenseNotFound
 	default:
 		return nil
 	}
