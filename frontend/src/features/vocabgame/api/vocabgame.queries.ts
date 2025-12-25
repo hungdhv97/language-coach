@@ -40,7 +40,7 @@ export const vocabGameQueries = {
    */
   useSessionStatistics: (sessionId: number) => {
     return useQuery<SessionStatistics>({
-      queryKey: gameQueries.keys.sessionStatistics(sessionId),
+      queryKey: vocabGameQueries.keys.sessionStatistics(sessionId),
       queryFn: () => vocabGameEndpoints.getSessionStatistics(sessionId),
       enabled: !!sessionId && sessionId > 0,
     });
