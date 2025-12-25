@@ -11,6 +11,19 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countGameSessionsByUserID = `-- name: CountGameSessionsByUserID :one
+SELECT COUNT(*)
+FROM vocab_game_sessions
+WHERE user_id = $1
+`
+
+func (q *Queries) CountGameSessionsByUserID(ctx context.Context, userID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countGameSessionsByUserID, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createGameSession = `-- name: CreateGameSession :one
 INSERT INTO vocab_game_sessions (
     user_id, mode, source_language_id, target_language_id,
@@ -95,6 +108,54 @@ func (q *Queries) FindGameSessionByID(ctx context.Context, id int64) (VocabGameS
 		&i.EndedAt,
 	)
 	return i, err
+}
+
+const findGameSessionsByUserID = `-- name: FindGameSessionsByUserID :many
+SELECT id, user_id, mode, source_language_id, target_language_id,
+       topic_id, level_id, total_questions, correct_questions,
+       started_at, ended_at
+FROM vocab_game_sessions
+WHERE user_id = $1
+ORDER BY started_at DESC
+LIMIT $3 OFFSET $2
+`
+
+type FindGameSessionsByUserIDParams struct {
+	UserID int64 `json:"user_id"`
+	Offset int32 `json:"offset"`
+	Limit  int32 `json:"limit"`
+}
+
+func (q *Queries) FindGameSessionsByUserID(ctx context.Context, arg FindGameSessionsByUserIDParams) ([]VocabGameSession, error) {
+	rows, err := q.db.Query(ctx, findGameSessionsByUserID, arg.UserID, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []VocabGameSession{}
+	for rows.Next() {
+		var i VocabGameSession
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Mode,
+			&i.SourceLanguageID,
+			&i.TargetLanguageID,
+			&i.TopicID,
+			&i.LevelID,
+			&i.TotalQuestions,
+			&i.CorrectQuestions,
+			&i.StartedAt,
+			&i.EndedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateGameSession = `-- name: UpdateGameSession :exec

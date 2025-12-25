@@ -13,9 +13,9 @@ func RegisterRoutes(router *gin.RouterGroup, handler *Handler, authMiddleware gi
 		sessionsGroup := vocabGameGroup.Group("/sessions")
 		{
 			sessionsGroup.POST("", handler.CreateSession)
+			sessionsGroup.GET("", handler.ListSessions) // Must be before /:sessionId to avoid route conflict
 			sessionsGroup.GET("/:sessionId", handler.GetSession)
 			sessionsGroup.POST("/:sessionId/answers", handler.SubmitAnswer)
 		}
 	}
 }
-

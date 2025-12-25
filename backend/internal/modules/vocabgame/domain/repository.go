@@ -10,6 +10,10 @@ type GameSessionRepository interface {
 	Create(ctx context.Context, session *GameSession) error
 	// FindGameSessionByID returns a vocabgame session by ID
 	FindGameSessionByID(ctx context.Context, id int64) (*GameSession, error)
+	// FindGameSessionsByUserID returns a list of game sessions for a user with pagination
+	FindGameSessionsByUserID(ctx context.Context, userID int64, limit, offset int) ([]*GameSession, error)
+	// CountGameSessionsByUserID returns the total count of game sessions for a user
+	CountGameSessionsByUserID(ctx context.Context, userID int64) (int64, error)
 	// Update updates a vocabgame session
 	Update(ctx context.Context, session *GameSession) error
 	// EndSession marks a session as ended

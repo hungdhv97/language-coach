@@ -102,3 +102,8 @@ type GetSessionResponse struct {
 	Session   GameSessionResponse   `json:"session"`
 	Questions []QuestionWithOptions `json:"questions"`
 }
+
+// ListSessionsResponse represents the response for listing sessions
+type ListSessionsResponse struct {
+	Sessions []GameSessionResponse `json:"sessions"`
+}

@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	CountGameSessionsByUserID(ctx context.Context, userID int64) (int64, error)
 	CreateGameAnswer(ctx context.Context, arg CreateGameAnswerParams) (CreateGameAnswerRow, error)
 	CreateGameQuestion(ctx context.Context, arg CreateGameQuestionParams) (CreateGameQuestionRow, error)
 	CreateGameQuestionOption(ctx context.Context, arg CreateGameQuestionOptionParams) (int64, error)
@@ -21,6 +22,7 @@ type Querier interface {
 	FindGameQuestionOptionsByQuestionIDs(ctx context.Context, dollar_1 []int64) ([]VocabGameQuestionOption, error)
 	FindGameQuestionsBySessionID(ctx context.Context, sessionID int64) ([]VocabGameQuestion, error)
 	FindGameSessionByID(ctx context.Context, id int64) (VocabGameSession, error)
+	FindGameSessionsByUserID(ctx context.Context, arg FindGameSessionsByUserIDParams) ([]VocabGameSession, error)
 	UpdateGameSession(ctx context.Context, arg UpdateGameSessionParams) error
 }
 

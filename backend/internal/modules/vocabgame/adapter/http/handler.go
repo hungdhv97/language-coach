@@ -10,6 +10,7 @@ import (
 	gamesubmitanswer "github.com/english-coach/backend/internal/modules/vocabgame/usecase/submit_answer"
 	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 	"github.com/english-coach/backend/internal/shared/logger"
+	"github.com/english-coach/backend/internal/shared/pagination"
 	"github.com/english-coach/backend/internal/shared/response"
 	"github.com/english-coach/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
@@ -146,6 +147,105 @@ func (h *Handler) CreateSession(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusCreated, resp)
+}
+
+// ListSessions handles GET /api/v1/vocabgames/sessions
+func (h *Handler) ListSessions(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	// Get user ID from context (set by auth middleware)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		// TODO: In production, this should require authentication
+		// For now, use a default user ID for development
+		userID = int64(1)
+	}
+
+	var userIDInt64 int64
+	switch v := userID.(type) {
+	case int64:
+		userIDInt64 = v
+	case int:
+		userIDInt64 = int64(v)
+	case string:
+		parsed, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			middleware.SetError(c, sharederrors.ErrInvalidParameter.WithDetails("invalid user_id"))
+			return
+		}
+		userIDInt64 = parsed
+	default:
+		userIDInt64 = 1 // Default for development
+	}
+
+	// Parse pagination parameters
+	paginationParams, err := pagination.ParseFromQuery(c)
+	if err != nil {
+		middleware.SetError(c, err)
+		return
+	}
+
+	// Get request logger from context (includes request ID)
+	requestLogger, _ := c.Get("logger")
+	var appLogger logger.ILogger
+	if reqLogger, ok := requestLogger.(logger.ILogger); ok {
+		appLogger = reqLogger
+	} else {
+		appLogger = h.logger
+	}
+
+	// Log session list request
+	appLogger.Info("vocabgame sessions list requested",
+		logger.Int64("user_id", userIDInt64),
+		logger.Int("limit", paginationParams.Limit),
+		logger.Int("offset", paginationParams.Offset),
+	)
+
+	// Get sessions
+	sessions, err := h.sessionRepo.FindGameSessionsByUserID(ctx, userIDInt64, paginationParams.Limit, paginationParams.Offset)
+	if err != nil {
+		middleware.SetError(c, err)
+		return
+	}
+
+	// Get total count for pagination
+	totalCount, err := h.sessionRepo.CountGameSessionsByUserID(ctx, userIDInt64)
+	if err != nil {
+		appLogger.Error("failed to count game sessions",
+			logger.Error(err),
+			logger.Int64("user_id", userIDInt64),
+		)
+		// Continue without total count
+		totalCount = int64(len(sessions))
+	}
+
+	// Map sessions to response DTOs
+	sessionResponses := make([]GameSessionResponse, 0, len(sessions))
+	for _, session := range sessions {
+		sessionResponses = append(sessionResponses, GameSessionResponse{
+			ID:               session.ID,
+			UserID:           session.UserID,
+			Mode:             session.Mode,
+			SourceLanguageID: session.SourceLanguageID,
+			TargetLanguageID: session.TargetLanguageID,
+			TopicID:          session.TopicID,
+			LevelID:          session.LevelID,
+			TotalQuestions:   session.TotalQuestions,
+			CorrectQuestions: session.CorrectQuestions,
+			StartedAt:        session.StartedAt,
+			EndedAt:          session.EndedAt,
+		})
+	}
+
+	// Log successful list
+	appLogger.Info("vocabgame sessions list completed",
+		logger.Int64("user_id", userIDInt64),
+		logger.Int("sessions_count", len(sessionResponses)),
+		logger.Int64("total", totalCount),
+	)
+
+	// Return paginated response
+	response.Paginated(c, http.StatusOK, sessionResponses, paginationParams, totalCount)
 }
 
 // GetSession handles GET /api/v1/vocabgames/sessions/{sessionId}

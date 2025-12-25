@@ -25,3 +25,17 @@ UPDATE vocab_game_sessions
 SET ended_at = $2 
 WHERE id = $1;
 
+-- name: FindGameSessionsByUserID :many
+SELECT id, user_id, mode, source_language_id, target_language_id,
+       topic_id, level_id, total_questions, correct_questions,
+       started_at, ended_at
+FROM vocab_game_sessions
+WHERE user_id = sqlc.arg('user_id')
+ORDER BY started_at DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
+-- name: CountGameSessionsByUserID :one
+SELECT COUNT(*)
+FROM vocab_game_sessions
+WHERE user_id = sqlc.arg('user_id');
+

@@ -105,6 +105,61 @@ func (r *gameSessionRepository) Update(ctx context.Context, session *domain.Game
 	return sharederrors.MapVocabGameRepositoryError(err, "Update")
 }
 
+// FindGameSessionsByUserID returns a list of game sessions for a user with pagination
+func (r *gameSessionRepository) FindGameSessionsByUserID(ctx context.Context, userID int64, limit, offset int) ([]*domain.GameSession, error) {
+	rows, err := r.queries.FindGameSessionsByUserID(ctx, db.FindGameSessionsByUserIDParams{
+		UserID: userID,
+		Offset: int32(offset),
+		Limit:  int32(limit),
+	})
+	if err != nil {
+		return nil, sharederrors.MapVocabGameRepositoryError(err, "FindGameSessionsByUserID")
+	}
+
+	sessions := make([]*domain.GameSession, 0, len(rows))
+	for _, row := range rows {
+		var topicID, levelID *int64
+		var endedAt *time.Time
+
+		if row.TopicID.Valid {
+			val := row.TopicID.Int64
+			topicID = &val
+		}
+		if row.LevelID.Valid {
+			val := row.LevelID.Int64
+			levelID = &val
+		}
+		if row.EndedAt.Valid {
+			endedAt = &row.EndedAt.Time
+		}
+
+		sessions = append(sessions, &domain.GameSession{
+			ID:               row.ID,
+			UserID:           row.UserID,
+			Mode:             row.Mode,
+			SourceLanguageID: row.SourceLanguageID,
+			TargetLanguageID: row.TargetLanguageID,
+			TopicID:          topicID,
+			LevelID:          levelID,
+			TotalQuestions:   int16(row.TotalQuestions.Int16),
+			CorrectQuestions: int16(row.CorrectQuestions.Int16),
+			StartedAt:        row.StartedAt.Time,
+			EndedAt:          endedAt,
+		})
+	}
+
+	return sessions, nil
+}
+
+// CountGameSessionsByUserID returns the total count of game sessions for a user
+func (r *gameSessionRepository) CountGameSessionsByUserID(ctx context.Context, userID int64) (int64, error) {
+	count, err := r.queries.CountGameSessionsByUserID(ctx, userID)
+	if err != nil {
+		return 0, sharederrors.MapVocabGameRepositoryError(err, "CountGameSessionsByUserID")
+	}
+	return count, nil
+}
+
 // EndSession marks a session as ended
 func (r *gameSessionRepository) EndSession(ctx context.Context, sessionID int64, endedAt interface{}) error {
 	var endTime time.Time
