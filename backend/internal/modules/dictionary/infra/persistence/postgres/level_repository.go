@@ -6,7 +6,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/english-coach/backend/internal/modules/dictionary/domain"
-	"github.com/english-coach/backend/internal/shared/errors"
+	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 )
 
 // levelRepository implements LevelRepository using sqlc
@@ -18,7 +18,7 @@ type levelRepository struct {
 func (r *levelRepository) FindAll(ctx context.Context) ([]*domain.Level, error) {
 	rows, err := r.queries.FindAllLevels(ctx)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindAll")
 	}
 
 	levels := make([]*domain.Level, 0, len(rows))
@@ -56,7 +56,7 @@ func (r *levelRepository) FindAll(ctx context.Context) ([]*domain.Level, error) 
 func (r *levelRepository) FindByID(ctx context.Context, id int64) (*domain.Level, error) {
 	row, err := r.queries.FindLevelByID(ctx, id)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByID")
 	}
 
 	var description *string
@@ -89,7 +89,7 @@ func (r *levelRepository) FindByID(ctx context.Context, id int64) (*domain.Level
 func (r *levelRepository) FindByCode(ctx context.Context, code string) (*domain.Level, error) {
 	row, err := r.queries.FindLevelByCode(ctx, code)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByCode")
 	}
 
 	var description *string
@@ -123,7 +123,7 @@ func (r *levelRepository) FindByLanguageID(ctx context.Context, languageID int16
 	langIDPg := pgtype.Int2{Int16: languageID, Valid: true}
 	rows, err := r.queries.FindLevelsByLanguageID(ctx, langIDPg)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByLanguageID")
 	}
 
 	levels := make([]*domain.Level, 0, len(rows))

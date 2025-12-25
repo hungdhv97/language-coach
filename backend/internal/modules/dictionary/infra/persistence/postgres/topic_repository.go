@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/english-coach/backend/internal/modules/dictionary/domain"
-	"github.com/english-coach/backend/internal/shared/errors"
+	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 )
 
 // topicRepository implements TopicRepository using sqlc
@@ -16,7 +16,7 @@ type topicRepository struct {
 func (r *topicRepository) FindAll(ctx context.Context) ([]*domain.Topic, error) {
 	rows, err := r.queries.FindAllTopics(ctx)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindAll")
 	}
 
 	topics := make([]*domain.Topic, 0, len(rows))
@@ -35,7 +35,7 @@ func (r *topicRepository) FindAll(ctx context.Context) ([]*domain.Topic, error) 
 func (r *topicRepository) FindByID(ctx context.Context, id int64) (*domain.Topic, error) {
 	row, err := r.queries.FindTopicByID(ctx, id)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByID")
 	}
 
 	return &domain.Topic{
@@ -49,7 +49,7 @@ func (r *topicRepository) FindByID(ctx context.Context, id int64) (*domain.Topic
 func (r *topicRepository) FindByCode(ctx context.Context, code string) (*domain.Topic, error) {
 	row, err := r.queries.FindTopicByCode(ctx, code)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByCode")
 	}
 
 	return &domain.Topic{

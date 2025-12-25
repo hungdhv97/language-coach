@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/english-coach/backend/internal/modules/dictionary/domain"
-	"github.com/english-coach/backend/internal/shared/errors"
+	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 )
 
 // senseRepository implements SenseRepository using sqlc
@@ -16,7 +16,7 @@ type senseRepository struct {
 func (r *senseRepository) FindByWordID(ctx context.Context, wordID int64) ([]*domain.Sense, error) {
 	rows, err := r.queries.FindSensesByWordID(ctx, wordID)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByWordID")
 	}
 
 	senses := make([]*domain.Sense, 0, len(rows))
@@ -59,7 +59,7 @@ func (r *senseRepository) FindByWordIDs(ctx context.Context, wordIDs []int64) (m
 
 	rows, err := r.queries.FindSensesByWordIDs(ctx, wordIDs)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByWordIDs")
 	}
 
 	result := make(map[int64][]*domain.Sense)

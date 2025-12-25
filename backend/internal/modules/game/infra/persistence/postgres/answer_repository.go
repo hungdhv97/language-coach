@@ -8,7 +8,7 @@ import (
 
 	"github.com/english-coach/backend/internal/modules/game/domain"
 	db "github.com/english-coach/backend/internal/platform/db/sqlc/gen/game"
-	"github.com/english-coach/backend/internal/shared/errors"
+	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 )
 
 // gameAnswerRepo implements GameAnswerRepository using sqlc
@@ -38,7 +38,7 @@ func (r *gameAnswerRepo) Create(ctx context.Context, answer *domain.GameAnswer) 
 		AnsweredAt:       answeredAt,
 	})
 	if err != nil {
-		return errors.MapPgError(err)
+		return sharederrors.MapGameRepositoryError(err, "Create")
 	}
 
 	answer.ID = result.ID
@@ -54,7 +54,7 @@ func (r *gameAnswerRepo) FindAnswerByQuestionID(ctx context.Context, questionID,
 		UserID:     userID,
 	})
 	if err != nil {
-		return nil, errors.MapGameRepositoryError(err, "GetByQuestionIDAndSession")
+		return nil, sharederrors.MapGameRepositoryError(err, "FindAnswerByQuestionID")
 	}
 
 	var selectedOptionID *int64
@@ -88,7 +88,7 @@ func (r *gameAnswerRepo) FindAnswersBySessionID(ctx context.Context, sessionID, 
 		UserID:    userID,
 	})
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapGameRepositoryError(err, "FindAnswersBySessionID")
 	}
 
 	answers := make([]*domain.GameAnswer, 0, len(rows))

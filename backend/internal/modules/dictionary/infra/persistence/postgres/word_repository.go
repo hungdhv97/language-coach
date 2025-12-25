@@ -138,12 +138,12 @@ func (r *wordRepository) FindWordsByLevelAndTopicsAndLanguages(ctx context.Conte
 	for rows.Next() {
 		var wordID int64
 		if err := rows.Scan(&wordID); err != nil {
-			return nil, err
+			return nil, sharederrors.MapDictionaryRepositoryError(err, "FindWordsByLevelAndTopicsAndLanguages")
 		}
 		validWordIDs[wordID] = true
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindWordsByLevelAndTopicsAndLanguages")
 	}
 
 	// Filter words to only include those with valid topics

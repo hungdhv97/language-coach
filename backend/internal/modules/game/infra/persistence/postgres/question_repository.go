@@ -8,7 +8,7 @@ import (
 
 	"github.com/english-coach/backend/internal/modules/game/domain"
 	db "github.com/english-coach/backend/internal/platform/db/sqlc/gen/game"
-	"github.com/english-coach/backend/internal/shared/errors"
+	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 )
 
 // gameQuestionRepo implements GameQuestionRepository using sqlc
@@ -20,7 +20,7 @@ type gameQuestionRepo struct {
 func (r *gameQuestionRepo) CreateBatch(ctx context.Context, questions []*domain.GameQuestion, options []*domain.GameQuestionOption) error {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
-		return errors.MapPgError(err)
+		return sharederrors.MapGameRepositoryError(err, "CreateBatch")
 	}
 	defer tx.Rollback(ctx)
 
@@ -46,7 +46,7 @@ func (r *gameQuestionRepo) CreateBatch(ctx context.Context, questions []*domain.
 			CreatedAt:           createdAt,
 		})
 		if err != nil {
-			return errors.MapPgError(err)
+			return sharederrors.MapGameRepositoryError(err, "CreateBatch")
 		}
 		question.ID = result.ID
 		question.CreatedAt = result.CreatedAt.Time
@@ -57,8 +57,8 @@ func (r *gameQuestionRepo) CreateBatch(ctx context.Context, questions []*domain.
 	const optionsPerQuestion = 4
 	expectedOptionsCount := len(questions) * optionsPerQuestion
 	if len(options) != expectedOptionsCount {
-		return errors.NewAppError(
-			errors.CodeInternalError,
+		return sharederrors.NewAppError(
+			sharederrors.CodeInternalError,
 			"mismatch between questions and options count",
 		).WithMetadata("expected", expectedOptionsCount).
 			WithMetadata("questions", len(questions)).
@@ -83,20 +83,24 @@ func (r *gameQuestionRepo) CreateBatch(ctx context.Context, questions []*domain.
 				IsCorrect:    option.IsCorrect,
 			})
 			if err != nil {
-				return errors.MapPgError(err)
+				return sharederrors.MapGameRepositoryError(err, "CreateBatch")
 			}
 			option.ID = optionID
 		}
 	}
 
-	return tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		return sharederrors.MapGameRepositoryError(err, "CreateBatch")
+	}
+	return nil
 }
 
 // FindQuestionsBySessionID returns all questions for a session
 func (r *gameQuestionRepo) FindQuestionsBySessionID(ctx context.Context, sessionID int64) ([]*domain.GameQuestion, []*domain.GameQuestionOption, error) {
 	questionRows, err := r.queries.FindGameQuestionsBySessionID(ctx, sessionID)
 	if err != nil {
-		return nil, nil, errors.MapPgError(err)
+		return nil, nil, sharederrors.MapGameRepositoryError(err, "FindQuestionsBySessionID")
 	}
 
 	questions := make([]*domain.GameQuestion, 0, len(questionRows))
@@ -130,7 +134,7 @@ func (r *gameQuestionRepo) FindQuestionsBySessionID(ctx context.Context, session
 
 	optionRows, err := r.queries.FindGameQuestionOptionsByQuestionIDs(ctx, questionIDs)
 	if err != nil {
-		return nil, nil, errors.MapPgError(err)
+		return nil, nil, sharederrors.MapGameRepositoryError(err, "FindQuestionsBySessionID")
 	}
 
 	options := make([]*domain.GameQuestionOption, 0, len(optionRows))
@@ -151,7 +155,7 @@ func (r *gameQuestionRepo) FindQuestionsBySessionID(ctx context.Context, session
 func (r *gameQuestionRepo) FindQuestionByID(ctx context.Context, questionID int64) (*domain.GameQuestion, []*domain.GameQuestionOption, error) {
 	questionRow, err := r.queries.FindGameQuestionByID(ctx, questionID)
 	if err != nil {
-		return nil, nil, errors.MapPgError(err)
+		return nil, nil, sharederrors.MapGameRepositoryError(err, "FindQuestionByID")
 	}
 
 	var sourceSenseID *int64
@@ -175,7 +179,7 @@ func (r *gameQuestionRepo) FindQuestionByID(ctx context.Context, questionID int6
 
 	optionRows, err := r.queries.FindGameQuestionOptionsByQuestionID(ctx, questionID)
 	if err != nil {
-		return nil, nil, errors.MapPgError(err)
+		return nil, nil, sharederrors.MapGameRepositoryError(err, "FindQuestionByID")
 	}
 
 	options := make([]*domain.GameQuestionOption, 0, len(optionRows))

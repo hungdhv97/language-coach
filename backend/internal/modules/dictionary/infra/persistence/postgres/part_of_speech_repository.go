@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/english-coach/backend/internal/modules/dictionary/domain"
-	"github.com/english-coach/backend/internal/shared/errors"
+	sharederrors "github.com/english-coach/backend/internal/shared/errors"
 )
 
 // partOfSpeechRepository implements PartOfSpeechRepository using sqlc
@@ -16,7 +16,7 @@ type partOfSpeechRepository struct {
 func (r *partOfSpeechRepository) FindAll(ctx context.Context) ([]*domain.PartOfSpeech, error) {
 	rows, err := r.queries.FindAllPartsOfSpeech(ctx)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindAll")
 	}
 
 	partsOfSpeech := make([]*domain.PartOfSpeech, 0, len(rows))
@@ -35,7 +35,7 @@ func (r *partOfSpeechRepository) FindAll(ctx context.Context) ([]*domain.PartOfS
 func (r *partOfSpeechRepository) FindByID(ctx context.Context, id int16) (*domain.PartOfSpeech, error) {
 	row, err := r.queries.FindPartOfSpeechByID(ctx, id)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByID")
 	}
 
 	return &domain.PartOfSpeech{
@@ -49,7 +49,7 @@ func (r *partOfSpeechRepository) FindByID(ctx context.Context, id int16) (*domai
 func (r *partOfSpeechRepository) FindByCode(ctx context.Context, code string) (*domain.PartOfSpeech, error) {
 	row, err := r.queries.FindPartOfSpeechByCode(ctx, code)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByCode")
 	}
 
 	return &domain.PartOfSpeech{
@@ -67,7 +67,7 @@ func (r *partOfSpeechRepository) FindByIDs(ctx context.Context, ids []int16) (ma
 
 	rows, err := r.queries.FindPartsOfSpeechByIDs(ctx, ids)
 	if err != nil {
-		return nil, errors.MapPgError(err)
+		return nil, sharederrors.MapDictionaryRepositoryError(err, "FindByIDs")
 	}
 
 	result := make(map[int16]*domain.PartOfSpeech)
