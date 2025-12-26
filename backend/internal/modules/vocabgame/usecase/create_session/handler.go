@@ -174,7 +174,7 @@ func (h *Handler) generateQuestions(
 	selectedWords := h.selectAndShuffleWords(sourceWords, questionCount)
 
 	// Build questions and collect target words
-	questions, allTargetWords, err := h.buildQuestions(ctx, sessionID, selectedWords, sourceLanguageID, targetLanguageID)
+	questions, allTargetWords, sourceWordTranslations, err := h.buildQuestions(ctx, sessionID, selectedWords, sourceLanguageID, targetLanguageID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -183,7 +183,7 @@ func (h *Handler) generateQuestions(
 	}
 
 	// Generate options for each question
-	options, err := h.generateOptions(questions, allTargetWords)
+	options, err := h.generateOptions(questions, allTargetWords, sourceWordTranslations)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -285,9 +285,11 @@ func (h *Handler) buildQuestions(
 	sessionID int64,
 	selectedWords []*dictdomain.Word,
 	sourceLanguageID, targetLanguageID int16,
-) ([]*domain.GameQuestion, map[int64]*dictdomain.Word, error) {
+) ([]*domain.GameQuestion, map[int64]*dictdomain.Word, map[int64][]int64, error) {
 	questions := make([]*domain.GameQuestion, 0, len(selectedWords))
 	allTargetWords := make(map[int64]*dictdomain.Word)
+	// Map từ sourceWordID -> danh sách tất cả translation IDs của nó
+	sourceWordTranslations := make(map[int64][]int64)
 	questionOrder := int16(0)
 	wordsWithoutTranslation := 0
 
@@ -302,7 +304,7 @@ func (h *Handler) buildQuestions(
 				logger.Int64("word_id", sourceWord.ID),
 				logger.Int("target_language_id", int(targetLanguageID)),
 			)
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		if len(translations) == 0 {
 			wordsWithoutTranslation++
@@ -317,10 +319,13 @@ func (h *Handler) buildQuestions(
 		correctWord := translations[0] // Use first translation as correct answer
 		allTargetWords[correctWord.ID] = correctWord
 
-		// Collect other translations for wrong answers
-		for _, trans := range translations[1:] {
+		// Lưu tất cả translation IDs của sourceWord này (bao gồm cả correctWord)
+		translationIDs := make([]int64, len(translations))
+		for i, trans := range translations {
+			translationIDs[i] = trans.ID
 			allTargetWords[trans.ID] = trans
 		}
+		sourceWordTranslations[sourceWord.ID] = translationIDs
 
 		// Increment question order for each successfully created question
 		questionOrder++
@@ -342,16 +347,17 @@ func (h *Handler) buildQuestions(
 	// If all words lack translations, return ErrTranslationNotFound
 	// This is more specific than ErrInsufficientWords
 	if len(questions) == 0 && wordsWithoutTranslation == len(selectedWords) {
-		return nil, nil, domain.ErrTranslationNotFound
+		return nil, nil, nil, domain.ErrTranslationNotFound
 	}
 
-	return questions, allTargetWords, nil
+	return questions, allTargetWords, sourceWordTranslations, nil
 }
 
 // generateOptions generates options (A, B, C, D) for each question
 func (h *Handler) generateOptions(
 	questions []*domain.GameQuestion,
 	allTargetWords map[int64]*dictdomain.Word,
+	sourceWordTranslations map[int64][]int64,
 ) ([]*domain.GameQuestionOption, error) {
 	options := make([]*domain.GameQuestionOption, 0, len(questions)*4)
 
@@ -368,8 +374,16 @@ func (h *Handler) generateOptions(
 			return nil, domain.ErrQuestionNotFound
 		}
 
-		// Get wrong answer candidates
-		wrongCandidates := h.getWrongAnswerCandidates(targetWordList, correctWord.ID)
+		// Get all translations of the source word (to exclude them from wrong answers)
+		excludedWordIDs := make(map[int64]bool)
+		if translationIDs, ok := sourceWordTranslations[question.SourceWordID]; ok {
+			for _, transID := range translationIDs {
+				excludedWordIDs[transID] = true
+			}
+		}
+
+		// Get wrong answer candidates - exclude ALL translations of the source word
+		wrongCandidates := h.getWrongAnswerCandidates(targetWordList, excludedWordIDs)
 
 		// Ensure we have at least 3 wrong candidates
 		if len(wrongCandidates) < 3 {
@@ -387,11 +401,11 @@ func (h *Handler) generateOptions(
 	return options, nil
 }
 
-// getWrongAnswerCandidates gets wrong answer candidates excluding the correct answer
-func (h *Handler) getWrongAnswerCandidates(targetWordList []*dictdomain.Word, correctWordID int64) []*dictdomain.Word {
+// getWrongAnswerCandidates gets wrong answer candidates excluding all translations of the source word
+func (h *Handler) getWrongAnswerCandidates(targetWordList []*dictdomain.Word, excludedWordIDs map[int64]bool) []*dictdomain.Word {
 	wrongCandidates := make([]*dictdomain.Word, 0)
 	for _, word := range targetWordList {
-		if word.ID != correctWordID {
+		if !excludedWordIDs[word.ID] {
 			wrongCandidates = append(wrongCandidates, word)
 		}
 	}
