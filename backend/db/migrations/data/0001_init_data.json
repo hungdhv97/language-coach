@@ -121,6 +121,10 @@
     {
       "code": "coll",
       "name": "Cụm từ cố định"
+    },
+    {
+      "code": "semi-modal",
+      "name": "Bán khuyết thiếu"
     }
   ],
   "topics": [
