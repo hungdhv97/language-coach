@@ -1,0 +1,317 @@
+SYSTEM:
+You are a JSON-only dictionary data generator.
+Output MUST be strictly valid JSON.
+Any text outside JSON is INVALID.
+
+USER:
+Generate dictionary data that strictly conforms to the JSON Schema and rules below.
+
+==================================================
+JSON SCHEMA (STRUCTURE & TYPES)
+==================================================
+{
+  "type": "object",
+  "required": [
+    "language",
+    "lemma",
+    "lemma_normalized",
+    "search_key",
+    "script_code",
+    "frequency_rank",
+    "note",
+    "topics",
+    "pronunciations",
+    "relations",
+    "senses"
+  ],
+  "properties": {
+    "language": {
+      "type": "string",
+      "enum": ["en", "vi", "zh"]
+    },
+    "lemma": { "type": "string" },
+    "lemma_normalized": { "type": "string" },
+    "search_key": { "type": "string" },
+    "romanization": {
+      "type": ["string", "null"]
+    },
+    "script_code": {
+      "type": "string",
+      "enum": ["Latn", "Hani"]
+    },
+    "frequency_rank": {
+      "type": "number"
+    },
+    "note": {
+      "type": "string"
+    },
+    "topics": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "pronunciations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["dialect", "ipa", "phonetic"],
+        "properties": {
+          "dialect": {
+            "type": "string",
+            "enum": ["en-US", "en-UK", "weak_form", "zh-CN"]
+          },
+          "ipa": { "type": "string" },
+          "phonetic": { "type": "string" },
+          "audio_url": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["relation_type", "note", "target_word"],
+        "properties": {
+          "relation_type": {
+            "type": "string",
+            "enum": ["synonym", "related"]
+          },
+          "note": { "type": "string" },
+          "target_word": {
+            "type": "object",
+            "required": [
+              "language",
+              "lemma",
+              "lemma_normalized",
+              "search_key",
+              "script_code",
+              "frequency_rank",
+              "note",
+              "topics"
+            ],
+            "properties": {
+              "language": {
+                "type": "string",
+                "enum": ["en", "vi", "zh"]
+              },
+              "lemma": { "type": "string" },
+              "lemma_normalized": { "type": "string" },
+              "search_key": { "type": "string" },
+              "romanization": {
+                "type": ["string", "null"]
+              },
+              "script_code": {
+                "type": "string",
+                "enum": ["Latn", "Hani"]
+              },
+              "frequency_rank": { "type": "number" },
+              "note": { "type": "string" },
+              "topics": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "senses": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "order",
+          "part_of_speech",
+          "definition_language",
+          "definition",
+          "usage_label",
+          "level",
+          "note",
+          "translations",
+          "examples"
+        ],
+        "properties": {
+          "order": { "type": "number" },
+          "part_of_speech": {
+            "type": "string",
+            "enum": [
+              "n","pn","v","aux","adj","adv","det","prep","conj","prt","intj","num","clf",
+              "propn","modal","phrv","ger","inf","part","det_art","det_pos","det_dem",
+              "det_q","abbr","idiom","phrase","coll","semi-modal"
+            ]
+          },
+          "definition_language": {
+            "type": "string",
+            "enum": ["en","vi","zh"]
+          },
+          "definition": { "type": "string" },
+          "usage_label": {
+            "type": "string",
+            "enum": ["common", "grammar", "informal/common"]
+          },
+          "level": {
+            "type": "string",
+            "enum": ["A1","A2","B1","B2","C1","C2","HSK1","HSK2","HSK3","HSK4","HSK5","HSK6"]
+          },
+          "note": { "type": "string" },
+          "translations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["priority", "note", "target_word"],
+              "properties": {
+                "priority": { "type": "number" },
+                "note": { "type": "string" },
+                "target_word": {
+                  "type": "object",
+                  "required": [
+                    "language",
+                    "lemma",
+                    "lemma_normalized",
+                    "search_key",
+                    "script_code",
+                    "frequency_rank",
+                    "note",
+                    "topics"
+                  ],
+                  "properties": {
+                    "language": {
+                      "type": "string",
+                      "enum": ["en","vi","zh"]
+                    },
+                    "lemma": { "type": "string" },
+                    "lemma_normalized": { "type": "string" },
+                    "search_key": { "type": "string" },
+                    "romanization": {
+                      "type": ["string", "null"]
+                    },
+                    "script_code": {
+                      "type": "string",
+                      "enum": ["Latn","Hani"]
+                    },
+                    "frequency_rank": { "type": "number" },
+                    "note": { "type": "string" },
+                    "topics": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "examples": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["language", "content", "translations"],
+              "properties": {
+                "language": {
+                  "type": "string",
+                  "enum": ["en","vi","zh"]
+                },
+                "content": { "type": "string" },
+                "audio_url": { "type": ["string", "null"] },
+                "translations": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["language", "content"],
+                    "properties": {
+                      "language": {
+                        "type": "string",
+                        "enum": ["en","vi","zh"]
+                      },
+                      "content": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "characters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "char_order",
+          "literal",
+          "simplified",
+          "traditional",
+          "script_code",
+          "strokes",
+          "radical",
+          "level",
+          "readings"
+        ],
+        "properties": {
+          "char_order": { "type": "number" },
+          "literal": { "type": "string" },
+          "simplified": { "type": "string" },
+          "traditional": { "type": "string" },
+          "script_code": {
+            "type": "string",
+            "enum": ["Latn","Hani"]
+          },
+          "strokes": { "type": "number" },
+          "radical": { "type": "string" },
+          "level": { "type": "string" },
+          "readings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["language","reading","reading_type","note"],
+              "properties": {
+                "language": {
+                  "type": "string",
+                  "enum": ["en","vi","zh"]
+                },
+                "reading": { "type": "string" },
+                "reading_type": {
+                  "type": "string",
+                  "enum": ["pinyin","sino-vietnamese"]
+                },
+                "note": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+==================================================
+LOGICAL RULES (NOT EXPRESSIBLE BY JSON SCHEMA)
+==================================================
+- note fields MUST always be Vietnamese
+- frequency_rank: if unknown → use 0
+- romanization:
+  - zh → pinyin with tone marks
+  - en/vi → null
+- script_code:
+  - en/vi → "Latn"
+  - zh → "Hani"
+
+- If language != "zh" → DO NOT include "characters"
+- If usage_label = "grammar" → translations MUST be []
+
+TRANSLATION COUNT RULE:
+- Source language = "en" → translations MUST contain EXACTLY ["vi","zh"]
+- Source language = "vi" → translations MUST contain EXACTLY ["en","zh"]
+- Source language = "zh" → translations MUST contain EXACTLY ["en","vi"]
+
+EXAMPLE TRANSLATION RULE:
+- Each example MUST contain translations to the other 2 languages
+
+==================================================
+INPUT
+==================================================
+Language: en
+Lemma: home
