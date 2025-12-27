@@ -308,10 +308,16 @@ JSON SCHEMA (STRUCTURE & TYPES)
 LOGICAL RULES (NOT EXPRESSIBLE BY JSON SCHEMA)
 ==================================================
 - frequency_rank MUST be an integer from 1 (low frequency) to 10 (high frequency)
+
+- definition_language MUST ALWAYS be "vi"
+- definition MUST ALWAYS be written in Vietnamese
+
 - note fields MUST always be Vietnamese
+
 - romanization:
   - zh → pinyin with tone marks
   - en/vi → null
+
 - script_code:
   - en/vi → "Latn"
   - zh → "Hani"
@@ -319,12 +325,16 @@ LOGICAL RULES (NOT EXPRESSIBLE BY JSON SCHEMA)
 - If language != "zh" → DO NOT include "characters"
 - If usage_label = "grammar" → translations MUST be []
 
-TRANSLATION COUNT RULE:
+==================================================
+TRANSLATION COUNT RULE
+==================================================
 - Source language = "en" → translations MUST contain EXACTLY ["vi","zh"]
 - Source language = "vi" → translations MUST contain EXACTLY ["en","zh"]
 - Source language = "zh" → translations MUST contain EXACTLY ["en","vi"]
 
-EXAMPLE TRANSLATION RULE:
+==================================================
+EXAMPLE TRANSLATION RULE
+==================================================
 - Each example MUST contain translations to the other 2 languages
 
 ==================================================
