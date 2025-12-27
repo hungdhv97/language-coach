@@ -40,7 +40,9 @@ JSON SCHEMA (STRUCTURE & TYPES)
       "enum": ["Latn", "Hani"]
     },
     "frequency_rank": {
-      "type": "number"
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
     },
     "note": {
       "type": "string"
@@ -48,8 +50,21 @@ JSON SCHEMA (STRUCTURE & TYPES)
     "topics": {
       "type": "array",
       "minItems": 1,
-      "items": { "type": "string" }
+      "items": {
+        "type": "string",
+        "enum": [
+          "general","greetings","daily_life","family","education","work","business","travel",
+          "food_and_drink","shopping","health","technology","entertainment","sports","nature",
+          "culture","society","grammar","basic","possession","experience","informal","meeting",
+          "event","activity","auxiliary","perfect","emotion","communication","relationship",
+          "time","place","direction","transportation","housing","finance","banking","law",
+          "politics","science","environment","internet","social_media","email","presentation",
+          "job_interview","customer_service","emergency","weather","numbers","colors",
+          "feelings","opinions"
+        ]
+      }
     },
+
     "pronunciations": {
       "type": "array",
       "minItems": 1,
@@ -67,6 +82,7 @@ JSON SCHEMA (STRUCTURE & TYPES)
         }
       }
     },
+
     "relations": {
       "type": "array",
       "items": {
@@ -105,17 +121,34 @@ JSON SCHEMA (STRUCTURE & TYPES)
                 "type": "string",
                 "enum": ["Latn", "Hani"]
               },
-              "frequency_rank": { "type": "number" },
+              "frequency_rank": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 10
+              },
               "note": { "type": "string" },
               "topics": {
                 "type": "array",
-                "items": { "type": "string" }
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "general","greetings","daily_life","family","education","work","business","travel",
+                    "food_and_drink","shopping","health","technology","entertainment","sports","nature",
+                    "culture","society","grammar","basic","possession","experience","informal","meeting",
+                    "event","activity","auxiliary","perfect","emotion","communication","relationship",
+                    "time","place","direction","transportation","housing","finance","banking","law",
+                    "politics","science","environment","internet","social_media","email","presentation",
+                    "job_interview","customer_service","emergency","weather","numbers","colors",
+                    "feelings","opinions"
+                  ]
+                }
               }
             }
           }
         }
       }
     },
+
     "senses": {
       "type": "array",
       "minItems": 1,
@@ -139,7 +172,7 @@ JSON SCHEMA (STRUCTURE & TYPES)
             "enum": [
               "n","pn","v","aux","adj","adv","det","prep","conj","prt","intj","num","clf",
               "propn","modal","phrv","ger","inf","part","det_art","det_pos","det_dem",
-              "det_q","abbr","idiom","phrase","coll","semi-modal"
+              "det_q","abbr","idiom","phrase","coll","semi_modal"
             ]
           },
           "definition_language": {
@@ -156,6 +189,7 @@ JSON SCHEMA (STRUCTURE & TYPES)
             "enum": ["A1","A2","B1","B2","C1","C2","HSK1","HSK2","HSK3","HSK4","HSK5","HSK6"]
           },
           "note": { "type": "string" },
+
           "translations": {
             "type": "array",
             "items": {
@@ -191,17 +225,34 @@ JSON SCHEMA (STRUCTURE & TYPES)
                       "type": "string",
                       "enum": ["Latn","Hani"]
                     },
-                    "frequency_rank": { "type": "number" },
+                    "frequency_rank": {
+                      "type": "number",
+                      "minimum": 1,
+                      "maximum": 10
+                    },
                     "note": { "type": "string" },
                     "topics": {
                       "type": "array",
-                      "items": { "type": "string" }
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "general","greetings","daily_life","family","education","work","business","travel",
+                          "food_and_drink","shopping","health","technology","entertainment","sports","nature",
+                          "culture","society","grammar","basic","possession","experience","informal","meeting",
+                          "event","activity","auxiliary","perfect","emotion","communication","relationship",
+                          "time","place","direction","transportation","housing","finance","banking","law",
+                          "politics","science","environment","internet","social_media","email","presentation",
+                          "job_interview","customer_service","emergency","weather","numbers","colors",
+                          "feelings","opinions"
+                        ]
+                      }
                     }
                   }
                 }
               }
             }
           },
+
           "examples": {
             "type": "array",
             "minItems": 1,
@@ -235,54 +286,9 @@ JSON SCHEMA (STRUCTURE & TYPES)
         }
       }
     },
+
     "characters": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": [
-          "char_order",
-          "literal",
-          "simplified",
-          "traditional",
-          "script_code",
-          "strokes",
-          "radical",
-          "level",
-          "readings"
-        ],
-        "properties": {
-          "char_order": { "type": "number" },
-          "literal": { "type": "string" },
-          "simplified": { "type": "string" },
-          "traditional": { "type": "string" },
-          "script_code": {
-            "type": "string",
-            "enum": ["Latn","Hani"]
-          },
-          "strokes": { "type": "number" },
-          "radical": { "type": "string" },
-          "level": { "type": "string" },
-          "readings": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": ["language","reading","reading_type","note"],
-              "properties": {
-                "language": {
-                  "type": "string",
-                  "enum": ["en","vi","zh"]
-                },
-                "reading": { "type": "string" },
-                "reading_type": {
-                  "type": "string",
-                  "enum": ["pinyin","sino-vietnamese"]
-                },
-                "note": { "type": "string" }
-              }
-            }
-          }
-        }
-      }
+      "type": "array"
     }
   }
 }
@@ -290,8 +296,8 @@ JSON SCHEMA (STRUCTURE & TYPES)
 ==================================================
 LOGICAL RULES (NOT EXPRESSIBLE BY JSON SCHEMA)
 ==================================================
-- note fields MUST always be Vietnamese
-- frequency_rank: if unknown → use 0
+- frequency_rank MUST be an integer from 1 (low frequency) to 10 (high frequency)
+- note fields MUST always be Vietnamese ("Không có" if empty)
 - romanization:
   - zh → pinyin with tone marks
   - en/vi → null
