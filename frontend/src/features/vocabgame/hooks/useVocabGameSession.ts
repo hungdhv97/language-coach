@@ -2,7 +2,7 @@
  * Hook for managing vocabgame session state
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { vocabGameMutations } from '../api/vocabgame.mutations';
 import type { SubmitAnswerRequest, VocabGameAnswer } from '@/entities/vocabgame/model/vocabgame.types';
 
@@ -12,7 +12,7 @@ export interface UseVocabGameSessionOptions {
   onAllQuestionsAnswered?: () => void;
 }
 
-export function useVocabGameSession({ sessionId, onAnswerSubmitted, onAllQuestionsAnswered }: UseVocabGameSessionOptions) {
+export function useVocabGameSession({ sessionId, onAnswerSubmitted }: UseVocabGameSessionOptions) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Map<number, VocabGameAnswer>>(new Map());
   const [responseStartTime, setResponseStartTime] = useState<number | null>(null);

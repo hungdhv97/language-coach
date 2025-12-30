@@ -14,6 +14,11 @@ export default defineConfig({
   server: {
     host: '0.0.0.0', // Allow external connections (Docker)
     port: 5173,
+    allowedHosts: [
+      'app.lexigo.io.vn',
+      'localhost',
+      '.lexigo.io.vn', // Allow all subdomains
+    ],
     watch: {
       usePolling: true, // Required for HMR in Docker
     },

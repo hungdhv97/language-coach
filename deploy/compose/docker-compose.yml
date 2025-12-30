@@ -1,7 +1,15 @@
 # Docker Compose file for Language Coach application
 # Uses variable substitution for environment-specific configuration
-# Set ENV variable (e.g., dev, staging, prod) before running docker compose commands
-# Example: ENV=dev docker compose up
+# 
+# For Development:
+#   ENV=dev docker compose --profile dev up -d
+#
+# For Production:
+#   ENV=prod docker compose --profile prod up -d
+#
+# The file automatically selects the correct Dockerfile and env files based on ENV:
+# - ENV=dev → Dockerfile.dev (with volumes for live reload)
+# - ENV=prod → Dockerfile.prod (without volumes, code baked into image)
 
 services:
   postgres:
@@ -41,14 +49,15 @@ services:
   backend:
     build:
       context: ../..
-      dockerfile: deploy/docker/backend/${BACKEND_DOCKERFILE:-Dockerfile}
+      dockerfile: deploy/docker/backend/Dockerfile.${ENV:-dev}
     container_name: language-coach-backend
     ports:
       - "9090:8080"
     env_file:
       - ../env/${ENV:-dev}/backend.env
     volumes:
-      # Mount backend source code for live reload in dev
+      # Mount backend source code for live reload in dev only
+      # In production (Dockerfile.prod), volumes are not used (code is baked into image)
       - ../../backend:/app
     depends_on:
       postgres:
@@ -63,14 +72,19 @@ services:
   frontend:
     build:
       context: ../..
-      dockerfile: deploy/docker/frontend/${FRONTEND_DOCKERFILE:-Dockerfile.dev}
+      dockerfile: deploy/docker/frontend/Dockerfile.${ENV:-dev}
+      args:
+        # Pass VITE_API_BASE_URL as build arg for production build
+        # This is read from the environment variable set before running docker compose
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
     container_name: language-coach-frontend
     ports:
       - "5173:5173"
     env_file:
       - ../env/${ENV:-dev}/frontend.env
     volumes:
-      # Mount source code for HMR (Hot Module Replacement)
+      # Mount source code for HMR (Hot Module Replacement) in dev only
+      # In production (Dockerfile.prod), volumes are not used (code is baked into image)
       - ../../frontend/src:/app/src
       - ../../frontend/public:/app/public
     depends_on:

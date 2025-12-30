@@ -61,7 +61,10 @@ export default function RegisterPage() {
   // Check username availability
   const { data: usernameCheck } = useQuery({
     queryKey: ['checkUsername', debouncedUsername],
-    queryFn: () => userEndpoints.checkUsernameAvailability(debouncedUsername),
+    queryFn: () => {
+      if (!debouncedUsername) throw new Error('Username is required');
+      return userEndpoints.checkUsernameAvailability(debouncedUsername);
+    },
     enabled: !!debouncedUsername && debouncedUsername.length >= 3,
     retry: false,
   });
@@ -69,7 +72,10 @@ export default function RegisterPage() {
   // Check email availability
   const { data: emailCheck } = useQuery({
     queryKey: ['checkEmail', debouncedEmail],
-    queryFn: () => userEndpoints.checkEmailAvailability(debouncedEmail),
+    queryFn: () => {
+      if (!debouncedEmail) throw new Error('Email is required');
+      return userEndpoints.checkEmailAvailability(debouncedEmail);
+    },
     enabled: !!debouncedEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(debouncedEmail),
     retry: false,
   });

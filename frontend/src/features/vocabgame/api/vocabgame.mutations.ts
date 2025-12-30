@@ -20,7 +20,7 @@ export const vocabGameMutations = {
 
     return useMutation<VocabGameSession, Error, CreateVocabGameSessionRequest>({
       mutationFn: vocabGameEndpoints.createSession,
-      onSuccess: (data) => {
+      onSuccess: () => {
         // Invalidate vocabgame session queries if needed
         queryClient.invalidateQueries({ queryKey: ['vocabgame', 'sessions'] });
       },

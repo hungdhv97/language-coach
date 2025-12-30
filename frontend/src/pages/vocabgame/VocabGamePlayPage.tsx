@@ -3,7 +3,7 @@
  * Displays questions and handles game play flow
  */
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { vocabGameQueries } from '@/features/vocabgame/api/vocabgame.queries';
 import { useVocabGameSession } from '@/features/vocabgame/hooks/useVocabGameSession';

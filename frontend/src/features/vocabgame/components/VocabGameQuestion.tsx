@@ -22,8 +22,7 @@ export default function VocabGameQuestion({
   onAnswerSelect,
   isSubmitting = false,
   selectedOptionId,
-  totalQuestions,
-}: GameQuestionProps) {
+}: VocabGameQuestionProps) {
   const [localSelected, setLocalSelected] = useState<number | null>(selectedOptionId || null);
 
   useEffect(() => {
