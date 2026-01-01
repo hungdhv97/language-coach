@@ -10,7 +10,7 @@ server:
   shutdown_timeout: 10s
 
 database:
-  host: localhost
+  host: postgres
   port: 5432
   user: postgres
   password: postgres
@@ -31,6 +31,6 @@ logging:
 cors:
   allowed_origins:
     - http://localhost:3000
-    - http://localhost:5173
+    - http://localhost:5172
 
 

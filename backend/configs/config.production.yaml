@@ -10,12 +10,12 @@ server:
   shutdown_timeout: 10s
 
 database:
-  host: prod-db-host
+  host: postgres
   port: 5432
-  user: lexigo
-  password: change-me
+  user: postgres
+  password: postgres
   database: lexigo
-  sslmode: require
+  sslmode: disable
   max_conns: 50
   min_conns: 10
   max_conn_lifetime: 30m
