@@ -14,7 +14,6 @@ NC='\033[0m' # No Color
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-COMPOSE_FILE="$PROJECT_ROOT/deploy/compose/docker-compose.yml"
 
 # Get environment from argument (default to dev)
 ENV="${1:-dev}"
@@ -28,6 +27,9 @@ if [ "$ENV" != "dev" ] && [ "$ENV" != "prod" ]; then
     echo "  $0 prod   # Start production environment"
     exit 1
 fi
+
+# Set compose file based on environment
+COMPOSE_FILE="$PROJECT_ROOT/deploy/compose/docker-compose.${ENV}.yml"
 
 # Set environment display names
 if [ "$ENV" = "dev" ]; then
@@ -64,28 +66,17 @@ if [ ! -f "$COMPOSE_FILE" ]; then
     exit 1
 fi
 
-# Load docker-compose environment variables
+# Load docker-compose environment variables (for COMPOSE_PROJECT_NAME if needed)
 ENV_FILE="$PROJECT_ROOT/deploy/env/${ENV}/docker-compose.env"
-if [ ! -f "$ENV_FILE" ]; then
-    echo -e "${RED}❌ Error: Docker compose env file not found at $ENV_FILE${NC}"
-    exit 1
+if [ -f "$ENV_FILE" ]; then
+    # Load environment variables from docker-compose.env
+    set -a  # automatically export all variables
+    source "$ENV_FILE"
+    set +a
 fi
 
-# Load environment variables from docker-compose.env
-set -a  # automatically export all variables
-source "$ENV_FILE"
-set +a
+# Start services
+echo -e "${YELLOW}📦 Starting services for ${ENV} environment...${NC}"
 
-# Start services with specified profile
-echo -e "${YELLOW}📦 Starting services with ${ENV} profile...${NC}"
-
-# Set environment variables for docker-compose
-export ENV=$ENV
-
-# Set BACKEND_DOCKERFILE for dev environment (used in build process)
-if [ "$ENV" = "dev" ]; then
-    export BACKEND_DOCKERFILE="Dockerfile.dev"
-fi
-
-$DOCKER_COMPOSE -f "$COMPOSE_FILE" --profile "$ENV" up --build -d
+$DOCKER_COMPOSE -f "$COMPOSE_FILE" up --build -d
 

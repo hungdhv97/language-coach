@@ -6,8 +6,8 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: lexigo
     ports:
-      # Dev: 5500, Prod: 5501
-      - "${POSTGRES_PORT:-5500}:5432"
+      # Prod: 5500 -> 5432 (standard PostgreSQL port inside container)
+      - "5500:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -17,14 +17,12 @@ services:
       retries: 5
     networks:
       - lexigo-network
-    profiles:
-      - ${ENV:-dev}
 
   redis:
     image: redis:8.4-alpine
     ports:
-      # Dev: 6379, Prod: 6380
-      - "${REDIS_PORT:-6379}:6379"
+      # Prod: 6379 -> 6379 (standard Redis port inside container)
+      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -34,18 +32,16 @@ services:
       retries: 5
     networks:
       - lexigo-network
-    profiles:
-      - ${ENV:-dev}
 
   backend:
     build:
       context: ../..
-      dockerfile: deploy/docker/backend/Dockerfile.${ENV:-dev}
+      dockerfile: deploy/docker/backend/Dockerfile.prod
     ports:
-      # Dev: 9090, Prod: 9091
-      - "${BACKEND_PORT:-9090}:8080"
+      # Prod: 9090 -> 8080 (standard backend port inside container)
+      - "9090:8080"
     env_file:
-      - ../env/${ENV:-dev}/backend.env
+      - ../env/prod/backend.env
     volumes:
       - ../../backend:/app
     depends_on:
@@ -55,20 +51,18 @@ services:
         condition: service_healthy
     networks:
       - lexigo-network
-    profiles:
-      - ${ENV:-dev}
 
   frontend:
     build:
       context: ../..
-      dockerfile: deploy/docker/frontend/Dockerfile.${ENV:-dev}
+      dockerfile: deploy/docker/frontend/Dockerfile.prod
       args:
-        ENV: ${ENV:-dev}
+        ENV: prod
     ports:
-      # Dev: 5173, Prod: 5174
-      - "${FRONTEND_PORT:-5173}:5173"
+      # Prod: 5173 -> 5173 (standard frontend port inside container)
+      - "5173:5173"
     env_file:
-      - ../env/${ENV:-dev}/frontend.env
+      - ../env/prod/frontend.env
     volumes:
       - ../../frontend/src:/app/src
       - ../../frontend/public:/app/public
@@ -76,8 +70,6 @@ services:
       - backend
     networks:
       - lexigo-network
-    profiles:
-      - ${ENV:-dev}
 
 volumes:
   postgres_data:
@@ -86,3 +78,4 @@ volumes:
 networks:
   lexigo-network:
     driver: bridge
+

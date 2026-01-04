@@ -24,4 +24,5 @@
 │       ├── grafana.env
 │       └── prometheus.env
 └── compose/
-    └── docker-compose.yml   (UseControl the env using profiles + env_file separated by env)
+    ├── docker-compose.dev.yml   (Development environment with port mappings)
+    └── docker-compose.prod.yml  (Production environment with port mappings)

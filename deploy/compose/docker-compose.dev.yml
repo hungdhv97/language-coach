@@ -1,0 +1,81 @@
+services:
+  postgres:
+    image: postgres:18.1-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: lexigo
+    ports:
+      # Dev: 5499 -> 5432 (standard PostgreSQL port inside container)
+      - "5499:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lexigo-network
+
+  redis:
+    image: redis:8.4-alpine
+    ports:
+      # Dev: 6378 -> 6379 (standard Redis port inside container)
+      - "6378:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lexigo-network
+
+  backend:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/backend/Dockerfile.dev
+    ports:
+      # Dev: 9089 -> 8080 (standard backend port inside container)
+      - "9089:8080"
+    env_file:
+      - ../env/dev/backend.env
+    volumes:
+      - ../../backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lexigo-network
+
+  frontend:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/frontend/Dockerfile.dev
+      args:
+        ENV: dev
+    ports:
+      # Dev: 5172 -> 5173 (standard frontend port inside container)
+      - "5172:5173"
+    env_file:
+      - ../env/dev/frontend.env
+    volumes:
+      - ../../frontend/src:/app/src
+      - ../../frontend/public:/app/public
+    depends_on:
+      - backend
+    networks:
+      - lexigo-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  lexigo-network:
+    driver: bridge
+
