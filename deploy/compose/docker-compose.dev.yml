@@ -1,45 +1,47 @@
+name: lexigo-dev
+
 services:
   postgres:
+    container_name: lexigo-dev-postgres
     image: postgres:18.1-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: lexigo
     ports:
-      # Dev: 5499 -> 5432 (standard PostgreSQL port inside container)
-      - "5499:5432"
+      - "5500:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_dev:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - lexigo-network
+      - lexigo-network-dev
 
   redis:
+    container_name: lexigo-dev-redis
     image: redis:8.4-alpine
     ports:
-      # Dev: 6378 -> 6379 (standard Redis port inside container)
-      - "6378:6379"
+      - "6600:6379"
     volumes:
-      - redis_data:/data
+      - redis_data_dev:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - lexigo-network
+      - lexigo-network-dev
 
   backend:
+    container_name: lexigo-dev-backend
     build:
       context: ../..
       dockerfile: deploy/docker/backend/Dockerfile.dev
     ports:
-      # Dev: 9089 -> 8080 (standard backend port inside container)
-      - "9089:8080"
+      - "8800:8080"
     env_file:
       - ../env/dev/backend.env
     volumes:
@@ -50,17 +52,17 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - lexigo-network
+      - lexigo-network-dev
 
   frontend:
+    container_name: lexigo-dev-frontend
     build:
       context: ../..
       dockerfile: deploy/docker/frontend/Dockerfile.dev
       args:
         ENV: dev
     ports:
-      # Dev: 5172 -> 5173 (standard frontend port inside container)
-      - "5172:5173"
+      - "3300:5173"
     env_file:
       - ../env/dev/frontend.env
     volumes:
@@ -69,13 +71,13 @@ services:
     depends_on:
       - backend
     networks:
-      - lexigo-network
+      - lexigo-network-dev
 
 volumes:
-  postgres_data:
-  redis_data:
+  postgres_data_dev:
+  redis_data_dev:
 
 networks:
-  lexigo-network:
+  lexigo-network-dev:
     driver: bridge
 

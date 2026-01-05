@@ -1,45 +1,47 @@
+name: lexigo-prod
+
 services:
   postgres:
+    container_name: lexigo-prod-postgres
     image: postgres:18.1-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: lexigo
     ports:
-      # Prod: 5500 -> 5432 (standard PostgreSQL port inside container)
-      - "5500:5432"
+      - "5501:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_prod:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - lexigo-network
+      - lexigo-network-prod
 
   redis:
+    container_name: lexigo-prod-redis
     image: redis:8.4-alpine
     ports:
-      # Prod: 6379 -> 6379 (standard Redis port inside container)
-      - "6379:6379"
+      - "6601:6379"
     volumes:
-      - redis_data:/data
+      - redis_data_prod:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - lexigo-network
+      - lexigo-network-prod
 
   backend:
+    container_name: lexigo-prod-backend
     build:
       context: ../..
       dockerfile: deploy/docker/backend/Dockerfile.prod
     ports:
-      # Prod: 9090 -> 8080 (standard backend port inside container)
-      - "9090:8080"
+      - "8801:8080"
     env_file:
       - ../env/prod/backend.env
     volumes:
@@ -50,17 +52,17 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - lexigo-network
+      - lexigo-network-prod
 
   frontend:
+    container_name: lexigo-prod-frontend
     build:
       context: ../..
       dockerfile: deploy/docker/frontend/Dockerfile.prod
       args:
         ENV: prod
     ports:
-      # Prod: 5173 -> 5173 (standard frontend port inside container)
-      - "5173:5173"
+      - "3301:80"
     env_file:
       - ../env/prod/frontend.env
     volumes:
@@ -69,13 +71,13 @@ services:
     depends_on:
       - backend
     networks:
-      - lexigo-network
+      - lexigo-network-prod
 
 volumes:
-  postgres_data:
-  redis_data:
+  postgres_data_prod:
+  redis_data_prod:
 
 networks:
-  lexigo-network:
+  lexigo-network-prod:
     driver: bridge
 
