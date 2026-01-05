@@ -150,7 +150,7 @@ func setDefaults() {
 	viper.SetDefault("logging.level", "info")
 
 	// CORS defaults
-	viper.SetDefault("cors.allowed_origins", []string{"http://localhost:3000", "http://localhost:5173"})
+	viper.SetDefault("cors.allowed_origins", []string{"http://localhost:3000", "http://localhost:3300"})
 
 	// Environment variable mappings
 	// Viper automatically maps environment variables, but we need to set up the key replacer

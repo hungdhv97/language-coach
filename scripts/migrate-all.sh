@@ -67,7 +67,8 @@ show_help() {
     echo "  $0 dev --data-init --data-word-en      # Init + English words for dev"
     echo ""
     echo "Note:"
-    echo "  Database connection is configured from deploy/env/{ENV}/backend.env and docker-compose.env"
+    echo "  Database connection is configured from deploy/env/{ENV}/backend.env"
+    echo "  PostgreSQL port is mapped from docker-compose.{ENV}.yml (dev: 5500, prod: 5501)"
     echo "  DATABASE_URL env var can override the default connection"
     echo ""
 }
@@ -127,28 +128,29 @@ if [ "$ENV" != "dev" ] && [ "$ENV" != "prod" ]; then
 fi
 
 # Load environment configuration files
-COMPOSE_ENV_FILE="$PROJECT_ROOT/deploy/env/${ENV}/docker-compose.env"
 BACKEND_ENV_FILE="$PROJECT_ROOT/deploy/env/${ENV}/backend.env"
-
-if [ ! -f "$COMPOSE_ENV_FILE" ]; then
-    echo -e "${RED}❌ Error: Docker compose env file not found at $COMPOSE_ENV_FILE${NC}"
-    exit 1
-fi
 
 if [ ! -f "$BACKEND_ENV_FILE" ]; then
     echo -e "${RED}❌ Error: Backend env file not found at $BACKEND_ENV_FILE${NC}"
     exit 1
 fi
 
-# Load environment variables from docker-compose.env and backend.env
+# Load environment variables from backend.env
 set -a  # automatically export all variables
-source "$COMPOSE_ENV_FILE"
 source "$BACKEND_ENV_FILE"
 set +a
 
+# Set PostgreSQL host port based on environment
+# These ports match docker-compose.{env}.yml port mappings
+if [ "$ENV" = "dev" ]; then
+    POSTGRES_PORT=5500
+elif [ "$ENV" = "prod" ]; then
+    POSTGRES_PORT=5501
+fi
+
 # Build DATABASE_URL from environment variables if not already set
 if [ -z "$DATABASE_URL" ]; then
-    # Use POSTGRES_PORT from docker-compose.env (host port)
+    # Use POSTGRES_PORT (host port from docker-compose)
     # Use DB_USER, DB_PASSWORD, DB_NAME, DB_SSLMODE from backend.env
     # Host is localhost because script runs on host machine
     export DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@localhost:${POSTGRES_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}"

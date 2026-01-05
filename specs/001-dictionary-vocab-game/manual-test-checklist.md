@@ -6,8 +6,8 @@
 
 ## Test Environment Setup
 
-- [x] Backend API running on `http://localhost:9090`
-- [x] Frontend running on `http://localhost:5173`
+- [x] Backend API running on `http://localhost:8800`
+- [x] Frontend running on `http://localhost:3300`
 - [x] Database connected and migrations applied
 - [x] Sample data loaded (languages, words, topics, levels)
 
@@ -19,7 +19,7 @@
 
 ### Test Steps
 
-1. [x] Navigate to `http://localhost:5173/`
+1. [x] Navigate to `http://localhost:3300/`
 2. [x] Verify landing page displays with title "LexiGo"
 3. [x] Verify "Play Game" button is visible and clickable
 4. [x] Verify "Dictionary Lookup" button is visible and clickable

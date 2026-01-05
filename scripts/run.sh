@@ -66,14 +66,8 @@ if [ ! -f "$COMPOSE_FILE" ]; then
     exit 1
 fi
 
-# Load docker-compose environment variables (for COMPOSE_PROJECT_NAME if needed)
-ENV_FILE="$PROJECT_ROOT/deploy/env/${ENV}/docker-compose.env"
-if [ -f "$ENV_FILE" ]; then
-    # Load environment variables from docker-compose.env
-    set -a  # automatically export all variables
-    source "$ENV_FILE"
-    set +a
-fi
+# Note: docker-compose.yml files now use 'name' field for project name
+# No need to load docker-compose.env anymore
 
 # Start services
 echo -e "${YELLOW}📦 Starting services for ${ENV} environment...${NC}"

@@ -102,7 +102,7 @@ npm run dev
 yarn dev
 ```
 
-The frontend should be running on `http://localhost:5173` (default Vite port).
+The frontend should be running on `http://localhost:3300` (Docker dev port).
 
 ## Docker Setup (Alternative)
 
@@ -144,7 +144,7 @@ curl http://localhost:8080/api/v1/reference/languages
 
 ### 2. Test Frontend
 
-1. Open `http://localhost:5173` in your browser
+1. Open `http://localhost:3300` in your browser
 2. You should see the landing page with "Play Game" and "Dictionary Lookup" buttons
 
 ### 3. Test Database Connection

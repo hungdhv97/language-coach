@@ -15,7 +15,7 @@ info:
     name: LexiGo Team
 
 servers:
-  - url: http://localhost:9090/api/v1
+  - url: http://localhost:8800/api/v1
     description: Local development server
   - url: https://api.staging.example.com/api/v1
     description: Staging server
