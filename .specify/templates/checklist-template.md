@@ -1,6 +1,6 @@
 # [CHECKLIST TYPE] Checklist: [FEATURE NAME]
 
-**Purpose**: [Brief description of what this checklist covers, e.g., \"Release readiness checklist for feature X\"]
+**Purpose**: [Brief description of what this checklist covers]
 **Created**: [DATE]
 **Feature**: [Link to spec.md or relevant documentation]
 
@@ -22,15 +22,15 @@
 
 ## [Category 1]
 
-- [ ] CHK001 Code quality & consistency items completed (lint/build clean, no unexplained `any`, no magic values)
-- [ ] CHK002 Error handling & logging verified (central handler used, error schema respected, logs include key context)
-- [ ] CHK003 Security basics reviewed for this change (auth, RBAC, validation, secrets, common vulnerabilities)
+- [ ] CHK001 First checklist item with clear action
+- [ ] CHK002 Second checklist item
+- [ ] CHK003 Third checklist item
 
 ## [Category 2]
 
-- [ ] CHK004 Manual test cases executed for all P1 user journeys
-- [ ] CHK005 Manual smoke tests executed for login/registration/payment/core CRUD (if impacted)
-- [ ] CHK006 Documentation/UX updated where necessary (specs, quickstart, user-facing flows)
+- [ ] CHK004 Another category item
+- [ ] CHK005 Item with specific criteria
+- [ ] CHK006 Final item in this category
 
 ## Notes
 

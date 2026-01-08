@@ -7,6 +7,9 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
+> Repo policy: describe "testing" as acceptance scenarios + manual verification.
+> Do not write **unit test** code; if automated tests are needed (contract/integration/e2e) must clearly state exception in plan.
+
 <!--
   IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
   Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
@@ -26,7 +29,7 @@
 
 **Why this priority**: [Explain the value and why it has this priority level]
 
-**Independent Test**: [Describe how this can be tested independently - e.g., "Can be fully tested by [specific action] and delivers [specific value]". Favor concrete manual test steps, as manual testing is the primary quality gate.]
+**Independent Verification**: [Describe how this can be verified independently - e.g., "Can be verified by [specific action] and delivers [specific value]"]
 
 **Acceptance Scenarios**:
 
@@ -41,7 +44,7 @@
 
 **Why this priority**: [Explain the value and why it has this priority level]
 
-**Independent Test**: [Describe how this can be tested independently]
+**Independent Verification**: [Describe how this can be verified independently]
 
 **Acceptance Scenarios**:
 
@@ -55,7 +58,7 @@
 
 **Why this priority**: [Explain the value and why it has this priority level]
 
-**Independent Test**: [Describe how this can be tested independently]
+**Independent Verification**: [Describe how this can be verified independently]
 
 **Acceptance Scenarios**:
 
@@ -74,7 +77,6 @@
 
 - What happens when [boundary condition]?
 - How does system handle [error scenario]?
- - How are error responses surfaced to the user while keeping UX clear and consistent?
 
 ## Requirements *(mandatory)*
 
@@ -90,10 +92,8 @@
 - **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
 - **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
 - **FR-005**: System MUST [behavior, e.g., "log all security events"]
-- **FR-006**: All external inputs (body, query, params, headers) MUST be validated (e.g., via Zod or equivalent) before business logic executes.
-- **FR-007**: All errors exposed via API MUST follow the shared error schema (e.g., `{ code, message, details? }`).
 
-*Example of marking unclear requirements (use this pattern to keep contracts explicit):*
+*Example of marking unclear requirements:*
 
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
@@ -114,6 +114,5 @@
 
 - **SC-001**: [Measurable metric, e.g., "Users can complete account creation in under 2 minutes"]
 - **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
-- **SC-003**: [User satisfaction/UX metric, e.g., "90% of users successfully complete primary task on first attempt without confusion"]
+- **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
 - **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
-- **SC-005**: [Quality metric, e.g., "All P1 user journeys have documented manual test steps and pass smoke tests before release"]

@@ -3,7 +3,8 @@
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
 **Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
 
-**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
+**Note**: This template is filled in by the `/speckit.plan` command. This repo does not have
+`.specify/templates/commands/` — workflows are in `.specify/scripts/` (bash/powershell).
 
 ## Summary
 
@@ -20,7 +21,7 @@
 **Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
 **Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
 **Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
+**Testing**: [no unit tests (repo policy); manual verification checklist + contract docs validation]  
 **Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
 **Project Type**: [single/web/mobile - determines source structure]  
 **Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
@@ -31,30 +32,14 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-For this feature, explicitly state how it complies with the project constitution
-across the following areas (add concrete, testable bullets for each):
-
-- **Code Quality & Consistency**: Linting/formatting tools, naming, avoidance of
-  magic values, adherence to clean architecture boundaries.
-- **Type Safety**: Types for data models and API contracts, avoidance of `any`
-  (or equivalent), shared types between frontend/backend when applicable.
-- **Error Handling & Observability**: Unified error schema, use of centralized
-  error-handling layers, logging context (request IDs, key inputs, stack traces),
-  and any metrics/tracing for critical flows.
-- **API Design & Separation of Concerns**: Spec-first API design (OpenAPI or
-  equivalent), controllers as orchestrators only, domain logic in services/use
-  cases, infrastructure adapters for DB/cache/mq.
-- **Security**: Authentication mechanism, RBAC approach, input validation (Zod or
-  equivalent), protection against XSS/SQL injection/CSRF, rate limiting for
-  sensitive endpoints, and secret management.
-- **Performance & Scalability**: Pagination/streaming for large responses,
-  stateless service design where possible, key database indexes, and basic FE/BE
-  performance considerations.
-- **Manual Testing Discipline**: Planned manual test scenarios (happy paths and
-  failure cases) and smoke tests for critical flows before release.
-- **Documentation & UX**: Required spec/docs updates, quickstart/onboarding
-  implications, and how the feature respects the shared design system and UX
-  consistency requirements.
+- [ ] Comply with `STRUCTURE.md` in correct directory (no arbitrary large restructuring)
+- [ ] If API changes: update OpenAPI `backend/docs/openapi/**` + status code + error code + examples
+- [ ] Standard error shape `{code,message,details?}` and `X-Request-ID` header described in contract
+- [ ] No unit tests added; manual test checklist/verification for each user story
+- [ ] Frontend: shadcn/ui with current API, has loading/empty/error + basic a11y
+- [ ] Backend: gofmt + validate input + context/timeouts + structured logging (request_id)
+- [ ] Env vars changed → update `deploy/env/example/*.env`
+- [ ] Lint/format/build runs successfully (no tests required)
 
 ## Project Structure
 
@@ -72,46 +57,26 @@ specs/[###-feature]/
 
 ### Source Code (repository root)
 <!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
+  ACTION REQUIRED: Use the repo's actual layout and place new code in the correct
+  module per STRUCTURE.md (frontend/STRUCTURE.md, backend/STRUCTURE.md, etc.).
 -->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
-
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
 backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
+  # Go REST/JSON API (see backend/STRUCTURE.md)
 
 frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
+  # Vite + TypeScript app (see frontend/STRUCTURE.md)
 
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
+deploy/
+  # docker/compose + env examples (see deploy/STRUCTURE.md)
 
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+scripts/
+ops/
+.github/
+
+specs/
+  # feature specs/plans/contracts/checklists
 ```
 
 **Structure Decision**: [Document the selected structure and reference the real
