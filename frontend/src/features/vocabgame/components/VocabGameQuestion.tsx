@@ -60,8 +60,9 @@ export default function VocabGameQuestion({
               key={option.id}
               variant={isSelected ? 'default' : 'outline'}
               className={cn(
-                'w-full h-auto py-6 justify-start text-left',
-                isSelected && 'bg-primary text-primary-foreground',
+                'w-full h-auto py-6 justify-start text-left border',
+                isSelected && 'bg-primary text-primary-foreground border-primary',
+                !isSelected && 'border-input',
                 isDisabled && 'cursor-not-allowed opacity-50'
               )}
               onClick={() => handleOptionClick(option.id)}

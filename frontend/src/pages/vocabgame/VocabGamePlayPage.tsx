@@ -208,13 +208,6 @@ export default function GamePlayPage() {
           </CardContent>
         </Card>
 
-        {isSubmitting && (
-          <Alert>
-            <Spinner className="h-4 w-4" />
-            <AlertDescription>Đang gửi câu trả lời...</AlertDescription>
-          </Alert>
-        )}
-
         <VocabGameQuestion
           question={currentQuestion}
           onAnswerSelect={handleAnswerSelect}
