@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react';
+import { AlertCircle, ChevronRight, ChevronLeft, Search, X } from 'lucide-react';
 
 type Step = 'languages' | 'level' | 'topics';
 
@@ -32,7 +32,9 @@ export default function GameConfigPage() {
   
   // Step 3: Topics
   const [selectedTopicIds, setSelectedTopicIds] = useState<Set<number>>(new Set());
-  const [isAllTopicsSelected, setIsAllTopicsSelected] = useState(true);
+  const [isAllTopicsSelected, setIsAllTopicsSelected] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterMode, setFilterMode] = useState<'all' | 'selected' | 'unselected'>('all');
   
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -103,6 +105,17 @@ export default function GameConfigPage() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const validateTopics = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!isAllTopicsSelected && selectedTopicIds.size === 0) {
+      newErrors.topics = 'Vui lòng chọn ít nhất một chủ đề';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   // Handle step navigation
   const handleNextStep = (e?: React.MouseEvent<HTMLButtonElement>) => {
     e?.preventDefault();
@@ -117,6 +130,10 @@ export default function GameConfigPage() {
       if (validateLevel()) {
         setCurrentStep('topics');
         setErrors({});
+      }
+    } else if (currentStep === 'topics') {
+      if (validateTopics()) {
+        // Validation passed, will be handled by handleSubmit
       }
     }
   };
@@ -135,47 +152,55 @@ export default function GameConfigPage() {
   const handleTopicToggle = (topicId: number) => {
     const newSelected = new Set(selectedTopicIds);
     
-    if (topicId === -1) {
-      // "All" chip clicked
-      if (isAllTopicsSelected) {
-        // Deselect all
-        setIsAllTopicsSelected(false);
-        setSelectedTopicIds(new Set());
-      } else {
-        // Select all
-        setIsAllTopicsSelected(true);
-        setSelectedTopicIds(new Set());
-      }
+    if (newSelected.has(topicId)) {
+      newSelected.delete(topicId);
     } else {
-      // Specific topic clicked
-      if (newSelected.has(topicId)) {
-        newSelected.delete(topicId);
-      } else {
-        newSelected.add(topicId);
-      }
-      
-      // If any specific topic is selected, unselect "all"
-      if (newSelected.size > 0) {
-        setIsAllTopicsSelected(false);
-      }
-      
-      // If all topics are selected, set "all" as selected
-      if (newSelected.size === topics.length) {
-        setIsAllTopicsSelected(true);
-        setSelectedTopicIds(new Set());
-      } else {
-        setSelectedTopicIds(newSelected);
-      }
+      newSelected.add(topicId);
     }
+    
+    setSelectedTopicIds(newSelected);
+    setIsAllTopicsSelected(false);
   };
+
+  // Handle select all
+  const handleSelectAll = () => {
+    const allIds = new Set(topics.map((topic: Topic) => topic.id));
+    setSelectedTopicIds(allIds);
+    setIsAllTopicsSelected(false);
+  };
+
+  // Handle deselect all
+  const handleDeselectAll = () => {
+    setSelectedTopicIds(new Set());
+    setIsAllTopicsSelected(false);
+  };
+
+  // Filter topics based on search and filter mode
+  const filteredTopics = topics.filter((topic: Topic) => {
+    // Search filter
+    const matchesSearch = topic.name.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!matchesSearch) return false;
+
+    // Filter mode
+    if (filterMode === 'selected') {
+      return selectedTopicIds.has(topic.id);
+    } else if (filterMode === 'unselected') {
+      return !selectedTopicIds.has(topic.id);
+    }
+    return true; // 'all' mode
+  });
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!validateTopics()) {
+      return;
+    }
+
     try {
       // Prepare topic_ids: empty array or undefined means "all topics"
-      const topicIds = isAllTopicsSelected || selectedTopicIds.size === 0 
+      const topicIds = selectedTopicIds.size === 0 
         ? undefined 
         : Array.from(selectedTopicIds);
 
@@ -206,7 +231,9 @@ export default function GameConfigPage() {
     if (currentStep === 'level' || currentStep === 'topics') {
       setLevelId('');
       setSelectedTopicIds(new Set());
-      setIsAllTopicsSelected(true);
+      setIsAllTopicsSelected(false);
+      setSearchQuery('');
+      setFilterMode('all');
       setCurrentStep('languages');
     }
   }, [sourceLanguageId]);
@@ -230,7 +257,7 @@ export default function GameConfigPage() {
 
   return (
     <div className="min-h-screen p-4 md:p-8 bg-gradient-to-br from-background to-muted/20">
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         <header className="text-center space-y-2">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Cấu Hình Game</h1>
           <p className="text-muted-foreground text-lg">
@@ -331,13 +358,26 @@ export default function GameConfigPage() {
                           <div className="text-muted-foreground">Không có cấp độ nào. Vui lòng chọn ngôn ngữ nguồn trước.</div>
                         ) : (
                           levels.map((level: Level) => (
-                            <div key={level.id} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors">
-                              <RadioGroupItem value={String(level.id)} id={`level-${level.id}`} />
-                              <Label htmlFor={`level-${level.id}`} className="flex-1 cursor-pointer">
-                                <div className="font-medium">{level.name}</div>
-                                {level.description && (
-                                  <div className="text-sm text-muted-foreground">{level.description}</div>
-                                )}
+                            <div key={level.id} className="group relative">
+                              <Label 
+                                htmlFor={`level-${level.id}`} 
+                                className="flex items-start gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-primary/50 hover:bg-accent/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                              >
+                                <RadioGroupItem 
+                                  value={String(level.id)} 
+                                  id={`level-${level.id}`}
+                                  className="mt-0.5 shrink-0"
+                                />
+                                <div className="flex-1 min-w-0 flex flex-col">
+                                  <div className="font-semibold text-base leading-tight mb-2">
+                                    {level.name}
+                                  </div>
+                                  {level.description && (
+                                    <div className="text-sm text-muted-foreground leading-relaxed line-clamp-3 flex-1">
+                                      {level.description}
+                                    </div>
+                                  )}
+                                </div>
                               </Label>
                             </div>
                           ))
@@ -360,31 +400,85 @@ export default function GameConfigPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Chọn Chủ Đề</CardTitle>
-                  <CardDescription>Chọn một hoặc nhiều chủ đề (mặc định: Tất cả)</CardDescription>
+                  <CardDescription>Chọn một hoặc nhiều chủ đề</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Search Input */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm chủ đề..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full h-9 pl-9 pr-9 rounded-md border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSelectAll}
+                      className="text-sm"
+                    >
+                      Chọn tất cả
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeselectAll}
+                      className="text-sm"
+                    >
+                      Bỏ chọn tất cả
+                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="filter-mode" className="text-sm whitespace-nowrap">Lọc:</Label>
+                      <Select
+                        value={filterMode}
+                        onValueChange={(value: 'all' | 'selected' | 'unselected') => setFilterMode(value)}
+                      >
+                        <SelectTrigger id="filter-mode" className="w-[140px] h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tất cả</SelectItem>
+                          <SelectItem value="selected">Đang chọn</SelectItem>
+                          <SelectItem value="unselected">Chưa chọn</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Topic Chips Grid */}
                   <div className="space-y-3">
                     {topicsLoading ? (
-                      <div className="text-muted-foreground">Đang tải...</div>
+                      <div className="text-muted-foreground text-center py-8">Đang tải...</div>
+                    ) : filteredTopics.length === 0 ? (
+                      <div className="text-muted-foreground text-center py-8">
+                        {searchQuery ? 'Không tìm thấy chủ đề phù hợp' : 'Không có chủ đề nào'}
+                      </div>
                     ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {/* "All" chip */}
-                        <Badge
-                          variant={isAllTopicsSelected ? 'default' : 'outline'}
-                          className="cursor-pointer px-4 py-2 text-sm font-medium transition-colors hover:bg-primary/90"
-                          onClick={() => handleTopicToggle(-1)}
-                        >
-                          Tất Cả
-                        </Badge>
-                        
-                        {/* Topic chips */}
-                        {topics.map((topic: Topic) => {
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-2 gap-y-1.5 justify-items-stretch p-1">
+                        {filteredTopics.map((topic: Topic) => {
                           const isSelected = selectedTopicIds.has(topic.id);
                           return (
                             <Badge
                               key={topic.id}
                               variant={isSelected ? 'default' : 'outline'}
-                              className="cursor-pointer px-4 py-2 text-sm font-medium transition-colors hover:bg-primary/90"
+                              className="cursor-pointer px-3 py-2 text-sm font-medium transition-all hover:bg-primary hover:text-primary-foreground hover:scale-105 justify-center text-center w-full"
                               onClick={() => handleTopicToggle(topic.id)}
                             >
                               {topic.name}
@@ -394,11 +488,21 @@ export default function GameConfigPage() {
                       </div>
                     )}
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {isAllTopicsSelected || selectedTopicIds.size === 0
-                      ? 'Đã chọn: Tất cả chủ đề'
+
+                  {/* Selection Status */}
+                  <div className="text-sm text-muted-foreground pt-2 border-t">
+                    {selectedTopicIds.size === 0
+                      ? 'Chưa chọn chủ đề nào'
                       : `Đã chọn: ${selectedTopicIds.size} chủ đề`}
                   </div>
+
+                  {/* Validation Error */}
+                  {errors.topics && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{errors.topics}</AlertDescription>
+                    </Alert>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -454,7 +558,7 @@ export default function GameConfigPage() {
                 ) : (
                   <Button
                     type="submit"
-                    disabled={createSessionMutation.isPending}
+                    disabled={createSessionMutation.isPending || (selectedTopicIds.size === 0 && !isAllTopicsSelected)}
                   >
                     {createSessionMutation.isPending ? 'Đang tạo...' : 'Bắt Đầu Chơi'}
                   </Button>
