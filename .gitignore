@@ -46,6 +46,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+deploy/logs/
+deploy/backups/
+deploy/versions/
+.deployment-version
 
 # Temporary files
 *.tmp

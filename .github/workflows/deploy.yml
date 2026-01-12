@@ -1,0 +1,199 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  DEPLOY_ENV: prod
+
+jobs:
+  test:
+    name: Test & Lint
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20.19'
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: go mod download
+
+      - name: Run backend tests
+        working-directory: ./backend
+        run: go test ./... -v || true
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run frontend lint
+        working-directory: ./frontend
+        run: npm run lint || true
+
+  deploy:
+    name: Deploy to Production
+    needs: test
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # Fetch all history for tags
+
+      - name: Bump and get deployment version
+        id: version
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          # Get current version from deploy/VERSION file
+          VERSION_FILE="deploy/VERSION"
+          if [ -f "$VERSION_FILE" ]; then
+            CURRENT_VERSION=$(cat "$VERSION_FILE" | tr -d ' \n')
+            # Validate version format (x.y.z)
+            if [[ ! "$CURRENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Warning: Invalid version format in deploy/VERSION: $CURRENT_VERSION"
+              echo "Using default version 0.0.0"
+              CURRENT_VERSION="0.0.0"
+            fi
+          else
+            # Default version if file doesn't exist
+            CURRENT_VERSION="0.0.0"
+            echo "Warning: deploy/VERSION not found, using default version 0.0.0"
+          fi
+          
+          # Parse version components
+          IFS='.' read -r -a PARTS <<< "$CURRENT_VERSION"
+          MAJOR=${PARTS[0]:-0}
+          MINOR=${PARTS[1]:-0}
+          PATCH=${PARTS[2]:-0}
+          
+          # Determine bump type from commit message (case insensitive)
+          COMMIT_MSG_LOWER=$(echo "$COMMIT_MESSAGE" | tr '[:upper:]' '[:lower:]')
+          
+          if echo "$COMMIT_MSG_LOWER" | grep -qi "major"; then
+            BUMP_TYPE="major"
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+          elif echo "$COMMIT_MSG_LOWER" | grep -qi "minor"; then
+            BUMP_TYPE="minor"
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          elif echo "$COMMIT_MSG_LOWER" | grep -qi "patch"; then
+            BUMP_TYPE="patch"
+            PATCH=$((PATCH + 1))
+          else
+            # Default to patch if no keyword found
+            BUMP_TYPE="patch"
+            PATCH=$((PATCH + 1))
+          fi
+          
+          # Create new version
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          
+          # Update VERSION file
+          echo "$NEW_VERSION" > "$VERSION_FILE"
+          
+          # Add 'v' prefix for git tag
+          VERSION_TAG="v${NEW_VERSION}"
+          
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "version_tag=${VERSION_TAG}" >> $GITHUB_OUTPUT
+          echo "bump_type=${BUMP_TYPE}" >> $GITHUB_OUTPUT
+          echo "Previous version: ${CURRENT_VERSION}"
+          echo "Bump type: ${BUMP_TYPE}"
+          echo "New version: ${NEW_VERSION}"
+          echo "Version tag: ${VERSION_TAG}"
+
+      - name: Deploy to server
+        env:
+          DEPLOY_ENV: ${{ env.DEPLOY_ENV }}
+          DEPLOY_VERSION: ${{ steps.version.outputs.version }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          echo "🚀 Starting deployment..."
+          echo "Version: ${{ steps.version.outputs.version }}"
+          echo "Commit: ${{ github.sha }}"
+          
+          # Create logs directory in deploy/
+          mkdir -p deploy/logs
+          
+          # Log deployment start
+          echo "[$(date '+%Y-%m-%d %H:%M:%S')] Deployment started - Version: ${{ steps.version.outputs.version }} - Commit: ${{ github.sha }}" >> deploy/logs/deploy.log
+          
+          # Run deployment script with version
+          if [ -f scripts/deploy.sh ]; then
+            bash scripts/deploy.sh prod "${{ steps.version.outputs.version }}" 2>&1 | tee -a deploy/logs/deploy.log
+          else
+            echo "Error: deploy.sh not found" | tee -a deploy/logs/deploy.log
+            exit 1
+          fi
+
+      - name: Check deployment status
+        if: failure()
+        env:
+          DEPLOY_VERSION: ${{ steps.version.outputs.version }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          echo "❌ Deployment failed, attempting rollback..."
+          
+          # Log failure
+          echo "[$(date '+%Y-%m-%d %H:%M:%S')] Deployment failed - Version: ${{ steps.version.outputs.version }} - Commit: ${{ github.sha }}" >> deploy/logs/deploy.log
+          
+          # Run rollback script
+          if [ -f scripts/rollback.sh ]; then
+            bash scripts/rollback.sh prod 2>&1 | tee -a deploy/logs/deploy.log
+          else
+            echo "Error: rollback.sh not found" | tee -a deploy/logs/deploy.log
+          fi
+          
+          exit 1
+
+      - name: Create git tag
+        if: success()
+        env:
+          DEPLOY_VERSION_TAG: ${{ steps.version.outputs.version_tag }}
+        run: |
+          # Create tag if it doesn't exist
+          if ! git rev-parse "${{ steps.version.outputs.version_tag }}" >/dev/null 2>&1; then
+            git tag -a "${{ steps.version.outputs.version_tag }}" -m "Deployed version ${{ steps.version.outputs.version }}"
+            git push origin "${{ steps.version.outputs.version_tag }}" || echo "Failed to push tag (may not have push permissions)"
+          else
+            echo "Tag ${{ steps.version.outputs.version_tag }} already exists, skipping"
+          fi
+
+      - name: Upload deployment logs
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: deployment-logs-${{ steps.version.outputs.version }}
+          path: |
+            deploy/logs/deploy.log
+            deploy/VERSION
+          retention-days: 30
+
+      - name: Save deployment version
+        if: success()
+        run: |
+          # Save current deployment version for reference
+          mkdir -p deploy/versions
+          echo "Version: ${{ steps.version.outputs.version }}" > deploy/versions/current-prod.txt
+          echo "Tag: ${{ steps.version.outputs.version_tag }}" >> deploy/versions/current-prod.txt
+          echo "Commit: ${{ github.sha }}" >> deploy/versions/current-prod.txt
+          echo "Date: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> deploy/versions/current-prod.txt
+          echo "Deployment version saved to deploy/versions/current-prod.txt"
