@@ -33,7 +33,7 @@ jobs:
 
       - name: Run backend tests
         working-directory: ./backend
-        run: go test ./... -v || true
+        run: go test ./... -v
 
       - name: Install frontend dependencies
         working-directory: ./frontend
@@ -41,7 +41,7 @@ jobs:
 
       - name: Run frontend lint
         working-directory: ./frontend
-        run: npm run lint || true
+        run: npm run lint
 
   deploy:
     name: Deploy to Production
