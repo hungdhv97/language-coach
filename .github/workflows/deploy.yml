@@ -120,6 +120,44 @@ jobs:
           echo "New version: ${NEW_VERSION}"
           echo "Version tag: ${VERSION_TAG}"
 
+      - name: Copy environment files
+        run: |
+          echo "📋 Copying environment files from secrets to deploy/env/prod..."
+          
+          # Source directory for secrets
+          SECRETS_DIR="/home/hungthai/actions-runner/language_coach/secrets"
+          # Target directory for production env files
+          TARGET_DIR="deploy/env/prod"
+          
+          # Ensure target directory exists
+          mkdir -p "$TARGET_DIR"
+          
+          # Copy environment files
+          if [ -d "$SECRETS_DIR" ]; then
+            if [ -f "$SECRETS_DIR/backend.env" ]; then
+              cp "$SECRETS_DIR/backend.env" "$TARGET_DIR/" && echo "✓ Copied backend.env"
+            else
+              echo "⚠️  Warning: backend.env not found in $SECRETS_DIR"
+            fi
+            
+            if [ -f "$SECRETS_DIR/frontend.env" ]; then
+              cp "$SECRETS_DIR/frontend.env" "$TARGET_DIR/" && echo "✓ Copied frontend.env"
+            else
+              echo "⚠️  Warning: frontend.env not found in $SECRETS_DIR"
+            fi
+            
+            if [ -f "$SECRETS_DIR/docker-compose.env" ]; then
+              cp "$SECRETS_DIR/docker-compose.env" "$TARGET_DIR/" && echo "✓ Copied docker-compose.env"
+            else
+              echo "⚠️  Warning: docker-compose.env not found in $SECRETS_DIR"
+            fi
+            
+            echo "✅ Environment files copied successfully"
+          else
+            echo "❌ Error: Secrets directory not found at $SECRETS_DIR"
+            exit 1
+          fi
+
       - name: Deploy to server
         env:
           DEPLOY_ENV: ${{ env.DEPLOY_ENV }}
