@@ -2,6 +2,7 @@
 
 # Rollback Script
 # This script rolls back to a previous deployment version
+# NOTE: Only supports production environment
 
 set -e
 
@@ -16,17 +17,11 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Get environment from first argument (default to prod)
-ENV="${1:-prod}"
+# Hardcode environment to production
+ENV="prod"
 
-# Get backup timestamp from second argument (optional - uses latest if not provided)
-BACKUP_TIMESTAMP="${2:-}"
-
-# Validate environment
-if [ "$ENV" != "dev" ] && [ "$ENV" != "prod" ]; then
-    echo -e "${RED}❌ Error: Invalid environment '${ENV}'. Must be 'dev' or 'prod'${NC}"
-    exit 1
-fi
+# Get backup timestamp from first argument (optional - uses latest if not provided)
+BACKUP_TIMESTAMP="${1:-}"
 
 # Log file in deploy/logs/
 LOG_DIR="$PROJECT_ROOT/deploy/logs"

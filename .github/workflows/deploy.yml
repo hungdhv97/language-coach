@@ -138,7 +138,7 @@ jobs:
           
           # Run deployment script with version
           if [ -f scripts/deploy.sh ]; then
-            bash scripts/deploy.sh prod "${{ steps.version.outputs.version }}" 2>&1 | tee -a deploy/logs/deploy.log
+            bash scripts/deploy.sh "${{ steps.version.outputs.version }}" 2>&1 | tee -a deploy/logs/deploy.log
           else
             echo "Error: deploy.sh not found" | tee -a deploy/logs/deploy.log
             exit 1
@@ -157,7 +157,7 @@ jobs:
           
           # Run rollback script
           if [ -f scripts/rollback.sh ]; then
-            bash scripts/rollback.sh prod 2>&1 | tee -a deploy/logs/deploy.log
+            bash scripts/rollback.sh 2>&1 | tee -a deploy/logs/deploy.log
           else
             echo "Error: rollback.sh not found" | tee -a deploy/logs/deploy.log
           fi
@@ -190,10 +190,8 @@ jobs:
       - name: Save deployment version
         if: success()
         run: |
-          # Save current deployment version for reference
           mkdir -p deploy/versions
           echo "Version: ${{ steps.version.outputs.version }}" > deploy/versions/current-prod.txt
           echo "Tag: ${{ steps.version.outputs.version_tag }}" >> deploy/versions/current-prod.txt
           echo "Commit: ${{ github.sha }}" >> deploy/versions/current-prod.txt
           echo "Date: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> deploy/versions/current-prod.txt
-          echo "Deployment version saved to deploy/versions/current-prod.txt"

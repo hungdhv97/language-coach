@@ -134,12 +134,12 @@ Nếu deploy thất bại, hệ thống sẽ:
 ### Deploy thủ công:
 
 ```bash
-# Deploy production (chỉ hỗ trợ production)
+# Deploy production
 # Version sẽ tự động bump dựa trên commit message
-./scripts/deploy.sh prod
+./scripts/deploy.sh
 
 # Hoặc với version cụ thể (bỏ qua auto-bump)
-./scripts/deploy.sh prod 1.0.0
+./scripts/deploy.sh 1.0.0
 ```
 
 ### Development:
@@ -153,10 +153,10 @@ Nếu deploy thất bại, hệ thống sẽ:
 
 ```bash
 # Rollback về version mới nhất
-./scripts/rollback.sh prod
+./scripts/rollback.sh
 
 # Rollback về version cụ thể (dùng backup timestamp)
-./scripts/rollback.sh prod 20250127-143000
+./scripts/rollback.sh 20250127-143000
 ```
 
 ### Xem version hiện tại:
