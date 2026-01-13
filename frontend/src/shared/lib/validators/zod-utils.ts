@@ -20,6 +20,6 @@ export const commonSchemas = {
 
 // Helper function to create form resolver
 export function createFormResolver<T extends z.ZodTypeAny>(schema: T) {
-  return zodResolver(schema as any);
+  return zodResolver(schema);
 }
 

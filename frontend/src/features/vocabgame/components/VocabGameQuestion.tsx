@@ -3,7 +3,7 @@
  * Displays a question with 4 multiple-choice options (A, B, C, D)
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import type { VocabGameQuestionWithOptions } from '@/entities/vocabgame/model/vocabgame.types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,17 +23,21 @@ export default function VocabGameQuestion({
   isSubmitting = false,
   selectedOptionId,
 }: VocabGameQuestionProps) {
-  const [localSelected, setLocalSelected] = useState<number | null>(selectedOptionId || null);
-
-  useEffect(() => {
-    setLocalSelected(selectedOptionId || null);
-  }, [selectedOptionId, question.id]);
+  // Use a key-based approach: derive localSelected from props when question changes
+  // This avoids setState in useEffect
+  const questionKey = `${question.id}-${selectedOptionId || 'none'}`;
+  const [localSelectedMap, setLocalSelectedMap] = useState<Record<string, number | null>>({});
+  
+  // Get current local selected for this question
+  const localSelected = useMemo(() => {
+    return localSelectedMap[questionKey] ?? selectedOptionId ?? null;
+  }, [localSelectedMap, questionKey, selectedOptionId]);
 
   const handleOptionClick = (optionId: number) => {
     if (isSubmitting || localSelected !== null) {
       return; // Prevent multiple selections
     }
-    setLocalSelected(optionId);
+    setLocalSelectedMap(prev => ({ ...prev, [questionKey]: optionId }));
     onAnswerSelect(optionId);
   };
 

@@ -53,11 +53,11 @@ export const getLanguage = (): Language => {
 export const t = (key: string, lang?: Language): string => {
   const lng = lang || currentLanguage;
   const keys = key.split('.');
-  let value: any = translations[lng];
+  let value: unknown = translations[lng];
   
   for (const k of keys) {
     if (value && typeof value === 'object' && k in value) {
-      value = value[k];
+      value = (value as Record<string, unknown>)[k];
     } else {
       return key; // Return key if translation not found
     }

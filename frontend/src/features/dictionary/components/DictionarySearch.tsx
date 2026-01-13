@@ -2,7 +2,7 @@
  * Dictionary Search Component
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { dictionaryQueries } from '@/entities/dictionary/api/dictionary.queries';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,8 +12,7 @@ import type { Word, Language } from '@/entities/dictionary/model/dictionary.type
 
 export function DictionarySearch() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [languageId, setLanguageId] = useState<number | ''>('');
-  const [selectedWordId, setSelectedWordId] = useState<number | null>(null);
+  const [userSelectedLanguageId, setUserSelectedLanguageId] = useState<number | ''>('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const debouncedQuery = useDebounce(searchQuery, 500);
   const maxResults = 5;
@@ -21,15 +20,22 @@ export function DictionarySearch() {
   // Fetch languages
   const { data: languages = [], isLoading: languagesLoading } = dictionaryQueries.useLanguages();
 
-  // Set default language to English when languages are loaded
-  useEffect(() => {
-    if (languages.length > 0 && !languageId) {
-      const englishLang = languages.find((lang: Language) => lang.code === 'en');
-      if (englishLang) {
-        setLanguageId(englishLang.id);
-      }
-    }
-  }, [languages, languageId]);
+  // Calculate default language (English)
+  const defaultLanguageId = useMemo(() => {
+    const englishLang = languages.find((lang: Language) => lang.code === 'en');
+    return englishLang?.id;
+  }, [languages]);
+
+  // Derive effective language ID from user selection or default
+  const languageId = useMemo(() => {
+    return userSelectedLanguageId || defaultLanguageId || '';
+  }, [userSelectedLanguageId, defaultLanguageId]);
+
+  // Reset selectedWordId when search query or language changes
+  // Use a key-based approach: derive selectedWordId from search context
+  const searchContextKey = useMemo(() => `${debouncedQuery}-${languageId}`, [debouncedQuery, languageId]);
+  const [selectedWordIdMap, setSelectedWordIdMap] = useState<Record<string, number | null>>({});
+  const selectedWordId = selectedWordIdMap[searchContextKey] || null;
 
   const {
     data: searchResults,
@@ -43,11 +49,6 @@ export function DictionarySearch() {
     debouncedQuery.length > 0 && !!languageId
   );
 
-  // Reset selected word when search query changes
-  useEffect(() => {
-    setSelectedWordId(null);
-  }, [debouncedQuery, languageId]);
-
   // Show dropdown when typing
   useEffect(() => {
     if (languageId && debouncedQuery.length > 0) {
@@ -58,7 +59,7 @@ export function DictionarySearch() {
   }, [debouncedQuery, languageId]);
 
   const handleWordClick = (wordId: number) => {
-    setSelectedWordId(wordId);
+    setSelectedWordIdMap(prev => ({ ...prev, [searchContextKey]: wordId }));
     setIsDropdownOpen(false);
   };
 
@@ -138,7 +139,7 @@ export function DictionarySearch() {
         <div className="w-full sm:w-auto sm:min-w-[140px]">
           <Select
             value={languageId ? String(languageId) : undefined}
-            onValueChange={(value) => setLanguageId(value ? Number(value) : '')}
+            onValueChange={(value) => setUserSelectedLanguageId(value ? Number(value) : '')}
             disabled={languagesLoading}
           >
             <SelectTrigger id="language-select" className="w-full">

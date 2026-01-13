@@ -122,8 +122,7 @@ class HttpClient {
 
         // Throw an Error instance with the message, and attach ApiError properties
         const error = new Error(apiError.message || 'An error occurred');
-        (error as any).code = apiError.code;
-        (error as any).details = apiError.details;
+        Object.assign(error, { code: apiError.code, details: apiError.details });
         throw error;
       }
 
@@ -139,8 +138,7 @@ class HttpClient {
       if (error && typeof error === 'object' && 'message' in error) {
         const apiError = error as ApiError;
         const err = new Error(apiError.message);
-        (err as any).code = apiError.code;
-        (err as any).details = apiError.details;
+        Object.assign(err, { code: apiError.code, details: apiError.details });
         throw err;
       }
       throw new Error('Unknown error occurred');

@@ -15,6 +15,7 @@ import { userEndpoints } from '@/entities/user/api/user.endpoints';
 import { useAuthStore } from '@/shared/store/useAuthStore';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LogOut, AlertCircle } from 'lucide-react';
+import type { ApiError } from '@/shared/api/http-client';
 
 const profileSchema = z.object({
   display_name: z.string().max(100).optional().or(z.literal('')),
@@ -58,7 +59,7 @@ export default function ProfilePage() {
 
   const updateMutation = useMutation({
     mutationFn: (data: ProfileFormData) => {
-      const updateData: any = {};
+      const updateData: Partial<ProfileFormData> = {};
       if (data.display_name) updateData.display_name = data.display_name;
       if (data.avatar_url) updateData.avatar_url = data.avatar_url;
       if (data.birth_day) updateData.birth_day = data.birth_day;
@@ -69,8 +70,11 @@ export default function ProfilePage() {
       queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       alert('Cập nhật profile thành công!');
     },
-    onError: (err: any) => {
-      alert(err.message || 'Cập nhật profile thất bại');
+    onError: (err: Error | ApiError) => {
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : (err as ApiError).message || 'Cập nhật profile thất bại';
+      alert(errorMessage);
     },
   });
 

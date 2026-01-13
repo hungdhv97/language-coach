@@ -16,6 +16,7 @@ import { useAuthStore } from '@/shared/store/useAuthStore';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertCircle } from 'lucide-react';
+import type { ApiError } from '@/shared/api/http-client';
 
 const loginSchema = z.object({
   emailOrUsername: z.string().min(1, 'Vui lòng nhập email hoặc username'),
@@ -66,9 +67,11 @@ export default function LoginPage() {
       });
       navigate('/games');
     },
-    onError: (err: any) => {
+    onError: (err: Error | ApiError) => {
       // Extract error message from Error instance or ApiError object
-      const errorMessage = err?.message || err?.error?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : (err as ApiError).message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
       setError(errorMessage);
     },
   });

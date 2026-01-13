@@ -16,6 +16,7 @@ import { useAuthStore } from '@/shared/store/useAuthStore';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Check, X, Loader2, AlertCircle } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
+import type { ApiError } from '@/shared/api/http-client';
 
 const registerSchema = z.object({
   display_name: z.string().max(100).optional().or(z.literal('')),
@@ -53,7 +54,9 @@ export default function RegisterPage() {
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const username = form.watch('username');
+  // eslint-disable-next-line react-hooks/incompatible-library
   const email = form.watch('email');
   const debouncedUsername = useDebounce(username, 500);
   const debouncedEmail = useDebounce(email, 500);
@@ -135,12 +138,15 @@ export default function RegisterPage() {
           is_active: true,
         });
         navigate('/games');
-      } catch (err: any) {
+      } catch {
         setError('Đăng ký thành công nhưng đăng nhập thất bại. Vui lòng đăng nhập thủ công.');
       }
     },
-    onError: (err: any) => {
-      setError(err.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+    onError: (err: Error | ApiError) => {
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : (err as ApiError).message || 'Đăng ký thất bại. Vui lòng thử lại.';
+      setError(errorMessage);
     },
   });
 

@@ -3,7 +3,7 @@
  * Multi-step flow: Languages -> Level -> Topics
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dictionaryQueries } from '@/entities/dictionary/api/dictionary.queries';
 import { vocabGameMutations } from '@/features/vocabgame/api/vocabgame.mutations';
@@ -24,8 +24,8 @@ export default function GameConfigPage() {
   const [currentStep, setCurrentStep] = useState<Step>('languages');
   
   // Step 1: Languages
-  const [sourceLanguageId, setSourceLanguageId] = useState<number | ''>('');
-  const [targetLanguageId, setTargetLanguageId] = useState<number | ''>('');
+  const [userSelectedSourceLanguageId, setUserSelectedSourceLanguageId] = useState<number | ''>('');
+  const [userSelectedTargetLanguageId, setUserSelectedTargetLanguageId] = useState<number | ''>('');
   
   // Step 2: Level
   const [levelId, setLevelId] = useState<number | ''>('');
@@ -41,41 +41,52 @@ export default function GameConfigPage() {
   // Fetch reference data
   const { data: languages = [], isLoading: languagesLoading } = dictionaryQueries.useLanguages();
   const { data: topics = [], isLoading: topicsLoading } = dictionaryQueries.useTopics();
+  
+  // Calculate default source language (English)
+  const defaultSourceLanguageId = useMemo(() => {
+    const englishLang = languages.find((lang: Language) => lang.code === 'en');
+    return englishLang?.id;
+  }, [languages]);
+
+  // Derive effective source language ID from user selection or default
+  const sourceLanguageId = useMemo(() => {
+    return userSelectedSourceLanguageId || defaultSourceLanguageId || '';
+  }, [userSelectedSourceLanguageId, defaultSourceLanguageId]);
+
+  // Calculate available target languages (exclude source)
+  const availableTargetLanguages = useMemo(() => {
+    return languages.filter(
+      (lang: Language) => !sourceLanguageId || lang.id !== sourceLanguageId
+    );
+  }, [languages, sourceLanguageId]);
+
+  // Derive effective target language ID - auto-select first available when source changes
+  const defaultTargetLanguageId = useMemo(() => {
+    if (availableTargetLanguages.length > 0 && sourceLanguageId) {
+      return availableTargetLanguages[0].id;
+    }
+    return '';
+  }, [availableTargetLanguages, sourceLanguageId]);
+
+  // Derive effective target language ID from user selection or default
+  const targetLanguageId = useMemo(() => {
+    // Reset user selection when source changes
+    if (sourceLanguageId && userSelectedTargetLanguageId) {
+      // Check if user selection is still valid (not the source language)
+      const isValid = availableTargetLanguages.some(
+        (lang: Language) => lang.id === userSelectedTargetLanguageId
+      );
+      if (!isValid) {
+        return defaultTargetLanguageId;
+      }
+      return userSelectedTargetLanguageId;
+    }
+    return userSelectedTargetLanguageId || defaultTargetLanguageId;
+  }, [userSelectedTargetLanguageId, defaultTargetLanguageId, sourceLanguageId, availableTargetLanguages]);
+
   const { data: levels = [], isLoading: levelsLoading } = dictionaryQueries.useLevels(
     sourceLanguageId ? Number(sourceLanguageId) : undefined
   );
-
-  // Filter target languages (exclude source language)
-  const availableTargetLanguages = languages.filter(
-    (lang: Language) => !sourceLanguageId || lang.id !== sourceLanguageId
-  );
-
-  // Set default source language to English on initial load
-  useEffect(() => {
-    if (languages.length > 0 && !sourceLanguageId) {
-      const englishLang = languages.find((lang: Language) => lang.code === 'en');
-      if (englishLang) {
-        setSourceLanguageId(englishLang.id);
-      }
-    }
-  }, [languages, sourceLanguageId]);
-
-  // Auto-set target language when source language changes
-  // Set to first available language (excluding source)
-  useEffect(() => {
-    if (languages.length > 0 && sourceLanguageId) {
-      const filtered = languages.filter(
-        (lang: Language) => lang.id !== sourceLanguageId
-      );
-      if (filtered.length > 0) {
-        // Always set target to first available language when source changes
-        setTargetLanguageId(filtered[0].id);
-      } else {
-        // If no available languages, clear target
-        setTargetLanguageId('');
-      }
-    }
-  }, [languages, sourceLanguageId]);
 
   // Create session mutation
   const createSessionMutation = vocabGameMutations.useCreateSession();
@@ -226,9 +237,20 @@ export default function GameConfigPage() {
     }
   };
 
-  // Reset level when source language changes
-  useEffect(() => {
-    if (currentStep === 'level' || currentStep === 'topics') {
+  // Track previous source language to detect changes
+  const prevSourceLanguageIdRef = useRef<number | ''>(sourceLanguageId);
+  const prevLevelIdRef = useRef<number | ''>(levelId);
+
+  // Handle source language change - reset dependent state
+  const handleSourceLanguageChange = (value: string) => {
+    const newSourceId = value ? Number(value) : '';
+    const prevSourceId = prevSourceLanguageIdRef.current;
+    
+    setUserSelectedSourceLanguageId(newSourceId);
+    prevSourceLanguageIdRef.current = newSourceId;
+    
+    // Reset dependent state when source language changes
+    if (prevSourceId !== newSourceId && (currentStep === 'level' || currentStep === 'topics')) {
       setLevelId('');
       setSelectedTopicIds(new Set());
       setIsAllTopicsSelected(false);
@@ -236,15 +258,22 @@ export default function GameConfigPage() {
       setFilterMode('all');
       setCurrentStep('languages');
     }
-  }, [sourceLanguageId]);
+  };
 
-  // Reset topics when level changes
-  useEffect(() => {
-    if (currentStep === 'topics') {
+  // Handle level change - reset topics
+  const handleLevelChange = (value: string) => {
+    const newLevelId = value ? Number(value) : '';
+    const prevLevel = prevLevelIdRef.current;
+    
+    setLevelId(newLevelId);
+    prevLevelIdRef.current = newLevelId;
+    
+    // Reset topics when level changes
+    if (prevLevel !== newLevelId && currentStep === 'topics') {
       setSelectedTopicIds(new Set());
       setIsAllTopicsSelected(true);
     }
-  }, [levelId]);
+  };
 
   const canProceedToNextStep = () => {
     if (currentStep === 'languages') {
@@ -289,7 +318,7 @@ export default function GameConfigPage() {
                       <Label htmlFor="source-language">Ngôn Ngữ Nguồn</Label>
                       <Select
                         value={sourceLanguageId ? String(sourceLanguageId) : undefined}
-                        onValueChange={(value) => setSourceLanguageId(value ? Number(value) : '')}
+                        onValueChange={handleSourceLanguageChange}
                         disabled={languagesLoading}
                         required
                       >
@@ -310,7 +339,7 @@ export default function GameConfigPage() {
                       <Label htmlFor="target-language">Ngôn Ngữ Đích</Label>
                       <Select
                         value={targetLanguageId ? String(targetLanguageId) : undefined}
-                        onValueChange={(value) => setTargetLanguageId(value ? Number(value) : '')}
+                        onValueChange={(value) => setUserSelectedTargetLanguageId(value ? Number(value) : '')}
                         disabled={languagesLoading || !sourceLanguageId}
                         required
                       >
@@ -349,7 +378,7 @@ export default function GameConfigPage() {
                     <Label>Cấp Độ (Bắt buộc)</Label>
                     <RadioGroup
                       value={levelId ? String(levelId) : undefined}
-                      onValueChange={(value) => setLevelId(value ? Number(value) : '')}
+                      onValueChange={handleLevelChange}
                     >
                       <div className="space-y-3">
                         {levelsLoading ? (
