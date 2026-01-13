@@ -54,9 +54,7 @@ export default function RegisterPage() {
     },
   });
 
-  // eslint-disable-next-line react-hooks/incompatible-library
   const username = form.watch('username');
-  // eslint-disable-next-line react-hooks/incompatible-library
   const email = form.watch('email');
   const debouncedUsername = useDebounce(username, 500);
   const debouncedEmail = useDebounce(email, 500);

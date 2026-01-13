@@ -2,7 +2,7 @@
  * Dictionary Search Component
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { dictionaryQueries } from '@/entities/dictionary/api/dictionary.queries';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,7 +13,7 @@ import type { Word, Language } from '@/entities/dictionary/model/dictionary.type
 export function DictionarySearch() {
   const [searchQuery, setSearchQuery] = useState('');
   const [userSelectedLanguageId, setUserSelectedLanguageId] = useState<number | ''>('');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [userSetDropdownOpen, setUserSetDropdownOpen] = useState<boolean | null>(null);
   const debouncedQuery = useDebounce(searchQuery, 500);
   const maxResults = 5;
 
@@ -49,18 +49,17 @@ export function DictionarySearch() {
     debouncedQuery.length > 0 && !!languageId
   );
 
-  // Show dropdown when typing
-  useEffect(() => {
-    if (languageId && debouncedQuery.length > 0) {
-      setIsDropdownOpen(true);
-    } else {
-      setIsDropdownOpen(false);
-    }
-  }, [debouncedQuery, languageId]);
+  // Derive dropdown open state from conditions instead of useEffect
+  const shouldShowDropdown = useMemo(() => {
+    return languageId && debouncedQuery.length > 0;
+  }, [languageId, debouncedQuery]);
+
+  // Use user-set state if explicitly set, otherwise use derived state
+  const isDropdownOpen = userSetDropdownOpen !== null ? userSetDropdownOpen : shouldShowDropdown;
 
   const handleWordClick = (wordId: number) => {
     setSelectedWordIdMap(prev => ({ ...prev, [searchContextKey]: wordId }));
-    setIsDropdownOpen(false);
+    setUserSetDropdownOpen(false);
   };
 
   const showDropdown = 
@@ -82,11 +81,11 @@ export function DictionarySearch() {
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              setIsDropdownOpen(true);
+              setUserSetDropdownOpen(true);
             }}
             onFocus={() => {
               if (languageId && debouncedQuery.length > 0) {
-                setIsDropdownOpen(true);
+                setUserSetDropdownOpen(true);
               }
             }}
             disabled={!languageId}
