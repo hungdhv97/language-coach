@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -54,8 +54,8 @@ export default function RegisterPage() {
     },
   });
 
-  const username = form.watch('username');
-  const email = form.watch('email');
+  const username = useWatch({ control: form.control, name: 'username' });
+  const email = useWatch({ control: form.control, name: 'email' });
   const debouncedUsername = useDebounce(username, 500);
   const debouncedEmail = useDebounce(email, 500);
 

@@ -27,6 +27,7 @@ jwt:
 
 logging:
   level: info
+  path: /var/log/language-coach
 
 cors:
   allowed_origins:

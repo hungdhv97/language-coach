@@ -20,6 +20,7 @@ export const commonSchemas = {
 
 // Helper function to create form resolver
 export function createFormResolver<T extends z.ZodTypeAny>(schema: T) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return zodResolver(schema as any);
 }
 

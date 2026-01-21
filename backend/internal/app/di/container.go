@@ -70,7 +70,7 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 	}
 
 	// Initialize logger
-	appLogger, err := logger.NewLogger(cfg.App.Env)
+	appLogger, err := logger.NewLogger(cfg.App.Env, cfg.Logging.Path)
 	if err != nil {
 		return nil, err
 	}

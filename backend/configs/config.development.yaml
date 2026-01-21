@@ -27,6 +27,7 @@ jwt:
 
 logging:
   level: debug
+  path: logs
 
 cors:
   allowed_origins:

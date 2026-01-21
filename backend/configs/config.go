@@ -56,6 +56,7 @@ type JWTConfig struct {
 // LoggingConfig holds logging configuration
 type LoggingConfig struct {
 	Level string
+	Path  string
 }
 
 // CORSConfig holds CORS configuration
@@ -148,6 +149,7 @@ func setDefaults() {
 
 	// Logging defaults
 	viper.SetDefault("logging.level", "info")
+	viper.SetDefault("logging.path", "/var/log/language-coach")
 
 	// CORS defaults
 	viper.SetDefault("cors.allowed_origins", []string{"http://localhost:3000", "http://localhost:3300"})
@@ -166,5 +168,6 @@ func setDefaults() {
 	viper.BindEnv("database.sslmode", "DB_SSLMODE")
 	viper.BindEnv("jwt.secret", "JWT_SECRET")
 	viper.BindEnv("logging.level", "LOG_LEVEL")
+	viper.BindEnv("logging.path", "LOG_PATH")
 	viper.BindEnv("cors.allowed_origins", "CORS_ALLOWED_ORIGINS")
 }

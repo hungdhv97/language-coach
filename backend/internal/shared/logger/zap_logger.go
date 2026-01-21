@@ -2,6 +2,7 @@ package logger
 
 import (
 	"os"
+	"path/filepath"
 	"time"
 
 	"go.uber.org/zap"
@@ -96,7 +97,7 @@ func (l *Logger) Sync() error {
 }
 
 // NewLogger creates a new structured logger using zap
-func NewLogger(env string) (*Logger, error) {
+func NewLogger(env string, logPath string) (*Logger, error) {
 	// Map environment to log level
 	var level zapcore.Level
 	switch env {
@@ -129,20 +130,23 @@ func NewLogger(env string) (*Logger, error) {
 	fileEncoder := zapcore.NewJSONEncoder(fileEncoderCfg)
 
 	// Ensure log directory exists
-	if err := os.MkdirAll("logs", 0o755); err != nil {
+	if logPath == "" {
+		logPath = "logs"
+	}
+	if err := os.MkdirAll(logPath, 0o755); err != nil {
 		return nil, err
 	}
 
 	// Lumberjack rotation config
 	appWriter := &lumberjack.Logger{
-		Filename:   "logs/app.log",
+		Filename:   filepath.Join(logPath, "app.log"),
 		MaxSize:    50,   // MB per file
 		MaxBackups: 7,    // number of old files to keep
 		MaxAge:     30,   // days to keep a log file
 		Compress:   true, // gzip old log files
 	}
 	errorWriter := &lumberjack.Logger{
-		Filename:   "logs/error.log",
+		Filename:   filepath.Join(logPath, "error.log"),
 		MaxSize:    50,
 		MaxBackups: 7,
 		MaxAge:     30,
