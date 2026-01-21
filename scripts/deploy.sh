@@ -25,7 +25,7 @@ DEPLOY_VERSION="${1:-}"
 
 # Validate version is provided
 if [ -z "$DEPLOY_VERSION" ]; then
-    echo -e "${RED}❌ Error: Version is required${NC}"
+    echo -e "${RED}Error: Version is required${NC}"
     echo "Usage: $0 <version>"
     echo "Version should be passed from GitHub Actions workflow"
     exit 1
@@ -33,7 +33,7 @@ fi
 
 # Validate version format
 if [[ ! "$DEPLOY_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo -e "${RED}❌ Error: Invalid version format: $DEPLOY_VERSION${NC}"
+    echo -e "${RED}Error: Invalid version format: $DEPLOY_VERSION${NC}"
     echo "Expected format: x.y.z (e.g., 1.0.0)"
     exit 1
 fi
@@ -55,25 +55,25 @@ log() {
 # Function to log errors
 log_error() {
     log "ERROR" "$@"
-    echo -e "${RED}❌ $@${NC}" >&2
+    echo -e "${RED}$@${NC}" >&2
 }
 
 # Function to log success
 log_success() {
     log "SUCCESS" "$@"
-    echo -e "${GREEN}✅ $@${NC}"
+    echo -e "${GREEN}$@${NC}"
 }
 
 # Function to log info
 log_info() {
     log "INFO" "$@"
-    echo -e "${BLUE}ℹ️  $@${NC}"
+    echo -e "${BLUE}$@${NC}"
 }
 
 # Function to log warning
 log_warning() {
     log "WARNING" "$@"
-    echo -e "${YELLOW}⚠️  $@${NC}"
+    echo -e "${YELLOW}$@${NC}"
 }
 
 # Backup directory
@@ -234,5 +234,5 @@ log_info "Final container status:"
 $DOCKER_COMPOSE -f "$COMPOSE_FILE" ps
 
 echo ""
-echo -e "${GREEN}🎉 Deployment to $ENV completed successfully!${NC}"
-echo -e "${GREEN}📦 Version: $DEPLOY_VERSION${NC}"
+echo -e "${GREEN}Deployment to $ENV completed successfully!${NC}"
+echo -e "${GREEN}Version: $DEPLOY_VERSION${NC}"
