@@ -2,7 +2,7 @@
  * Register Page Component
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,14 +34,10 @@ const registerSchema = z.object({
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
-type ValidationState = 'idle' | 'checking' | 'valid' | 'invalid';
-
 export default function RegisterPage() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   const [error, setError] = useState<string | null>(null);
-  const [usernameValidation, setUsernameValidation] = useState<ValidationState>('idle');
-  const [emailValidation, setEmailValidation] = useState<ValidationState>('idle');
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -60,7 +56,7 @@ export default function RegisterPage() {
   const debouncedEmail = useDebounce(email, 500);
 
   // Check username availability
-  const { data: usernameCheck } = useQuery({
+  const { data: usernameCheck, isLoading: isUsernameChecking } = useQuery({
     queryKey: ['checkUsername', debouncedUsername],
     queryFn: () => {
       if (!debouncedUsername) throw new Error('Username is required');
@@ -71,7 +67,7 @@ export default function RegisterPage() {
   });
 
   // Check email availability
-  const { data: emailCheck } = useQuery({
+  const { data: emailCheck, isLoading: isEmailChecking } = useQuery({
     queryKey: ['checkEmail', debouncedEmail],
     queryFn: () => {
       if (!debouncedEmail) throw new Error('Email is required');
@@ -81,31 +77,19 @@ export default function RegisterPage() {
     retry: false,
   });
 
-  useEffect(() => {
-    if (!debouncedUsername || debouncedUsername.length < 3) {
-      setUsernameValidation('idle');
-      return;
-    }
+  const usernameValidation = (() => {
+    if (!debouncedUsername || debouncedUsername.length < 3) return 'idle';
+    if (isUsernameChecking) return 'checking';
+    if (usernameCheck) return usernameCheck.available ? 'valid' : 'invalid';
+    return 'idle';
+  })();
 
-    if (usernameCheck) {
-      setUsernameValidation(usernameCheck.available ? 'valid' : 'invalid');
-    } else {
-      setUsernameValidation('checking');
-    }
-  }, [debouncedUsername, usernameCheck]);
-
-  useEffect(() => {
-    if (!debouncedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(debouncedEmail)) {
-      setEmailValidation('idle');
-      return;
-    }
-
-    if (emailCheck) {
-      setEmailValidation(emailCheck.available ? 'valid' : 'invalid');
-    } else {
-      setEmailValidation('checking');
-    }
-  }, [debouncedEmail, emailCheck]);
+  const emailValidation = (() => {
+    if (!debouncedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(debouncedEmail)) return 'idle';
+    if (isEmailChecking) return 'checking';
+    if (emailCheck) return emailCheck.available ? 'valid' : 'invalid';
+    return 'idle';
+  })();
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterFormData) => {
